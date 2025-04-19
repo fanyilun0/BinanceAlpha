@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  crypto-sentinel:
+    build: .
+    container_name: crypto-sentinel
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    environment:
+      - TZ=Asia/Shanghai
+      - IS_DOCKER=true
+      - HTTP_PROXY=http://host.docker.internal:7890
+      - HTTPS_PROXY=http://host.docker.internal:7890
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
