@@ -333,12 +333,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
                     else:
                         print(f"{platform} 平台提示词已生成")
                     
-                    # 单独保存该平台的建议到文件
-                    platform_file = f"{advice_dir}/{platform.lower().replace(' ', '_')}_advice_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-                    with open(platform_file, "w", encoding="utf-8") as f:
-                        f.write(platform_advice)
-                    
-                    logger.info(f"{platform} 平台投资建议已保存到: {platform_file}")
+                    # 文件保存已在advisor.get_investment_advice中处理
                 else:
                     logger.error(f"{platform} 平台生成投资建议失败")
                     
@@ -348,7 +343,9 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             
         # 保存所有平台的综合建议到文件
         if results:
-            all_advice_file = f"{advice_dir}/all_platforms_advice_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+            # 获取当前时间戳用于文件命名
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            all_advice_file = f"{advice_dir}/all_platforms_advice_{timestamp}.md"
             with open(all_advice_file, "w", encoding="utf-8") as f:
                 f.write(all_advice)
             
