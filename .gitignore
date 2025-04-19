@@ -7,4 +7,3 @@ __pycache__
 .env
 prompts/
 debug_logs/
-advices/

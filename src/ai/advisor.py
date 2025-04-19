@@ -73,28 +73,39 @@ class DeepseekAdvisor:
         logger.info(f"开始生成投资建议，使用最近{months}个月的数据...")
         
         try:
-            # 生成并保存投资建议
-            result = self.api.generate_and_save_investment_advice(
-                data_json=data_json,
-                last_record_id=last_record_id,
-                debug=debug,
+            # 创建AI分析提示词
+            prompt = f"""作为一名专业的投资顾问，请分析以下{months}个月的历史数据，给出具体的投资建议。
+
+数据包含了历史表现、市场信息和关键指标。请关注最近的趋势和变化，并提供基于数据的价值投资建议。
+
+数据：
+{data_json}
+
+请提供以下内容：
+1. 市场概况及主要趋势分析
+2. 推荐投资领域和具体标的
+3. 风险评估和控制策略
+4. 中短期投资展望
+
+以'投资建议摘要'开始，以'风险声明'结束。使用markdown格式，简明扼要。
+"""
+            
+            # 直接使用generate_text方法生成文本
+            advice = self.api.generate_text(
+                prompt=prompt,
                 max_retries=max_retries,
                 retry_delay=retry_delay,
                 **kwargs
             )
             
-            if result.get("success"):
-                # 获取建议内容和记录ID
-                advice = result.get("advice")
-                
+            if advice:
                 # 额外保存一份到AI建议目录
                 self._save_advice_to_file(advice)
                 
                 logger.info(f"成功生成投资建议")
                 return advice
             else:
-                error = result.get("error", "未知错误")
-                logger.error(f"生成投资建议失败: {error}")
+                logger.error(f"生成投资建议失败")
                 return None
                 
         except Exception as e:

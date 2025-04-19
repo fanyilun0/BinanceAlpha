@@ -328,7 +328,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
                         platform_message += f"{platform_advice}"
                         
                         # 推送消息
-                        await send_message_async(platform_message, msg_type="markdown")
+                        await send_message_async(platform_message, msg_type="text")
                         logger.info(f"{platform} 平台投资建议已推送")
                     else:
                         print(f"{platform} 平台提示词已生成")
@@ -345,7 +345,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         if results:
             # 获取当前时间戳用于文件命名
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            all_advice_file = f"{advice_dir}/all_platforms_advice_{timestamp}.md"
+            all_advice_file = f"{advice_dir}/advice_{timestamp}_all_platforms.md"
             with open(all_advice_file, "w", encoding="utf-8") as f:
                 f.write(all_advice)
             
@@ -406,17 +406,9 @@ async def main():
         
         if args.debug_only:
             mode_info.append("- 调试模式：仅生成提示词不发送API请求")
-            if args.platform:
-                mode_info.append(f"- 仅处理 {args.platform} 平台的数据")
-            elif PLATFORMS_TO_QUERY:
-                mode_info.append(f"- 处理配置的指定平台: {', '.join(PLATFORMS_TO_QUERY)}")
-            else:
-                mode_info.append(f"- 处理所有支持的平台: {', '.join(supported_platforms)}")
+
         else:
             mode_info.append("- 常规模式：生成投资建议并发送消息")
-            if args.platform:
-                logger.warning("--platform 参数仅在调试模式下有效，将被忽略")
-                print("  警告: --platform 参数仅在调试模式下有效，将被忽略")
         
         if args.force_update:
             mode_info.append("- 强制更新：不使用缓存数据")

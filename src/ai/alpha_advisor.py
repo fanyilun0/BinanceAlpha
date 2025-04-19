@@ -202,7 +202,7 @@ class AlphaAdvisor:
         
         # 保存提示词供调试
         os.makedirs(DATA_DIRS['prompts'], exist_ok=True)
-        prompt_file = os.path.join(DATA_DIRS['prompts'], f"prompt_{platform_str}_{timestamp}.txt")
+        prompt_file = os.path.join(DATA_DIRS['prompts'], f"prompt_{timestamp}_{platform_str}.txt")
         with open(prompt_file, 'w', encoding='utf-8') as f:
             f.write(prompt)
         logger.info(f"已保存{platform or '通用'}平台提示词到: {prompt_file}")
@@ -249,7 +249,7 @@ class AlphaAdvisor:
                         
                         # 保存建议到文件
                         os.makedirs(DATA_DIRS['advices'], exist_ok=True)
-                        advice_file = os.path.join(DATA_DIRS['advices'], f"advice_{platform_str}_{timestamp}.md")
+                        advice_file = os.path.join(DATA_DIRS['advices'], f"advice_{timestamp}_{platform_str}.md")
                         with open(advice_file, 'w', encoding='utf-8') as f:
                             f.write(message)
                         logger.info(f"已保存{platform or '通用'}平台投资建议到: {advice_file}")
