@@ -26,6 +26,18 @@ DATA_DIRS = {
     'reports': 'reports'            # 报告保存目录
 }
 
+# 区块链平台配置
+BLOCKCHAIN_PLATFORMS = {
+    "Ethereum": ["ETH", "ERC20", "Ethereum", "ERC-20", "ERC 20", "以太坊"],
+    "Solana": ["SOL", "Solana", "SPL", "索拉纳"], 
+    "BNB Chain": ["BNB", "BSC", "BEP20", "BEP-20", "Binance Smart Chain", "币安智能链"]
+}
+
+# 要查询的区块链平台
+# 留空数组表示查询所有BLOCKCHAIN_PLATFORMS中定义的平台
+# 填入平台名数组则只查询指定的平台，例如: ["Ethereum", "Solana"]
+PLATFORMS_TO_QUERY = []
+
 # 市场情绪指标配置
 MARKET_SENTIMENT = {
     # API端点
