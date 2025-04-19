@@ -3,7 +3,7 @@ import json
 import logging
 import time
 import random
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import requests
 from datetime import datetime
 
@@ -27,8 +27,115 @@ class AlphaAdvisor:
         if not self.api_key:
             logger.warning("未设置DEEPSEEK_API_KEY环境变量")
     
-    def _prepare_prompt(self, alpha_data: Dict[str, Any]) -> str:
-        """准备提示词"""
+    def _format_project_data(self, crypto: Dict[str, Any]) -> str:
+        """格式化单个项目数据为文本
+        
+        Args:
+            crypto: 项目数据字典
+            
+        Returns:
+            str: 格式化后的项目数据文本
+        """
+        name = crypto.get("name", "未知")
+        symbol = crypto.get("symbol", "未知")
+        rank = crypto.get("cmcRank", "未知")
+        
+        # 提取价格和价格变化数据（USD）
+        quotes = crypto.get("quotes", [])
+        usd_quote = next((q for q in quotes if q.get("name") == "USD"), {})
+        
+        price = usd_quote.get("price", 0)
+        percent_change_24h = usd_quote.get("percentChange24h", 0)
+        percent_change_7d = usd_quote.get("percentChange7d", 0)
+        percent_change_30d = usd_quote.get("percentChange30d", 0)
+        market_cap = usd_quote.get("marketCap", 0)
+        fdv = price * crypto.get("totalSupply", 0)
+        volume_24h = usd_quote.get("volume24h", 0)
+        
+        # 获取项目平台信息
+        platform_info = crypto.get("platform", {})
+        platform_name = platform_info.get("name", "") if platform_info else ""
+        
+        # 构建项目信息文本
+        project_text = f"{name} ({symbol}):\n"
+        project_text += f"   - 排名: {rank}\n"
+        if platform_name:
+            project_text += f"   - 平台: {platform_name}\n"
+        project_text += f"   - 价格: ${price:.6f}\n"
+        project_text += f"   - 价格变化: 24h {percent_change_24h:.2f}% | 7d {percent_change_7d:.2f}% | 30d {percent_change_30d:.2f}%\n"
+        project_text += f"   - 市值: ${market_cap:.2f}\n"
+        project_text += f"   - 完全稀释估值: ${fdv:.2f}\n"
+        project_text += f"   - 24小时交易量: ${volume_24h:.2f}\n"
+        
+        # 添加项目标签信息
+        tags = crypto.get("tags", [])
+        if tags and isinstance(tags, list) and all(isinstance(tag, str) for tag in tags):
+            project_text += f"   - 标签: {', '.join(tags[:5])}{' ...' if len(tags) > 5 else ''}\n"
+            
+        # 添加项目简介（如果有）
+        description = crypto.get("description", "")
+        if description and len(description) > 10:
+            # 截取合适长度的描述
+            short_desc = description[:200] + "..." if len(description) > 200 else description
+            project_text += f"   - 简介: {short_desc}\n"
+            
+        return project_text
+    
+    def _create_prompt_template(self, platform: str, date: str, crypto_count: int) -> str:
+        """创建提示词模板
+        
+        Args:
+            platform: 区块链平台名称
+            date: 数据日期
+            crypto_count: 加密货币数量
+            
+        Returns:
+            str: 提示词模板
+        """
+        # 开头部分
+        intro = f"""
+作为加密货币分析师，请针对以下{f"{platform}平台上的" if platform else ""}币安Alpha项目数据（{date}），分析并仅推荐3个最具投资潜力的代币。
+
+分析要点:
+1. {"关注"+platform+"生态系统的独特优势和竞争格局" if platform else "项目的技术创新和实际应用场景"}
+2. {"代币在该生态中的具体作用和采用情况" if platform else "市场定位和竞争优势"}
+3. 技术创新和实际应用场景
+4. {"发展潜力和生态系统扩展性" if platform else "生态系统发展情况和采用率"}
+5. 近期价格走势、交易量和市值变化
+
+以下是当前{f"{platform}平台上的" if platform else ""}币安Alpha列表中的前{min(crypto_count, 20)}个项目（按市值排序）：
+"""
+
+        # 结尾部分
+        conclusion = f"""
+请基于以上{f"{platform}平台上的" if platform else ""}币安Alpha项目数据，提供以下内容：
+
+1. 仅推荐3个最具投资潜力的{""+platform+"平台" if platform else ""}代币，包括：
+   - 代币名称和代码
+   - 详细推荐理由{f"（专注于{platform}生态系统中的作用）" if platform else ""}
+   - 技术亮点和实际应用场景
+   - 与同类项目的对比优势
+
+2. 每个代币的投资分析：
+   - 投资风险评估（低/中/高）及具体风险点
+   - 建议的投资时间范围（短期/中期/长期）
+   - 适合的投资者类型
+   - 潜在的价格触发因素
+
+请使用markdown格式输出，分析应该简明扼要但内容深入，重点突出每个推荐项目的独特价值和投资理由。
+"""
+        
+        return intro, conclusion
+    
+    def _prepare_prompt(self, alpha_data: Dict[str, Any]) -> Tuple[str, str]:
+        """准备提示词
+        
+        Args:
+            alpha_data: 币安Alpha数据
+            
+        Returns:
+            Tuple[str, str]: 平台名称和生成的提示词
+        """
         crypto_list = alpha_data.get("data", {}).get("cryptoCurrencyList", [])
         date = alpha_data.get("date", "")
         platform = alpha_data.get("platform", "") # 从传入的数据中获取平台信息
@@ -55,92 +162,19 @@ class AlphaAdvisor:
                     platform = p_name
                     break
         
-        # 构建提示词
-        prompt = f"""
-作为加密货币分析师，请针对以下{f"{platform}平台上的" if platform else ""}币安Alpha项目数据（{date}），分析并仅推荐3个最具投资潜力的代币。
-
-分析要点:
-1. {"关注"+platform+"生态系统的独特优势和竞争格局" if platform else "项目的技术创新和实际应用场景"}
-2. {"代币在该生态中的具体作用和采用情况" if platform else "市场定位和竞争优势"}
-3. 技术创新和实际应用场景
-4. {"发展潜力和生态系统扩展性" if platform else "生态系统发展情况和采用率"}
-5. 近期价格走势、交易量和市值变化
-
-以下是当前{f"{platform}平台上的" if platform else ""}币安Alpha列表中的前{min(len(crypto_list), 20)}个项目（按市值排序）：
-"""
+        # 获取提示词模板
+        intro_template, conclusion_template = self._create_prompt_template(platform, date, len(crypto_list))
         
-        # 添加加密货币数据
+        # 构建项目数据部分
+        projects_text = ""
         for i, crypto in enumerate(crypto_list[:20], 1):
-            name = crypto.get("name", "未知")
-            symbol = crypto.get("symbol", "未知")
-            rank = crypto.get("cmcRank", "未知")
-            
-            # 提取价格和价格变化数据（USD）
-            quotes = crypto.get("quotes", [])
-            usd_quote = next((q for q in quotes if q.get("name") == "USD"), {})
-            
-            price = usd_quote.get("price", 0)
-            percent_change_24h = usd_quote.get("percentChange24h", 0)
-            percent_change_7d = usd_quote.get("percentChange7d", 0)
-            percent_change_30d = usd_quote.get("percentChange30d", 0)
-            market_cap = usd_quote.get("marketCap", 0)
-            fdv = price * crypto.get("totalSupply", 0)
-            volume_24h = usd_quote.get("volume24h", 0)
-            
-            # 获取项目平台信息
-            platform_info = crypto.get("platform", {})
-            platform_name = platform_info.get("name", "") if platform_info else ""
-            
-            # 添加项目信息
-            prompt += f"{i}. {name} ({symbol}):\n"
-            prompt += f"   - 排名: {rank}\n"
-            if platform_name:
-                prompt += f"   - 平台: {platform_name}\n"
-            prompt += f"   - 价格: ${price:.6f}\n"
-            prompt += f"   - 价格变化: 24h {percent_change_24h:.2f}% | 7d {percent_change_7d:.2f}% | 30d {percent_change_30d:.2f}%\n"
-            prompt += f"   - 市值: ${market_cap:.2f}\n"
-            prompt += f"   - 完全稀释估值: ${fdv:.2f}\n"
-            prompt += f"   - 24小时交易量: ${volume_24h:.2f}\n"
-            
-            # 添加项目标签信息
-            tags = crypto.get("tags", [])
-            if tags and isinstance(tags, list) and all(isinstance(tag, str) for tag in tags):
-                prompt += f"   - 标签: {', '.join(tags[:5])}{' ...' if len(tags) > 5 else ''}\n"
-                
-            # 添加项目简介（如果有）
-            description = crypto.get("description", "")
-            if description and len(description) > 10:
-                # 截取合适长度的描述
-                short_desc = description[:200] + "..." if len(description) > 200 else description
-                prompt += f"   - 简介: {short_desc}\n"
-                
-            prompt += "\n"
+            project_text = self._format_project_data(crypto)
+            projects_text += f"{i}. {project_text}\n"
         
-        # 添加分析要求
-        prompt += f"""
-请基于以上{f"{platform}平台上的" if platform else ""}币安Alpha项目数据，提供以下内容：
-
-1. 仅推荐3个最具投资潜力的{""+platform+"平台" if platform else ""}代币，包括：
-   - 代币名称和代码
-   - 详细推荐理由{f"（专注于{platform}生态系统中的作用）" if platform else ""}
-   - 技术亮点和实际应用场景
-   - 与同类项目的对比优势
-
-2. 每个代币的投资分析：
-   - 投资风险评估（低/中/高）及具体风险点
-   - 建议的投资时间范围（短期/中期/长期）
-   - 适合的投资者类型
-   - 潜在的价格触发因素
-
-3. {f"{platform}生态系统分析：" if platform else "市场整体分析："}
-   - {"当前"+platform+"生态发展状况" if platform else "当前市场发展阶段和主要趋势"}
-   - {"与其他公链的竞争优势和劣势" if platform else "投资建议和风险提示"}
-   - {"未来发展趋势和可能面临的挑战" if platform else "值得关注的行业动向"}
-
-请使用markdown格式输出，分析应该简明扼要但内容深入，重点突出每个推荐项目的独特价值和投资理由。
-"""
+        # 组合最终提示词
+        prompt = intro_template + projects_text + conclusion_template
         
-        return prompt
+        return platform, prompt
     
     def get_investment_advice(self, alpha_data: Dict[str, Any], max_retries=3, retry_delay=2.0, debug=True, dry_run=False) -> Optional[str]:
         """获取投资建议
@@ -160,21 +194,23 @@ class AlphaAdvisor:
             return None
         
         # 准备提示词
-        prompt = self._prepare_prompt(alpha_data)
+        platform, prompt = self._prepare_prompt(alpha_data)
+        
+        # 格式化平台名称用于文件命名
+        platform_str = platform.lower().replace(' ', '_') if platform else "general"
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         
         # 保存提示词供调试
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         os.makedirs(DATA_DIRS['prompts'], exist_ok=True)
-        prompt_file = os.path.join(DATA_DIRS['prompts'], f"alpha_prompt_{timestamp}.txt")
+        prompt_file = os.path.join(DATA_DIRS['prompts'], f"prompt_{platform_str}_{timestamp}.txt")
         with open(prompt_file, 'w', encoding='utf-8') as f:
             f.write(prompt)
-        logger.info(f"已保存Alpha提示词到: {prompt_file}")
+        logger.info(f"已保存{platform or '通用'}平台提示词到: {prompt_file}")
         
         # 如果是dry_run模式，到此为止直接返回
         if dry_run:
             logger.info("调试模式：已生成提示词，跳过API请求")
-            platform = alpha_data.get("platform", "未知平台")
-            return f"## 调试模式 - {platform} 平台提示词生成\n\n提示词已保存到: {prompt_file}\n\n此为调试模式，未发送API请求。"
+            return f"## 调试模式 - {platform or '通用'}平台提示词生成\n\n提示词已保存到: {prompt_file}\n\n此为调试模式，未发送API请求。"
         
         # 准备API请求参数
         headers = {
@@ -210,6 +246,14 @@ class AlphaAdvisor:
                     # 如果返回内容有效，保存并返回
                     if message and len(message) > 100:
                         logger.info("成功获取AI建议")
+                        
+                        # 保存建议到文件
+                        os.makedirs(DATA_DIRS['advices'], exist_ok=True)
+                        advice_file = os.path.join(DATA_DIRS['advices'], f"advice_{platform_str}_{timestamp}.md")
+                        with open(advice_file, 'w', encoding='utf-8') as f:
+                            f.write(message)
+                        logger.info(f"已保存{platform or '通用'}平台投资建议到: {advice_file}")
+                        
                         return message
                     else:
                         logger.warning(f"API返回内容过短或为空: {message}")
