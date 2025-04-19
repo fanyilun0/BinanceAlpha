@@ -12,20 +12,13 @@ async def _send_single_message(session, content, headers, proxy, msg_type="text"
         proxy: 代理设置
         msg_type: 消息类型，支持"text"和"markdown"
     """
-    if msg_type == "markdown":
-        payload = {
-            "msgtype": "markdown",
-            "markdown": {
-                "content": content
-            }
+
+    payload = {
+        "msgtype": "text",
+        "text": {
+            "content": content
         }
-    else:
-        payload = {
-            "msgtype": "text",
-            "text": {
-                "content": content
-            }
-        }
+    }
     
     try:
         async with session.post(WEBHOOK_URL, json=payload, headers=headers, proxy=proxy) as response:
