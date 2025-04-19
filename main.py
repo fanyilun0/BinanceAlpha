@@ -4,6 +4,7 @@ import json
 import asyncio
 import logging
 import platform
+import argparse
 from datetime import datetime
 
 from webhook import send_message_async
@@ -12,7 +13,7 @@ src_dir = os.path.join(os.path.dirname(__file__), 'src')
 sys.path.append(src_dir)
 
 # 导入自定义模块
-from config import DATA_DIRS
+from config import DATA_DIRS, BLOCKCHAIN_PLATFORMS, PLATFORMS_TO_QUERY
 from src.utils.historical_data import BinanceAlphaDataCollector
 from src.ai import AlphaAdvisor
 
@@ -109,7 +110,7 @@ async def get_ai_investment_advice():
         logger.debug(error_details)
         print(f"错误详情已记录到日志文件")
 
-async def get_binance_alpha_list():
+async def get_binance_alpha_list(force_update=False):
     """获取币安Alpha项目列表数据并推送"""
     print("=== 币安Alpha项目列表数据 ===\n")
     
@@ -122,7 +123,7 @@ async def get_binance_alpha_list():
     try:
         # 获取币安Alpha项目列表数据
         print("正在获取币安Alpha项目列表数据...")
-        alpha_data = await collector.get_latest_data(force_update=True)
+        alpha_data = await collector.get_latest_data(force_update=force_update)
         
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败")
@@ -171,9 +172,19 @@ async def get_binance_alpha_list():
         print(f"错误详情已记录到日志文件")
         return False
 
-async def get_alpha_investment_advice(alpha_data=None):
-    """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类"""
+async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_platform=None):
+    """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
+    
+    Args:
+        alpha_data: 币安Alpha数据
+        debug_only: 是否仅生成提示词但不发送API请求（调试模式）
+        target_platform: 指定要处理的平台（仅在调试模式下有效）
+    """
     print("=== 币安Alpha项目AI投资建议 (按区块链平台分类) ===\n")
+    if debug_only:
+        print("【调试模式】仅生成提示词，不发送API请求\n")
+        if target_platform:
+            print(f"【仅处理】{target_platform}平台\n")
     
     try:
         # 初始化AI顾问
@@ -198,44 +209,73 @@ async def get_alpha_investment_advice(alpha_data=None):
             print("错误: 币安Alpha数据中未包含项目列表")
             return False
         
-        # 定义主要区块链平台
-        platforms = {
-            "Ethereum": ["ETH", "ERC20", "Ethereum", "ERC-20"],
-            "Solana": ["SOL", "Solana", "SPL"], 
-            "BNB Chain": ["BNB", "BSC", "BEP20", "BEP-20", "Binance Smart Chain"],
-        }
+        # 使用配置中的区块链平台定义
+        platforms = BLOCKCHAIN_PLATFORMS
+        
+        # 确定要处理的平台列表
+        platforms_to_process = []
+        
+        # 如果命令行指定了特定平台且是调试模式，优先使用命令行指定的平台
+        if target_platform and debug_only and target_platform in platforms:
+            platforms_to_process = [target_platform]
+        # 否则使用配置文件中的PLATFORMS_TO_QUERY
+        elif PLATFORMS_TO_QUERY:
+            # 确保只处理配置中存在的平台
+            platforms_to_process = [p for p in PLATFORMS_TO_QUERY if p in platforms]
+            if not platforms_to_process:
+                logger.warning(f"配置的PLATFORMS_TO_QUERY中没有有效的平台: {PLATFORMS_TO_QUERY}")
+                print(f"警告: 配置的平台{PLATFORMS_TO_QUERY}都不存在，将处理所有已定义的平台")
+                platforms_to_process = list(platforms.keys())
+        # 如果没有指定，则处理所有定义的平台
+        else:
+            platforms_to_process = list(platforms.keys())
+            
+        print(f"将处理以下平台: {', '.join(platforms_to_process)}\n")
         
         # 对项目按区块链平台分类
-        platform_projects = {platform: [] for platform in platforms.keys()}
+        platform_projects = {platform: [] for platform in platforms_to_process}
+        unclassified_projects = []  # 记录无法分类的项目
         
         for crypto in crypto_list:
-            # 获取项目的平台信息
+            # 获取项目的各种可能包含平台信息的字段
             platform_info = crypto.get("platform", {})
             platform_name = platform_info.get("name", "") if platform_info else ""
             platform_symbol = platform_info.get("symbol", "") if platform_info else ""
-            
-            # 尝试从tags或其他字段获取平台信息
             tags = crypto.get("tags", [])
+            category = crypto.get("category", "")
+            description = crypto.get("description", "")
+            
+            # 扁平化标签列表，确保是字符串
             platform_tags = [tag for tag in tags if isinstance(tag, str)]
             
             # 判断项目所属平台
             assigned = False
-            for platform, keywords in platforms.items():
-                if any(keyword.lower() in platform_name.lower() for keyword in keywords) or \
-                   any(keyword.lower() in platform_symbol.lower() for keyword in keywords) or \
-                   any(any(keyword.lower() in tag.lower() for tag in platform_tags) for keyword in keywords):
+            
+            # 仅对要处理的平台进行分类
+            for platform in platforms_to_process:
+                keywords = platforms[platform]
+                # 检查各种字段中是否包含平台关键词
+                if (any(keyword.lower() in platform_name.lower() for keyword in keywords) or
+                    any(keyword.lower() in platform_symbol.lower() for keyword in keywords) or
+                    any(any(keyword.lower() in tag.lower() for tag in platform_tags) for keyword in keywords) or
+                    any(keyword.lower() in category.lower() for keyword in keywords) or
+                    any(keyword.lower() in description.lower() for keyword in keywords)):
                     platform_projects[platform].append(crypto)
                     assigned = True
                     break
             
-            # 如果无法分类，放入"Other"
+            # 记录无法分类的项目（不处理）
             if not assigned:
-                platform_projects["Other"].append(crypto)
+                unclassified_projects.append(crypto)
         
         # 打印分类结果
         print(f"币安Alpha项目分类统计：")
+        total_classified = 0
         for platform, projects in platform_projects.items():
             print(f"{platform}: {len(projects)}个项目")
+            total_classified += len(projects)
+        print(f"未分类项目: {len(unclassified_projects)}个")
+        print(f"总计: {total_classified + len(unclassified_projects)}个项目")
         
         # 创建建议目录
         advice_dir = DATA_DIRS['advices']
@@ -245,15 +285,14 @@ async def get_alpha_investment_advice(alpha_data=None):
         results = {}
         all_advice = f"# 币安Alpha项目投资建议 (按区块链平台分类，{date})\n\n"
         
-        for platform, projects in platform_projects.items():
-            # 跳过没有项目的平台
-            if not projects:
-                logger.info(f"跳过 {platform} 平台（无项目）")
-                continue
-                
-            # 项目数量太少时也跳过
+        for platform in platforms_to_process:
+            projects = platform_projects.get(platform, [])
+            
+            # 跳过项目数量太少的平台
             if len(projects) < 5:
-                logger.info(f"跳过 {platform} 平台（项目数量过少: {len(projects)}）")
+                message = f"跳过 {platform} 平台（项目数量: {len(projects)}）"
+                logger.info(message)
+                print(message)
                 continue
             
             print(f"\n处理 {platform} 平台的 {len(projects)} 个项目...")
@@ -262,16 +301,18 @@ async def get_alpha_investment_advice(alpha_data=None):
             platform_alpha_data = {
                 "date": date,
                 "data": {"cryptoCurrencyList": projects},
-                "total_count": len(projects)
+                "total_count": len(projects),
+                "platform": platform  # 添加平台信息
             }
             
             # 获取该平台的投资建议
-            if os.getenv('DEEPSEEK_API_KEY'):
+            if os.getenv('DEEPSEEK_API_KEY') or debug_only:
                 platform_advice = advisor.get_investment_advice(
                     alpha_data=platform_alpha_data,
                     max_retries=max_retries,
                     retry_delay=retry_delay,
-                    debug=True
+                    debug=True,
+                    dry_run=debug_only
                 )
                 
                 if platform_advice:
@@ -280,13 +321,17 @@ async def get_alpha_investment_advice(alpha_data=None):
                     # 添加到全部建议中
                     all_advice += f"## {platform} 平台\n\n{platform_advice}\n\n"
                     
-                    # 构建并推送该平台的消息
-                    platform_message = f"🤖 币安Alpha {platform}平台项目AI投资建议\n\n"
-                    platform_message += f"{platform_advice}"
-                    
-                    # 推送消息
-                    await send_message_async(platform_message, msg_type="markdown")
-                    logger.info(f"{platform} 平台投资建议已推送")
+                    # 如果是调试模式，不发送消息到webhook
+                    if not debug_only:
+                        # 构建并推送该平台的消息
+                        platform_message = f"🤖 币安Alpha {platform}平台项目AI投资建议\n\n"
+                        platform_message += f"{platform_advice}"
+                        
+                        # 推送消息
+                        await send_message_async(platform_message, msg_type="markdown")
+                        logger.info(f"{platform} 平台投资建议已推送")
+                    else:
+                        print(f"{platform} 平台提示词已生成")
                     
                     # 单独保存该平台的建议到文件
                     platform_file = f"{advice_dir}/{platform.lower().replace(' ', '_')}_advice_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
@@ -297,8 +342,9 @@ async def get_alpha_investment_advice(alpha_data=None):
                 else:
                     logger.error(f"{platform} 平台生成投资建议失败")
                     
-                # 添加延迟，避免API调用过于频繁
-                await asyncio.sleep(2)
+                # 添加延迟，避免API调用过于频繁（在非调试模式下）
+                if not debug_only:
+                    await asyncio.sleep(2)
             
         # 保存所有平台的综合建议到文件
         if results:
@@ -308,13 +354,14 @@ async def get_alpha_investment_advice(alpha_data=None):
             
             logger.info(f"所有平台投资建议已保存到: {all_advice_file}")
             
-            # 推送综合建议
-            summary_message = "📊 币安Alpha项目投资建议 (按区块链平台分类)\n\n"
-            summary_message += f"分析时间: {date}\n"
-            summary_message += f"已分析平台: {', '.join(results.keys())}\n\n"
-            summary_message += "各平台详细建议已单独发送，请查看。"
-            
-            await send_message_async(summary_message)
+            # 在非调试模式下推送综合建议
+            if not debug_only:
+                summary_message = "📊 币安Alpha项目投资建议 (按区块链平台分类)\n\n"
+                summary_message += f"分析时间: {date}\n"
+                summary_message += f"已分析平台: {', '.join(results.keys())}\n\n"
+                summary_message += "各平台详细建议已单独发送，请查看。"
+                
+                await send_message_async(summary_message)
             
             return True
         else:
@@ -340,29 +387,93 @@ async def main():
     - 推送到webhook
     """
     
+    # 从配置中获取支持的平台列表
+    supported_platforms = list(BLOCKCHAIN_PLATFORMS.keys())
+    
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description="Crypto Monitor - 币安Alpha项目分析工具")
+    parser.add_argument("--debug-only", action="store_true", help="启用调试模式，仅生成提示词不发送API请求")
+    parser.add_argument("--platform", type=str, choices=supported_platforms, 
+                       help=f"指定要处理的平台（仅在调试模式下有效）: {', '.join(supported_platforms)}")
+    parser.add_argument("--force-update", action="store_true", help="强制更新数据，不使用缓存")
+    args = parser.parse_args()
+    
     try:
-        print("模式: 币安Alpha项目列表数据和分平台AI投资建议\n")
+        print("\n===============================================================")
+        print(" 币安Alpha项目分析工具")
+        print("===============================================================\n")
+        
+        # 显示运行模式信息
+        print("运行模式:")
+        mode_info = ["- 获取币安Alpha项目列表数据"]
+        
+        if args.debug_only:
+            mode_info.append("- 调试模式：仅生成提示词不发送API请求")
+            if args.platform:
+                mode_info.append(f"- 仅处理 {args.platform} 平台的数据")
+            elif PLATFORMS_TO_QUERY:
+                mode_info.append(f"- 处理配置的指定平台: {', '.join(PLATFORMS_TO_QUERY)}")
+            else:
+                mode_info.append(f"- 处理所有支持的平台: {', '.join(supported_platforms)}")
+        else:
+            mode_info.append("- 常规模式：生成投资建议并发送消息")
+            if args.platform:
+                logger.warning("--platform 参数仅在调试模式下有效，将被忽略")
+                print("  警告: --platform 参数仅在调试模式下有效，将被忽略")
+        
+        if args.force_update:
+            mode_info.append("- 强制更新：不使用缓存数据")
+        
+        for info in mode_info:
+            print(info)
+        print()
         
         # 获取币安Alpha项目列表数据
-        alpha_data = await get_binance_alpha_list()
+        print("步骤1: 获取币安Alpha项目列表数据...\n")
+        alpha_data = await get_binance_alpha_list(force_update=args.force_update)
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
+            print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
+            return 1
+        
+        print("\n步骤2: 分类项目并生成投资建议...\n")
+        
+        # 按区块链平台获取AI投资建议
+        try:
+            success = await get_alpha_investment_advice(
+                alpha_data, 
+                debug_only=args.debug_only, 
+                target_platform=args.platform if args.debug_only else None
+            )
+            
+            if success:
+                if args.debug_only:
+                    print("\n成功：提示词生成完成")
+                else:
+                    print("\n成功：所有平台投资建议处理完成")
+            else:
+                print("\n警告：部分平台处理过程中出现错误")
+        except Exception as e:
+            logger.error(f"生成投资建议过程中出错: {str(e)}")
+            print(f"\n错误: 生成投资建议过程中出错: {str(e)}")
+            import traceback
+            error_details = traceback.format_exc()
+            logger.debug(error_details)
+            print("错误详情已记录到日志文件")
             return 1
             
-        # 按区块链平台获取AI投资建议
-        success = await get_alpha_investment_advice(alpha_data)
-        
-        if success:
-            print("\n所有平台投资建议处理完成")
-        else:
-            print("\n平台投资建议生成过程中出现错误")
-            
-        print("\n处理完成，程序退出")
-        return 0 if success else 1
+        print("\n===============================================================")
+        print(" 处理完成，程序退出")
+        print("===============================================================\n")
+        return 0
         
     except Exception as e:
         logger.error(f"程序执行过程中出错: {str(e)}")
-        print(f"错误: {str(e)}")
+        print(f"\n错误: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        logger.debug(error_details)
+        print("错误详情已记录到日志文件")
         return 1
 
 if __name__ == "__main__":

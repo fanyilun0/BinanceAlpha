@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 import requests
 from datetime import datetime
 
-from config import DEEPSEEK_AI, DATA_DIRS
+from config import DEEPSEEK_AI, DATA_DIRS, BLOCKCHAIN_PLATFORMS
 # 导入调试保存功能
 from ai.prompt import save_list_data_for_debug
 
@@ -31,53 +31,42 @@ class AlphaAdvisor:
         """准备提示词"""
         crypto_list = alpha_data.get("data", {}).get("cryptoCurrencyList", [])
         date = alpha_data.get("date", "")
+        platform = alpha_data.get("platform", "") # 从传入的数据中获取平台信息
         
         # 保存币安Alpha项目列表数据到本地文件以便调试
         save_list_data_for_debug(crypto_list[:20], "alpha_crypto_list")
         
-        # 获取平台信息
-        platform = None
-        # 检查第一个项目的平台信息
-        if crypto_list and len(crypto_list) > 0:
+        # 如果未直接指定平台，尝试识别平台
+        if not platform and crypto_list and len(crypto_list) > 0:
+            # 从配置中获取区块链平台关键词
+            platform_keywords = BLOCKCHAIN_PLATFORMS
+            
+            # 尝试从第一个项目信息中识别平台
             first_crypto = crypto_list[0]
             platform_info = first_crypto.get("platform", {})
-            if platform_info:
-                platform = platform_info.get("name", "")
-                
-            # 如果platform为空，则尝试从tags中获取
-            if not platform:
-                tags = first_crypto.get("tags", [])
-                platform_tags = [tag for tag in tags if isinstance(tag, str)]
-                
-                # 常见区块链平台关键词
-                platform_keywords = {
-                    "Ethereum": ["ETH", "ERC20", "Ethereum", "ERC-20"],
-                    "Solana": ["SOL", "Solana", "SPL"], 
-                    "BNB Chain": ["BNB", "BSC", "BEP20", "BEP-20", "Binance Smart Chain"],
-                    "Polygon": ["MATIC", "Polygon"],
-                    "Avalanche": ["AVAX", "Avalanche"]
-                }
-                
-                # 尝试从tags中识别平台
-                for p_name, keywords in platform_keywords.items():
-                    if any(any(keyword.lower() in tag.lower() for tag in platform_tags) for keyword in keywords):
-                        platform = p_name
-                        break
+            platform_name = platform_info.get("name", "") if platform_info else ""
+            tags = first_crypto.get("tags", [])
+            platform_tags = [tag for tag in tags if isinstance(tag, str)]
+            
+            # 尝试从平台信息和标签中识别平台
+            for p_name, keywords in platform_keywords.items():
+                if (any(keyword.lower() in platform_name.lower() for keyword in keywords) or 
+                    any(any(keyword.lower() in tag.lower() for tag in platform_tags) for keyword in keywords)):
+                    platform = p_name
+                    break
         
         # 构建提示词
-        if platform:
-            prompt = f"""
-作为加密货币分析师，请根据以下{platform}平台上的币安Alpha项目数据（{date}），分析并推荐3-5个最具投资潜力的代币。
-分析应基于市值、价格走势、交易量等数据指标，考虑近期表现和未来潜力。请特别关注{platform}生态系统的独特优势和这些代币在该生态中的作用。
+        prompt = f"""
+作为加密货币分析师，请针对以下{f"{platform}平台上的" if platform else ""}币安Alpha项目数据（{date}），分析并仅推荐3个最具投资潜力的代币。
 
-以下是当前{platform}平台上的币安Alpha列表中的前{min(len(crypto_list), 20)}个项目（按市值排序）：
-"""
-        else:
-            prompt = f"""
-作为加密货币分析师，请根据以下币安Alpha项目数据（{date}），分析并推荐3-5个最具投资潜力的代币。
-分析应基于市值、价格走势、交易量等数据指标，考虑近期表现和未来潜力。
+分析要点:
+1. {"关注"+platform+"生态系统的独特优势和竞争格局" if platform else "项目的技术创新和实际应用场景"}
+2. {"代币在该生态中的具体作用和采用情况" if platform else "市场定位和竞争优势"}
+3. 技术创新和实际应用场景
+4. {"发展潜力和生态系统扩展性" if platform else "生态系统发展情况和采用率"}
+5. 近期价格走势、交易量和市值变化
 
-以下是当前币安Alpha列表中的前{min(len(crypto_list), 20)}个项目（按市值排序）：
+以下是当前{f"{platform}平台上的" if platform else ""}币安Alpha列表中的前{min(len(crypto_list), 20)}个项目（按市值排序）：
 """
         
         # 添加加密货币数据
@@ -108,9 +97,7 @@ class AlphaAdvisor:
             if platform_name:
                 prompt += f"   - 平台: {platform_name}\n"
             prompt += f"   - 价格: ${price:.6f}\n"
-            prompt += f"   - 24小时变化: {percent_change_24h:.2f}%\n"
-            prompt += f"   - 7天变化: {percent_change_7d:.2f}%\n"
-            prompt += f"   - 30天变化: {percent_change_30d:.2f}%\n"
+            prompt += f"   - 价格变化: 24h {percent_change_24h:.2f}% | 7d {percent_change_7d:.2f}% | 30d {percent_change_30d:.2f}%\n"
             prompt += f"   - 市值: ${market_cap:.2f}\n"
             prompt += f"   - 完全稀释估值: ${fdv:.2f}\n"
             prompt += f"   - 24小时交易量: ${volume_24h:.2f}\n"
@@ -120,36 +107,42 @@ class AlphaAdvisor:
             if tags and isinstance(tags, list) and all(isinstance(tag, str) for tag in tags):
                 prompt += f"   - 标签: {', '.join(tags[:5])}{' ...' if len(tags) > 5 else ''}\n"
                 
+            # 添加项目简介（如果有）
+            description = crypto.get("description", "")
+            if description and len(description) > 10:
+                # 截取合适长度的描述
+                short_desc = description[:200] + "..." if len(description) > 200 else description
+                prompt += f"   - 简介: {short_desc}\n"
+                
             prompt += "\n"
         
         # 添加分析要求
-        if platform:
-            prompt += f"""
-请基于以上{platform}平台上的币安Alpha项目数据，提供以下内容：
+        prompt += f"""
+请基于以上{f"{platform}平台上的" if platform else ""}币安Alpha项目数据，提供以下内容：
 
-1. 3-5个推荐投资的{platform}平台代币，包括代币名称、代码和推荐理由
-2. 每个代币的投资风险评估（低/中/高）
-3. 建议的投资时间范围（短期/中期/长期）
-4. 简要分析这些代币在{platform}生态系统中的作用和未来潜力
-5. 简要总结当前{platform}平台币安Alpha项目的整体市场状况
+1. 仅推荐3个最具投资潜力的{""+platform+"平台" if platform else ""}代币，包括：
+   - 代币名称和代码
+   - 详细推荐理由{f"（专注于{platform}生态系统中的作用）" if platform else ""}
+   - 技术亮点和实际应用场景
+   - 与同类项目的对比优势
 
-分析应该简明扼要，重点突出，便于投资者快速理解和决策。
-"""
-        else:
-            prompt += """
-请基于以上数据，提供以下内容：
+2. 每个代币的投资分析：
+   - 投资风险评估（低/中/高）及具体风险点
+   - 建议的投资时间范围（短期/中期/长期）
+   - 适合的投资者类型
+   - 潜在的价格触发因素
 
-1. 3-5个推荐投资的代币，包括代币名称、代码和推荐理由
-2. 每个代币的投资风险评估（低/中/高）
-3. 建议的投资时间范围（短期/中期/长期）
-4. 简要总结当前币安Alpha项目的整体市场状况
+3. {f"{platform}生态系统分析：" if platform else "市场整体分析："}
+   - {"当前"+platform+"生态发展状况" if platform else "当前市场发展阶段和主要趋势"}
+   - {"与其他公链的竞争优势和劣势" if platform else "投资建议和风险提示"}
+   - {"未来发展趋势和可能面临的挑战" if platform else "值得关注的行业动向"}
 
-分析应该简明扼要，重点突出，便于投资者快速理解和决策。
+请使用markdown格式输出，分析应该简明扼要但内容深入，重点突出每个推荐项目的独特价值和投资理由。
 """
         
         return prompt
     
-    def get_investment_advice(self, alpha_data: Dict[str, Any], max_retries=3, retry_delay=2.0, debug=True) -> Optional[str]:
+    def get_investment_advice(self, alpha_data: Dict[str, Any], max_retries=3, retry_delay=2.0, debug=True, dry_run=False) -> Optional[str]:
         """获取投资建议
         
         Args:
@@ -157,11 +150,12 @@ class AlphaAdvisor:
             max_retries: 最大重试次数
             retry_delay: 重试间隔时间（秒）
             debug: 是否启用调试模式，保存数据到文件
+            dry_run: 是否仅生成提示词但不发送API请求（调试模式）
             
         Returns:
             生成的投资建议文本，如果生成失败则返回None
         """
-        if not self.api_key:
+        if not self.api_key and not dry_run:
             logger.error("未设置DEEPSEEK_API_KEY，无法获取AI建议")
             return None
         
@@ -170,10 +164,17 @@ class AlphaAdvisor:
         
         # 保存提示词供调试
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        os.makedirs(DATA_DIRS['prompts'], exist_ok=True)
         prompt_file = os.path.join(DATA_DIRS['prompts'], f"alpha_prompt_{timestamp}.txt")
         with open(prompt_file, 'w', encoding='utf-8') as f:
             f.write(prompt)
         logger.info(f"已保存Alpha提示词到: {prompt_file}")
+        
+        # 如果是dry_run模式，到此为止直接返回
+        if dry_run:
+            logger.info("调试模式：已生成提示词，跳过API请求")
+            platform = alpha_data.get("platform", "未知平台")
+            return f"## 调试模式 - {platform} 平台提示词生成\n\n提示词已保存到: {prompt_file}\n\n此为调试模式，未发送API请求。"
         
         # 准备API请求参数
         headers = {
@@ -196,9 +197,8 @@ class AlphaAdvisor:
             "stream": DEEPSEEK_AI.get('stream', False)
         }
         
-        # 尝试请求
-        attempt = 0
-        while attempt < max_retries:
+        # 尝试请求API
+        for attempt in range(max_retries):
             try:
                 logger.info(f"正在请求AI建议，尝试 {attempt + 1}/{max_retries}")
                 response = requests.post(self.api_url, headers=headers, json=payload, timeout=60)
@@ -206,87 +206,24 @@ class AlphaAdvisor:
                 if response.status_code == 200:
                     result = response.json()
                     message = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-                    return message
+                    
+                    # 如果返回内容有效，保存并返回
+                    if message and len(message) > 100:
+                        logger.info("成功获取AI建议")
+                        return message
+                    else:
+                        logger.warning(f"API返回内容过短或为空: {message}")
                 else:
                     logger.error(f"API请求失败，状态码: {response.status_code}, 响应: {response.text}")
                     
             except Exception as e:
                 logger.error(f"API请求过程中出错: {str(e)}")
             
-            # 增加重试次数并等待
-            attempt += 1
-            if attempt < max_retries:
-                delay = retry_delay * (1 + random.random())  # 添加随机抖动
+            # 如果不是最后一次尝试，等待后重试
+            if attempt < max_retries - 1:
+                delay = retry_delay * (1 + random.random() * 0.5)  # 添加随机抖动，最多额外50%
                 logger.info(f"等待 {delay:.2f} 秒后重试...")
                 time.sleep(delay)
         
         logger.error(f"在 {max_retries} 次尝试后放弃获取AI建议")
-        return None
-    
-
-        """获取模拟投资建议（当API不可用时使用）"""
-        crypto_list = alpha_data.get("data", {}).get("cryptoCurrencyList", [])
-        date = alpha_data.get("date", "")
-        
-        # 随机选择3-5个代币
-        sample_size = min(random.randint(3, 5), len(crypto_list))
-        selected_cryptos = random.sample(crypto_list[:20], sample_size)
-        
-        # 风险等级和投资期限选项
-        risk_levels = ["低", "中", "高"]
-        time_frames = ["短期", "中期", "长期"]
-        
-        # 构建模拟建议
-        advice = f"# 币安Alpha项目投资建议 ({date})\n\n"
-        advice += "## 推荐代币\n\n"
-        
-        for i, crypto in enumerate(selected_cryptos, 1):
-            name = crypto.get("name", "未知")
-            symbol = crypto.get("symbol", "未知")
-            
-            # 随机生成风险和期限
-            risk = random.choice(risk_levels)
-            timeframe = random.choice(time_frames)
-            
-            # 提取价格数据
-            quotes = crypto.get("quotes", [])
-            usd_quote = next((q for q in quotes if q.get("name") == "USD"), {})
-            percent_change_24h = usd_quote.get("percentChange24h", 0)
-            percent_change_7d = usd_quote.get("percentChange7d", 0)
-            
-            # 根据价格变化生成理由
-            if percent_change_7d > 10:
-                reason = f"近期强劲上涨趋势，7天内上涨{percent_change_7d:.2f}%"
-            elif percent_change_7d > 0:
-                reason = f"稳定增长，7天内上涨{percent_change_7d:.2f}%"
-            elif percent_change_24h > 0:
-                reason = f"24小时内呈现反弹趋势，上涨{percent_change_24h:.2f}%"
-            else:
-                reason = "当前价格具有较好的入场机会"
-            
-            advice += f"### {i}. {name} ({symbol})\n"
-            advice += f"- **风险等级**: {risk}\n"
-            advice += f"- **投资期限**: {timeframe}\n"
-            advice += f"- **推荐理由**: {reason}\n\n"
-        
-        # 添加市场总结
-        advice += "## 市场总结\n\n"
-        
-        # 计算市场整体涨跌情况
-        positive_count = sum(1 for crypto in crypto_list[:20] if 
-                            next((q.get("percentChange24h", 0) for q in crypto.get("quotes", []) if q.get("name") == "USD"), 0) > 0)
-        positive_ratio = positive_count / min(20, len(crypto_list))
-        
-        if positive_ratio > 0.7:
-            market_summary = "当前币安Alpha项目整体呈现强势上涨趋势，大部分代币表现积极。适合积极布局，但注意风险管理。"
-        elif positive_ratio > 0.5:
-            market_summary = "市场整体稳定向上，部分代币表现出色。建议选择性布局，关注基本面良好的项目。"
-        elif positive_ratio > 0.3:
-            market_summary = "市场呈现震荡态势，涨跌互现。建议谨慎投资，优先考虑具有实际应用场景的项目。"
-        else:
-            market_summary = "市场整体承压，多数代币呈下跌趋势。建议以观望为主，等待更好的入场时机。"
-        
-        advice += market_summary + "\n\n"
-        advice += "**免责声明**: 以上建议仅供参考，不构成投资建议。投资前请进行充分的研究和风险评估。"
-        
-        return advice 
+        return None 
