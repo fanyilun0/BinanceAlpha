@@ -15,6 +15,7 @@ sys.path.append(src_dir)
 # 导入自定义模块
 from config import DATA_DIRS, BLOCKCHAIN_PLATFORMS, PLATFORMS_TO_QUERY
 from src.utils.historical_data import BinanceAlphaDataCollector
+from src.utils.binance_symbols import update_tokens
 from src.ai import AlphaAdvisor
 
 # 从新的AI模块导入DeepseekAdvisor
@@ -110,6 +111,43 @@ async def get_ai_investment_advice():
         logger.debug(error_details)
         print(f"错误详情已记录到日志文件")
 
+async def get_binance_tokens():
+    """获取Binance交易对列表并更新"""
+    print("=== 更新Binance交易对列表 ===\n")
+    
+    try:
+        # 更新token列表
+        result = update_tokens()
+        
+        if result["symbols_changed"]:
+            print(f"交易对列表已更新")
+            print(f"已存在的token数量: {len(result['existing_tokens'])}")
+            print(f"当前获取的token数量: {len(result['all_tokens'])}")
+            print(f"新增token数量: {len(result['new_tokens'])}")
+            
+            if result['new_tokens']:
+                print("新增token:")
+                for token in result['new_tokens'][:10]:  # 只显示前10个
+                    print(f"- {token}")
+                if len(result['new_tokens']) > 10:
+                    print(f"...以及其他 {len(result['new_tokens'])-10} 个token")
+            else:
+                print("没有新增的token")
+        else:
+            print("交易对列表未发生变化，使用现有token列表")
+            print(f"现有token数量: {len(result['all_tokens'])}")
+            
+        return result
+    
+    except Exception as e:
+        logger.error(f"更新Binance交易对列表时出错: {str(e)}")
+        print(f"错误: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        logger.debug(error_details)
+        print(f"错误详情已记录到日志文件")
+        return None
+
 async def get_binance_alpha_list(force_update=False):
     """获取币安Alpha项目列表数据并推送"""
     print("=== 币安Alpha项目列表数据 ===\n")
@@ -172,13 +210,14 @@ async def get_binance_alpha_list(force_update=False):
         print(f"错误详情已记录到日志文件")
         return False
 
-async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_platform=None):
+async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_platform=None, listed_tokens=None):
     """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
     
     Args:
         alpha_data: 币安Alpha数据
         debug_only: 是否仅生成提示词但不发送API请求（调试模式）
         target_platform: 指定要处理的平台（仅在调试模式下有效）
+        listed_tokens: 已上线的Token列表，用于过滤掉不需要建议的项目
     """
     print("=== 币安Alpha项目AI投资建议 (按区块链平台分类) ===\n")
     if debug_only:
@@ -208,6 +247,26 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             logger.error("币安Alpha数据中未包含项目列表")
             print("错误: 币安Alpha数据中未包含项目列表")
             return False
+        
+        # 如果提供了已上线Token列表，过滤掉这些token
+        if listed_tokens and listed_tokens.get('all_tokens'):
+            original_count = len(crypto_list)
+            
+            # 创建一个已上线token的集合，不区分大小写，便于比较
+            listed_tokens_set = {token.upper() for token in listed_tokens.get('all_tokens')}
+            
+            # 过滤掉已经上线的token
+            filtered_crypto_list = [
+                crypto for crypto in crypto_list 
+                if crypto.get("symbol", "").upper() not in listed_tokens_set
+            ]
+            
+            removed_count = original_count - len(filtered_crypto_list)
+            print(f"已从Alpha项目列表中移除{removed_count}个已上线的Token，剩余{len(filtered_crypto_list)}个项目")
+            crypto_list = filtered_crypto_list
+            
+            # 更新alpha_data中的项目列表
+            alpha_data["data"]["cryptoCurrencyList"] = crypto_list
         
         # 使用配置中的区块链平台定义
         platforms = BLOCKCHAIN_PLATFORMS
@@ -378,6 +437,7 @@ async def main():
     """主函数
     
     执行流程:
+    - 获取并更新Binance交易对列表
     - 获取币安Alpha项目列表数据
     - 按区块链平台分类项目
     - 为每个平台分别调用AI生成投资建议
@@ -393,6 +453,7 @@ async def main():
     parser.add_argument("--platform", type=str, choices=supported_platforms, 
                        help=f"指定要处理的平台（仅在调试模式下有效）: {', '.join(supported_platforms)}")
     parser.add_argument("--force-update", action="store_true", help="强制更新数据，不使用缓存")
+    parser.add_argument("--skip-tokens-update", action="store_true", help="跳过更新Binance交易对列表")
     args = parser.parse_args()
     
     try:
@@ -402,11 +463,15 @@ async def main():
         
         # 显示运行模式信息
         print("运行模式:")
-        mode_info = ["- 获取币安Alpha项目列表数据"]
+        mode_info = []
+        
+        if not args.skip_tokens_update:
+            mode_info.append("- 获取并更新Binance交易对列表")
+        
+        mode_info.append("- 获取币安Alpha项目列表数据")
         
         if args.debug_only:
             mode_info.append("- 调试模式：仅生成提示词不发送API请求")
-
         else:
             mode_info.append("- 常规模式：生成投资建议并发送消息")
         
@@ -417,22 +482,32 @@ async def main():
             print(info)
         print()
         
+        # 获取并更新Binance交易对列表
+        listed_tokens = None
+        if not args.skip_tokens_update:
+            print("步骤1: 获取并更新Binance交易对列表...\n")
+            listed_tokens = await get_binance_tokens()
+            print()  # 添加空行，提高可读性
+        
         # 获取币安Alpha项目列表数据
-        print("步骤1: 获取币安Alpha项目列表数据...\n")
+        step_num = 2 if not args.skip_tokens_update else 1
+        print(f"步骤{step_num}: 获取币安Alpha项目列表数据...\n")
         alpha_data = await get_binance_alpha_list(force_update=args.force_update)
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
             return 1
         
-        print("\n步骤2: 分类项目并生成投资建议...\n")
+        step_num += 1
+        print(f"\n步骤{step_num}: 分类项目并生成投资建议...\n")
         
         # 按区块链平台获取AI投资建议
         try:
             success = await get_alpha_investment_advice(
                 alpha_data, 
                 debug_only=args.debug_only, 
-                target_platform=args.platform if args.debug_only else None
+                target_platform=args.platform if args.debug_only else None,
+                listed_tokens=listed_tokens
             )
             
             if success:
