@@ -23,7 +23,7 @@ DATA_DIRS = {
     'records': 'investment_records', # 投资建议记录保存目录
     'debug': 'debug_logs',          # 调试日志保存目录
     'data': 'data',                 # 市场数据保存目录
-    'reports': 'reports'            # 报告保存目录
+    'symbols': 'symbols'            # 符号保存目录
 }
 
 # 区块链平台配置
