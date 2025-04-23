@@ -135,6 +135,130 @@ def get_cex_tokens():
         # 出错时返回空列表
         return []
 
+def check_token_listing_status(token, listed_tokens=None):
+    """检查token是否已经在币安现货上线
+    
+    Args:
+        token (str): 要检查的token符号
+        listed_tokens (dict, optional): 已获取的上线token信息字典，如果为None则重新获取
+    
+    Returns:
+        dict: 包含以下信息的字典：
+            - is_listed (bool): 是否已上线
+            - listing_type (str, optional): 上线类型，'standard'或'1000x'或None
+            - listed_as (str, optional): 实际上线的符号名称
+    """
+    # 确保token是大写
+    token = token.upper() if token else ""
+    
+    if not token:
+        return {"is_listed": False}
+    
+    # 如果没有提供listed_tokens，则获取最新数据
+    if not listed_tokens:
+        try:
+            listed_tokens_data = update_tokens()
+            if not listed_tokens_data:
+                logger.warning("获取上线token列表失败")
+                return {"is_listed": False}
+        except Exception as e:
+            logger.error(f"检查token上线状态时出错: {str(e)}")
+            return {"is_listed": False}
+    else:
+        listed_tokens_data = listed_tokens
+    
+    # 获取标准形式的token集合（不区分大小写）
+    standard_tokens_set = {t.upper() for t in listed_tokens_data.get('standard_tokens', [])}
+    if not standard_tokens_set and 'all_tokens' in listed_tokens_data:
+        # 如果没有专门的standard_tokens，使用all_tokens
+        standard_tokens_set = {t.upper() for t in listed_tokens_data.get('all_tokens', [])}
+    
+    # 获取1000Token形式的映射
+    thousand_tokens = listed_tokens_data.get('thousand_tokens', [])
+    thousand_tokens_map = {real_token.upper(): full_name.upper() 
+                         for full_name, real_token in thousand_tokens}
+    
+    # 检查是否是标准形式token
+    if token in standard_tokens_set:
+        return {
+            "is_listed": True,
+            "listing_type": "standard",
+            "listed_as": token
+        }
+    
+    # 检查是否是1000Token对应的代币
+    elif token in thousand_tokens_map:
+        return {
+            "is_listed": True,
+            "listing_type": "1000x",
+            "listed_as": thousand_tokens_map[token]
+        }
+    
+    return {"is_listed": False}
+
+def prepare_token_listing_data(tokens_data):
+    """预处理币安上线token数据，分离标准token和1000x形式token
+    
+    Args:
+        tokens_data (dict): update_tokens()返回的token数据
+    
+    Returns:
+        dict: 包含以下字段的字典：
+            - standard_tokens (list): 标准形式的token列表
+            - thousand_tokens (list): 1000x形式的token元组列表，每个元组为(full_name, real_token)
+            - cex_info_message (str): 格式化的CEX上线信息
+    """
+    if not tokens_data or not isinstance(tokens_data, dict):
+        logger.warning("无效的token数据")
+        return {
+            "standard_tokens": [],
+            "thousand_tokens": [],
+            "cex_info_message": "无有效数据"
+        }
+    
+    # 获取CEX上线的token列表
+    cex_tokens = tokens_data.get('cex_tokens', [])
+    if cex_tokens is None:
+        cex_tokens = []
+        logger.warning("cex_tokens为None，使用空列表代替")
+    
+    # 预处理1000Token形式的代币名称
+    thousand_tokens = []
+    standard_tokens = []
+    
+    for token in cex_tokens:
+        if token.startswith('1000') and len(token) > 4:
+            # 提取1000后面的实际代币名称
+            real_token = token[4:]
+            thousand_tokens.append((token, real_token))  # 保存元组(完整名称, 实际代币名称)
+        else:
+            standard_tokens.append(token)
+    
+    # 构建上线信息消息
+    cex_info = "🔔 币安现货已上线Token列表：\n\n"
+    
+    # 添加常规token
+    if standard_tokens:
+        cex_info += "📊 标准Token：\n"
+        for i, token in enumerate(sorted(standard_tokens)[:20], 1):
+            cex_info += f"{i}. {token}\n"
+        if len(standard_tokens) > 20:
+            cex_info += f"...以及其他 {len(standard_tokens)-20} 个token\n"
+        cex_info += "\n"
+    
+    # 添加1000Token形式的信息
+    if thousand_tokens:
+        cex_info += "💰 1000Token形式：\n"
+        for i, (full_name, token_name) in enumerate(sorted(thousand_tokens), 1):
+            cex_info += f"{i}. {full_name} (原始: {token_name})\n"
+        cex_info += "\n"
+    
+    return {
+        "standard_tokens": standard_tokens,
+        "thousand_tokens": thousand_tokens,
+        "cex_info_message": cex_info
+    }
+
 def update_tokens():
     """更新token列表并返回新token，只有在交易对列表变化时才保存"""
     # 获取项目根目录
@@ -193,14 +317,20 @@ def update_tokens():
         # 找出新增的token（不在已存在列表中的）
         new_tokens = [t for t in token_names if t not in existing_tokens]
         
-        # 我们需要确定哪些token在CEX上线，这里暂时返回一个空数组
+        # 获取CEX上线的token
         cex_tokens = get_cex_tokens()
+        
+        # 预处理token数据
+        token_data = prepare_token_listing_data({"cex_tokens": cex_tokens})
         
         return {
             "all_tokens": token_names,
             "new_tokens": new_tokens,
             "existing_tokens": existing_tokens,
             "cex_tokens": cex_tokens,
+            "standard_tokens": token_data["standard_tokens"],
+            "thousand_tokens": token_data["thousand_tokens"],
+            "cex_info_message": token_data["cex_info_message"],
             "file_path": filepath,
             "symbols_changed": True
         }
@@ -209,11 +339,17 @@ def update_tokens():
         # 即使交易对列表没变，也要获取最新的CEX上线token
         cex_tokens = get_cex_tokens()
         
+        # 预处理token数据
+        token_data = prepare_token_listing_data({"cex_tokens": cex_tokens})
+        
         return {
             "all_tokens": existing_tokens,
             "new_tokens": [],
             "existing_tokens": existing_tokens,
-            "cex_tokens": cex_tokens,  # 使用最新获取的CEX token
+            "cex_tokens": cex_tokens,
+            "standard_tokens": token_data["standard_tokens"],
+            "thousand_tokens": token_data["thousand_tokens"],
+            "cex_info_message": token_data["cex_info_message"],
             "file_path": latest_raw_file,
             "symbols_changed": False
         }
