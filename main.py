@@ -136,6 +136,62 @@ async def get_binance_tokens():
         else:
             print("交易对列表未发生变化，使用现有token列表")
             print(f"现有token数量: {len(result['all_tokens'])}")
+        
+        # 预处理币安现货上线的token列表
+        cex_tokens = result.get('cex_tokens', [])
+        # 预处理1000Token形式的代币名称
+        thousand_tokens = []
+        standard_tokens = []
+        
+        if cex_tokens:
+            for token in cex_tokens:
+                if token.startswith('1000') and len(token) > 4:
+                    # 提取1000后面的实际代币名称
+                    real_token = token[4:]
+                    thousand_tokens.append((token, real_token))  # 保存元组(完整名称, 实际代币名称)
+                else:
+                    standard_tokens.append(token)
+            
+            print(f"币安CEX上线的token数量: {len(cex_tokens)}")
+            print(f"其中标准形式token: {len(standard_tokens)}个")
+            print(f"1000x形式token: {len(thousand_tokens)}个")
+            
+            # 构建上线信息消息
+            cex_info = "🔔 币安现货已上线Token列表：\n\n"
+            
+            # 添加常规token
+            if standard_tokens:
+                cex_info += "📊 标准Token：\n"
+                for i, token in enumerate(sorted(standard_tokens)[:20], 1):
+                    cex_info += f"{i}. {token}\n"
+                if len(standard_tokens) > 20:
+                    cex_info += f"...以及其他 {len(standard_tokens)-20} 个token\n"
+                cex_info += "\n"
+            
+            # 添加1000Token形式的信息
+            if thousand_tokens:
+                cex_info += "💰 1000Token形式：\n"
+                for i, (full_name, token_name) in enumerate(sorted(thousand_tokens), 1):
+                    cex_info += f"{i}. {full_name} (原始: {token_name})\n"
+                cex_info += "\n"
+            
+            # 添加到result以便后续使用
+            result['thousand_tokens'] = thousand_tokens
+            result['standard_tokens'] = standard_tokens
+            result['cex_info_message'] = cex_info
+            
+            # 打印部分信息
+            if standard_tokens:
+                print(f"前10个标准CEX token: {', '.join(sorted(standard_tokens)[:10])}")
+                if len(standard_tokens) > 10:
+                    print(f"...以及其他 {len(standard_tokens)-10} 个token")
+            
+            if thousand_tokens:
+                print("1000Token形式:")
+                for full_name, token_name in thousand_tokens[:5]:
+                    print(f"- {full_name} (原始: {token_name})")
+                if len(thousand_tokens) > 5:
+                    print(f"...以及其他 {len(thousand_tokens)-5} 个")
             
         return result
     
@@ -148,7 +204,7 @@ async def get_binance_tokens():
         print(f"错误详情已记录到日志文件")
         return None
 
-async def get_binance_alpha_list(force_update=False):
+async def get_binance_alpha_list(force_update=False, listed_tokens=None):
     """获取币安Alpha项目列表数据并推送"""
     print("=== 币安Alpha项目列表数据 ===\n")
     
@@ -174,13 +230,64 @@ async def get_binance_alpha_list(force_update=False):
         
         print(f"获取到{len(crypto_list)}个币安Alpha项目，CoinMarketCap显示总共有{total_count}个项目")
         
+        # 如果提供了已上线Token列表，标记已上线的项目
+        if listed_tokens:
+            # 获取标准形式和1000Token形式的代币信息
+            standard_tokens_set = {token.upper() for token in listed_tokens.get('standard_tokens', [])}
+            thousand_tokens = listed_tokens.get('thousand_tokens', [])
+            thousand_tokens_map = {real_token.upper(): full_name.upper() for full_name, real_token in thousand_tokens}
+            
+            # 记录匹配到的已上线token
+            matched_tokens = []
+            matched_thousand_tokens = []
+            
+            # 为每个crypto添加isListed标记
+            for crypto in crypto_list:
+                symbol = crypto.get("symbol", "").upper()
+                is_listed = False
+                listed_as = None
+                
+                # 检查是否是标准形式token
+                if symbol in standard_tokens_set:
+                    is_listed = True
+                    matched_tokens.append(symbol)
+                
+                # 检查是否是1000Token对应的代币
+                elif symbol in thousand_tokens_map:
+                    is_listed = True
+                    listed_as = thousand_tokens_map[symbol]
+                    matched_thousand_tokens.append((symbol, listed_as))
+                
+                # 添加isListed标记和listedAs信息
+                crypto["isListed"] = is_listed
+                if listed_as:
+                    crypto["listedAs"] = listed_as
+            
+            # 打印标记结果
+            print(f"已标记{len(matched_tokens) + len(matched_thousand_tokens)}个已上线币安的Token")
+            print(f"  - 标准形式: {len(matched_tokens)}个")
+            print(f"  - 1000Token形式: {len(matched_thousand_tokens)}个")
+            
+            # 打印部分已标记的token
+            if matched_tokens:
+                print(f"标准形式已上线Token示例: {', '.join(matched_tokens[:5])}")
+                if len(matched_tokens) > 5:
+                    print(f"...以及其他 {len(matched_tokens)-5} 个")
+            
+            if matched_thousand_tokens:
+                print("1000Token形式已上线Token示例:")
+                for original, thousand in matched_thousand_tokens[:3]:
+                    print(f"  - {original} (在币安上线为: {thousand})")
+                if len(matched_thousand_tokens) > 3:
+                    print(f"  ...以及其他 {len(matched_thousand_tokens)-3} 个")
+        
         # 构建消息内容
         message = f"📊 币安Alpha项目列表 (更新时间: {alpha_data.get('date')})\n\n"
-        message += f"项目总数: {total_count}\n\n"
-        message += "🔝 Top 20 币安Alpha项目 (按市值排序):\n\n"
+        message += f"🔢 项目总数: {total_count}\n\n"
+        message += "🔝 Top 50 币安Alpha项目 (按市值排序):\n\n"
         
-        # 添加前20个项目信息
-        for i, crypto in enumerate(crypto_list[:20], 1):
+        # 添加前50个项目信息
+        for i, crypto in enumerate(crypto_list[:50], 1):
             name = crypto.get("name", "未知")
             symbol = crypto.get("symbol", "未知")
             rank = crypto.get("cmcRank", "未知")
@@ -188,12 +295,24 @@ async def get_binance_alpha_list(force_update=False):
             percent_change_24h = crypto.get("quotes", [{}])[2].get("percentChange24h", 0) if len(crypto.get("quotes", [])) > 2 else 0
             market_cap = crypto.get("quotes", [{}])[2].get("marketCap", 0) if len(crypto.get("quotes", [])) > 2 else 0
             fdv = crypto.get("totalSupply", 0) * price_usd
-            message += f"{i}. {name} ({symbol}) - CMC排名: {rank}\n"
-            message += f"   价格: ${price_usd:.6f}, 24h变化: {percent_change_24h:.2f}%\n"
-            message += f"   市值: ${market_cap:.2f}, 完全稀释估值: ${fdv:.2f}\n"
+            is_listed = crypto.get("isListed", False)
+            listed_as = crypto.get("listedAs", None)
+            
+            # 添加涨跌图标
+            change_emoji = "🟢" if percent_change_24h >= 0 else "🔴"
+            
+            message += f"{i}. {name} ({symbol}) - 📈 CMC排名: {rank}\n"
+            if is_listed:
+                if listed_as:
+                    message += f"   🔔 已上线币安，交易对: {listed_as}\n"
+                else:
+                    message += f"   🔔 已上线币安\n"
+            
+            message += f"   💰 价格: ${price_usd:.2f}, 24h变化: {change_emoji} {percent_change_24h:.2f}%\n"
+            message += f"   💎 MC: ${market_cap/1000000:.2f}M, FDV: ${fdv/1000000:.2f}M\n"
         
         # 添加数据来源信息
-        message += "数据来源: CoinMarketCap\n"
+        message += "📊 数据来源: CoinMarketCap\n"
         
         # 推送消息
         await send_message_async(message)
@@ -255,14 +374,66 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             # 创建一个已上线token的集合，不区分大小写，便于比较
             listed_tokens_set = {token.upper() for token in listed_tokens.get('all_tokens')}
             
-            # 过滤掉已经上线的token
-            filtered_crypto_list = [
-                crypto for crypto in crypto_list 
-                if crypto.get("symbol", "").upper() not in listed_tokens_set
-            ]
+            # alpha中已上线cex的token
+            # 确保cex_tokens存在，如果不存在则使用空列表
+            cex_tokens = listed_tokens.get('cex_tokens', [])
+            if cex_tokens is None:
+                cex_tokens = []
+                logger.warning("cex_tokens为None，使用空列表代替")
+                print("警告: cex_tokens为None，使用空列表代替")
+                
+            # 获取1000Token形式的token
+            thousand_tokens = listed_tokens.get('thousand_tokens', [])
             
+            # 构建常规token集合和1000Token映射
+            standard_tokens_set = {token.upper() for token in listed_tokens.get('standard_tokens', [])}
+            thousand_tokens_map = {real_token.upper(): full_name.upper() for full_name, real_token in thousand_tokens}
+            
+            # 汇总所有需要过滤的token集合
+            filtered_tokens = set()
+            filtered_thousand_tokens = set()
+            
+            # 记录匹配到的token，用于日志输出
+            matched_tokens = []
+            matched_thousand_tokens = []
+            
+            # 过滤标准形式和1000Token形式的token
+            filtered_crypto_list = []
+            for crypto in crypto_list:
+                symbol = crypto.get("symbol", "").upper()
+                should_filter = False
+                
+                # 检查是否是标准形式token
+                if symbol in standard_tokens_set:
+                    matched_tokens.append(symbol)
+                    should_filter = True
+                
+                # 检查是否是1000Token对应的代币
+                elif symbol in thousand_tokens_map:
+                    matched_thousand_tokens.append((symbol, thousand_tokens_map[symbol]))
+                    should_filter = True
+                
+                if not should_filter:
+                    filtered_crypto_list.append(crypto)
+            
+            # 统计结果
             removed_count = original_count - len(filtered_crypto_list)
+            
+            # 打印详细过滤信息
             print(f"已从Alpha项目列表中移除{removed_count}个已上线的Token，剩余{len(filtered_crypto_list)}个项目")
+            print(f"  - 标准形式Token移除: {len(matched_tokens)}个")
+            print(f"  - 1000Token形式移除: {len(matched_thousand_tokens)}个")
+            
+            # 打印部分被过滤的token示例
+            print(f"移除的标oken: {', '.join(matched_tokens)}")
+            
+            if matched_thousand_tokens:
+                print("移除的1000Token示例:")
+                for original, thousand in matched_thousand_tokens[:3]:
+                    print(f"  - {original} (对应1000形式: {thousand})")
+                if len(matched_thousand_tokens) > 3:
+                    print(f"  ...以及其他 {len(matched_thousand_tokens)-3} 个")
+            
             crypto_list = filtered_crypto_list
             
             # 更新alpha_data中的项目列表
@@ -492,7 +663,7 @@ async def main():
         # 获取币安Alpha项目列表数据
         step_num = 2 if not args.skip_tokens_update else 1
         print(f"步骤{step_num}: 获取币安Alpha项目列表数据...\n")
-        alpha_data = await get_binance_alpha_list(force_update=args.force_update)
+        alpha_data = await get_binance_alpha_list(force_update=args.force_update, listed_tokens=listed_tokens)
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")

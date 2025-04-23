@@ -119,6 +119,22 @@ def get_raw_symbols_file():
     latest_file = sorted(symbol_files)[-1]
     return os.path.join(symbols_dir, latest_file)
 
+def get_cex_tokens():
+    """获取币安CEX上已上线的token"""
+    try:
+        # 获取所有交易对
+        symbols = fetch_symbols()
+        
+        # 提取token名称
+        cex_tokens = extract_token_names(symbols)
+        
+        logger.info(f"从币安获取到{len(cex_tokens)}个上线token")
+        return cex_tokens
+    except Exception as e:
+        logger.error(f"获取币安CEX上线token时出错: {str(e)}")
+        # 出错时返回空列表
+        return []
+
 def update_tokens():
     """更新token列表并返回新token，只有在交易对列表变化时才保存"""
     # 获取项目根目录
@@ -177,19 +193,27 @@ def update_tokens():
         # 找出新增的token（不在已存在列表中的）
         new_tokens = [t for t in token_names if t not in existing_tokens]
         
+        # 我们需要确定哪些token在CEX上线，这里暂时返回一个空数组
+        cex_tokens = get_cex_tokens()
+        
         return {
             "all_tokens": token_names,
             "new_tokens": new_tokens,
             "existing_tokens": existing_tokens,
+            "cex_tokens": cex_tokens,
             "file_path": filepath,
             "symbols_changed": True
         }
     else:
         # 如果交易对列表没有变化，返回已有的token列表
+        # 即使交易对列表没变，也要获取最新的CEX上线token
+        cex_tokens = get_cex_tokens()
+        
         return {
             "all_tokens": existing_tokens,
             "new_tokens": [],
             "existing_tokens": existing_tokens,
+            "cex_tokens": cex_tokens,  # 使用最新获取的CEX token
             "file_path": latest_raw_file,
             "symbols_changed": False
         }
