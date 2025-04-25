@@ -286,6 +286,123 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None):
         print(f"错误详情已记录到日志文件")
         return False
 
+async def classify_crypto_projects_by_platform(crypto_list, platforms, platforms_to_process):
+    """
+    对加密货币项目按照区块链平台进行分类，优先使用platform.name进行精确匹配
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        platforms: 可用的区块链平台及其关键词字典
+        platforms_to_process: 要处理的平台列表
+        
+    Returns:
+        tuple: (平台项目字典, 未分类项目列表)
+    """
+    # 创建查找映射表，将具体平台名称映射到我们的目标平台类别
+    platform_mapping = {
+        "Ethereum": "Ethereum",
+        "Solana": "Solana", 
+        "BNB Smart Chain (BEP20)": "BNB Chain",  # 将BNB Smart Chain映射到BNB Chain
+        "Base": "Other",  # 其他平台可以添加到此处
+    }
+    
+    # 对项目按区块链平台分类
+    platform_projects = {platform: [] for platform in platforms_to_process}
+    unclassified_projects = []  # 记录无法分类的项目
+    
+    # 添加一个"Other"类别，用于收集不在指定平台列表中的项目
+    if "Other" not in platform_projects and "Other" in platforms_to_process:
+        platform_projects["Other"] = []
+    
+    for crypto in crypto_list:
+        # 获取项目的平台信息
+        platform_info = crypto.get("platform", {})
+        platform_name = platform_info.get("name", "") if platform_info else ""
+        
+        # 获取标签中的生态系统信息，作为备选分类依据
+        tags = [tag for tag in crypto.get("tags", []) if isinstance(tag, str)]
+        ecosystem_tags = [tag for tag in tags if "ecosystem" in tag.lower()]
+        
+        # 初始化分配标志
+        assigned = False
+        
+        # 通过platform.name直接匹配平台
+        if platform_name and platform_name in platform_mapping:
+            mapped_platform = platform_mapping[platform_name]
+            
+            # 检查映射的平台是否在我们要处理的平台中
+            if mapped_platform in platforms_to_process:
+                platform_projects[mapped_platform].append(crypto)
+                assigned = True
+            # 如果映射到了"Other"类别并且我们在处理该类别
+            elif mapped_platform == "Other" and "Other" in platforms_to_process:
+                platform_projects["Other"].append(crypto)
+                assigned = True
+        
+        # 如果未通过platform.name匹配成功，尝试通过标签匹配
+        if not assigned:
+            for tag in ecosystem_tags:
+                matched = False
+                # 检查标签是否匹配平台
+                for platform in platforms_to_process:
+                    platform_keywords = platforms.get(platform, [])
+                    # 使用简化的关键词匹配逻辑
+                    if any(keyword.lower() in tag.lower() for keyword in platform_keywords):
+                        platform_projects[platform].append(crypto)
+                        assigned = True
+                        matched = True
+                        break
+                
+                if matched:
+                    break
+        
+        # 如果仍然未分类，则添加到未分类列表
+        if not assigned:
+            unclassified_projects.append(crypto)
+    
+    # 打印分类结果
+    print(f"币安Alpha项目分类统计：")
+    total_classified = 0
+    for platform, projects in platform_projects.items():
+        print(f"{platform}: {len(projects)}个项目")
+        total_classified += len(projects)
+    print(f"未分类项目: {len(unclassified_projects)}个")
+    print(f"总计: {total_classified + len(unclassified_projects)}个项目")
+    
+    return platform_projects, unclassified_projects
+
+def determine_platforms_to_process(platforms, target_platform=None, debug_only=False):
+    """
+    确定要处理的平台列表
+    
+    Args:
+        platforms: 可用的区块链平台字典
+        target_platform: 指定要处理的平台（仅在调试模式下有效）
+        debug_only: 是否为调试模式
+        
+    Returns:
+        list: 要处理的平台列表
+    """
+    # 确定要处理的平台列表
+    platforms_to_process = []
+    
+    # 如果命令行指定了特定平台且是调试模式，优先使用命令行指定的平台
+    if target_platform and debug_only and target_platform in platforms:
+        platforms_to_process = [target_platform]
+    # 否则使用配置文件中的PLATFORMS_TO_QUERY
+    elif PLATFORMS_TO_QUERY:
+        # 确保只处理配置中存在的平台
+        platforms_to_process = [p for p in PLATFORMS_TO_QUERY if p in platforms]
+        if not platforms_to_process:
+            logger.warning(f"配置的PLATFORMS_TO_QUERY中没有有效的平台: {PLATFORMS_TO_QUERY}")
+            print(f"警告: 配置的平台{PLATFORMS_TO_QUERY}都不存在，将处理所有已定义的平台")
+            platforms_to_process = list(platforms.keys())
+    # 如果没有指定，则处理所有定义的平台
+    else:
+        platforms_to_process = list(platforms.keys())
+        
+    return platforms_to_process
+
 async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_platform=None, listed_tokens=None):
     """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
     
@@ -362,7 +479,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             print(f"  - 1000Token形式移除: {len(matched_thousand_tokens)}个")
             
             # 打印部分被过滤的token示例
-            print(f"移除的标oken: {', '.join(matched_tokens)}")
+            print(f"移除的标准Token: {', '.join(matched_tokens)}")
             
             if matched_thousand_tokens:
                 print("移除的1000Token示例:")
@@ -380,69 +497,13 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         platforms = BLOCKCHAIN_PLATFORMS
         
         # 确定要处理的平台列表
-        platforms_to_process = []
-        
-        # 如果命令行指定了特定平台且是调试模式，优先使用命令行指定的平台
-        if target_platform and debug_only and target_platform in platforms:
-            platforms_to_process = [target_platform]
-        # 否则使用配置文件中的PLATFORMS_TO_QUERY
-        elif PLATFORMS_TO_QUERY:
-            # 确保只处理配置中存在的平台
-            platforms_to_process = [p for p in PLATFORMS_TO_QUERY if p in platforms]
-            if not platforms_to_process:
-                logger.warning(f"配置的PLATFORMS_TO_QUERY中没有有效的平台: {PLATFORMS_TO_QUERY}")
-                print(f"警告: 配置的平台{PLATFORMS_TO_QUERY}都不存在，将处理所有已定义的平台")
-                platforms_to_process = list(platforms.keys())
-        # 如果没有指定，则处理所有定义的平台
-        else:
-            platforms_to_process = list(platforms.keys())
-            
+        platforms_to_process = determine_platforms_to_process(platforms, target_platform, debug_only)
         print(f"将处理以下平台: {', '.join(platforms_to_process)}\n")
         
         # 对项目按区块链平台分类
-        platform_projects = {platform: [] for platform in platforms_to_process}
-        unclassified_projects = []  # 记录无法分类的项目
-        
-        for crypto in crypto_list:
-            # 获取项目的各种可能包含平台信息的字段
-            platform_info = crypto.get("platform", {})
-            platform_name = platform_info.get("name", "") if platform_info else ""
-            platform_symbol = platform_info.get("symbol", "") if platform_info else ""
-            tags = crypto.get("tags", [])
-            category = crypto.get("category", "")
-            description = crypto.get("description", "")
-            
-            # 扁平化标签列表，确保是字符串
-            platform_tags = [tag for tag in tags if isinstance(tag, str)]
-            
-            # 判断项目所属平台
-            assigned = False
-            
-            # 仅对要处理的平台进行分类
-            for platform in platforms_to_process:
-                keywords = platforms[platform]
-                # 检查各种字段中是否包含平台关键词
-                if (any(keyword.lower() in platform_name.lower() for keyword in keywords) or
-                    any(keyword.lower() in platform_symbol.lower() for keyword in keywords) or
-                    any(any(keyword.lower() in tag.lower() for tag in platform_tags) for keyword in keywords) or
-                    any(keyword.lower() in category.lower() for keyword in keywords) or
-                    any(keyword.lower() in description.lower() for keyword in keywords)):
-                    platform_projects[platform].append(crypto)
-                    assigned = True
-                    break
-            
-            # 记录无法分类的项目（不处理）
-            if not assigned:
-                unclassified_projects.append(crypto)
-        
-        # 打印分类结果
-        print(f"币安Alpha项目分类统计：")
-        total_classified = 0
-        for platform, projects in platform_projects.items():
-            print(f"{platform}: {len(projects)}个项目")
-            total_classified += len(projects)
-        print(f"未分类项目: {len(unclassified_projects)}个")
-        print(f"总计: {total_classified + len(unclassified_projects)}个项目")
+        platform_projects, unclassified_projects = await classify_crypto_projects_by_platform(
+            crypto_list, platforms, platforms_to_process
+        )
         
         # 创建建议目录
         advice_dir = DATA_DIRS['advices']
