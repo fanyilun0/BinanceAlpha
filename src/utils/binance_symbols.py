@@ -309,7 +309,7 @@ def update_tokens():
         token_names = extract_token_names(all_symbols)
         
         # 保存提取的token列表
-        filename = f"symbol-{current_datetime}.json"
+        filename = f"symbol.json"
         filepath = os.path.join(symbols_dir, filename)
         with open(filepath, 'w') as f:
             json.dump(token_names, f, indent=2)
