@@ -28,9 +28,10 @@ DATA_DIRS = {
 
 # 区块链平台配置
 BLOCKCHAIN_PLATFORMS = {
-    "Ethereum": ["ETH", "ERC20", "Ethereum", "ERC-20", "ERC 20", "以太坊"],
-    "Solana": ["SOL", "Solana", "SPL", "索拉纳"], 
-    "BNB Chain": ["BNB", "BSC", "BEP20", "BEP-20", "Binance Smart Chain", "币安智能链"]
+    "Ethereum": ["ETH", "ERC20", "Ethereum", "ERC-20", "ERC 20", "以太坊", "ethereum-ecosystem"],
+    "Solana": ["SOL", "Solana", "SPL", "索拉纳", "solana-ecosystem"], 
+    "BNB Chain": ["BNB", "BSC", "BEP20", "BEP-20", "Binance Smart Chain", "币安智能链", "bnb-chain-ecosystem", "binance-chain"],
+    # "Other": ["base-ecosystem", "arbitrum-ecosystem", "polygon-ecosystem", "avalanche-ecosystem"]
 }
 
 # 要查询的区块链平台

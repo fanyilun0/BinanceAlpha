@@ -49,6 +49,13 @@ class AlphaAdvisor:
         percent_change_7d = usd_quote.get("percentChange7d", 0)
         percent_change_30d = usd_quote.get("percentChange30d", 0)
         market_cap = usd_quote.get("marketCap", 0)
+
+        if market_cap == 0:
+            if crypto.get("circulatingSupply", 0) > 0:
+                market_cap = crypto.get("circulatingSupply", 0) * price
+            else:
+                market_cap = crypto.get("selfReportedCirculatingSupply", 0) * price
+
         fdv = price * crypto.get("totalSupply", 0)
         volume_24h = usd_quote.get("volume24h", 0)
         
