@@ -93,7 +93,7 @@ async def get_binance_tokens():
         print(f"错误详情已记录到日志文件")
         return None
 
-async def get_binance_alpha_list(force_update=False, listed_tokens=None):
+async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_only=False):
     """获取币安Alpha项目列表数据并推送"""
     print("=== 币安Alpha项目列表数据 ===\n")
     
@@ -176,19 +176,11 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None):
         # 向webhook发送消息
         print(f"消息长度: {len(message)} 字符")
         
-        if len(message) > 50000:
-            print("警告: 消息过长，将被截断")
-            message = message[:50000] + "...\n\n[消息过长，已截断]"
-        
         print("正在向webhook发送消息...")
         
-        success = await send_message_async(message)
+        if not debug_only:
+            await send_message_async(message)
         
-        if success:
-            print("消息发送成功")
-        else:
-            print("消息发送失败")
-            
         return alpha_data
         
     except Exception as e:
@@ -582,7 +574,7 @@ async def main():
         # 获取币安Alpha项目列表数据
         step_num = 2 if not args.skip_tokens_update else 1
         print(f"步骤{step_num}: 获取币安Alpha项目列表数据...\n")
-        alpha_data = await get_binance_alpha_list(force_update=args.force_update, listed_tokens=listed_tokens)
+        alpha_data = await get_binance_alpha_list(force_update=args.force_update, listed_tokens=listed_tokens, debug_only=args.debug_only)
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")

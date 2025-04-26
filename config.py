@@ -42,7 +42,7 @@ PLATFORMS_TO_QUERY = []
 # 需要屏蔽的代币列表
 # 可以使用符号(symbol)、名称(name)或ID进行匹配
 # 例如: ["BTC", "Bitcoin", "ETH", "Ethereum"]
-BLOCK_TOKEN_LIST = ["AITECH"]
+BLOCK_TOKEN_LIST = ["AITECH","BROCCOLI"]
 
 # 市场情绪指标配置
 MARKET_SENTIMENT = {
