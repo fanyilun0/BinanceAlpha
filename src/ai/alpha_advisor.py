@@ -270,7 +270,7 @@ class AlphaAdvisor:
         for attempt in range(max_retries):
             try:
                 logger.info(f"正在请求AI建议，尝试 {attempt + 1}/{max_retries}")
-                response = requests.post(self.api_url, headers=headers, json=payload, timeout=DEEPSEEK_AI.get('timeout', 180))
+                response = requests.post(self.api_url, headers=headers, json=payload, timeout=DEEPSEEK_AI.get('timeout', 300))
                 
                 if response.status_code == 200:
                     result = response.json()
@@ -279,14 +279,7 @@ class AlphaAdvisor:
                     # 如果返回内容有效，保存并返回
                     if message and len(message) > 100:
                         logger.info("成功获取AI建议")
-                        
-                        # 保存建议到文件
-                        os.makedirs(DATA_DIRS['advices'], exist_ok=True)
-                        advice_file = os.path.join(DATA_DIRS['advices'], f"advice_{timestamp}_{platform_str}.md")
-                        with open(advice_file, 'w', encoding='utf-8') as f:
-                            f.write(message)
-                        logger.info(f"已保存{platform or '通用'}平台投资建议到: {advice_file}")
-                        
+    
                         return message
                     else:
                         logger.warning(f"API返回内容过短或为空: {message}")
