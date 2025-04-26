@@ -468,10 +468,12 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         )
         
         if advice:
+            await send_message_async(advice)
+
             # 保存建议到文件
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             platform_filename = platform.lower().replace(' ', '_')
-            advice_file = os.path.join(advice_dir, f"advice_{platform_filename}_{timestamp}.md")
+            advice_file = os.path.join(advice_dir, f"advice_{timestamp}_{platform_filename}.md")
             
             with open(advice_file, 'w', encoding='utf-8') as f:
                 f.write(advice)
