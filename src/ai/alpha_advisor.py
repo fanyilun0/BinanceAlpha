@@ -8,6 +8,7 @@ import requests
 from datetime import datetime
 
 from config import DEEPSEEK_AI, DATA_DIRS, BLOCKCHAIN_PLATFORMS
+from src.utils.crypto_formatter import format_project_detailed, extract_basic_info, save_crypto_data
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -34,57 +35,11 @@ class AlphaAdvisor:
         Returns:
             str: 格式化后的项目数据文本
         """
-        name = crypto.get("name", "未知")
-        symbol = crypto.get("symbol", "未知")
-        rank = crypto.get("cmcRank", "未知")
-        
-        # 提取价格和价格变化数据（USD）
-        quotes = crypto.get("quotes", [])
-        usd_quote = next((q for q in quotes if q.get("name") == "USD"), {})
-        
-        price = usd_quote.get("price", 0)
-        percent_change_24h = usd_quote.get("percentChange24h", 0)
-        percent_change_7d = usd_quote.get("percentChange7d", 0)
-        percent_change_30d = usd_quote.get("percentChange30d", 0)
-        market_cap = usd_quote.get("marketCap", 0)
-
-        if market_cap == 0:
-            if crypto.get("circulatingSupply", 0) > 0:
-                market_cap = crypto.get("circulatingSupply", 0) * price
-            else:
-                market_cap = crypto.get("selfReportedCirculatingSupply", 0) * price
-
-        fdv = usd_quote.get("fullyDilutedMarketCap", 0)
-        volume_24h = usd_quote.get("volume24h", 0)
-        
-        # 获取项目平台信息
-        platform_info = crypto.get("platform", {})
-        platform_name = platform_info.get("name", "") if platform_info else ""
-        
-        # 构建项目信息文本
-        project_text = f"{name} ({symbol}):\n"
-        project_text += f"   - 排名: {rank}\n"
-        # if platform_name:
-        #     project_text += f"   - 平台: {platform_name}\n"
-        project_text += f"   - 价格: ${price:.6f}\n"
-        project_text += f"   - 价格变化: 24h {percent_change_24h:.2f}% | 7d {percent_change_7d:.2f}% | 30d {percent_change_30d:.2f}%\n"
-        project_text += f"   - MC: ${market_cap:.2f}\n"
-        project_text += f"   - FDV: ${fdv:.2f}\n"
-        project_text += f"   - 24h Vol: ${volume_24h:.2f}\n"
-        
-        # 添加项目标签信息
-        tags = crypto.get("tags", [])
-        if tags and isinstance(tags, list) and all(isinstance(tag, str) for tag in tags):
-            project_text += f"   - 标签: {', '.join(tags[:5])}{' ...' if len(tags) > 5 else ''}\n"
-            
-        # 添加项目简介（如果有）
-        description = crypto.get("description", "")
-        if description and len(description) > 10:
-            # 截取合适长度的描述
-            short_desc = description[:200] + "..." if len(description) > 200 else description
-            project_text += f"   - 简介: {short_desc}\n"
+        # 使用新的crypto_formatter模块
+        project_text = format_project_detailed(crypto, platform_name=False)
             
         return project_text
+
     def _prepare_prompt(self, alpha_data: Dict[str, Any]) -> Tuple[str, str]:
         """准备提示词
         
@@ -157,7 +112,7 @@ class AlphaAdvisor:
 各因素具体评估要点及权重：
 
 1. 交易量表现（核心，权重45%）：
-   - 日均交易量在同类项目中的排名
+   
    - 交易量稳定性与趋势
    - 买卖比例平衡度
    - 交易地址多样性
@@ -200,6 +155,7 @@ class AlphaAdvisor:
         
         # 格式化项目数据 -- 只取前20个
         for i, crypto in enumerate(crypto_list[:20], 1):
+            # 使用新的crypto_formatter模块
             project_text = self._format_project_data(crypto)
             data_section += f"{i}. {project_text}\n"
         
@@ -309,32 +265,32 @@ class AlphaAdvisor:
         return None 
         
 
-    def save_list_data_for_debug(self, data_list: List[Dict], filename_prefix: str = "list_data") -> str:
-        """保存列表数据到文件用于调试
+    def save_list_data_for_debug(self, crypto_list: List[Dict[str, Any]], prefix: str = ""):
+        """保存币安Alpha项目列表数据到本地文件以便调试
         
         Args:
-            data_list: 要保存的数据列表
-            filename_prefix: 文件名前缀
+            crypto_list: 加密货币数据列表
+            prefix: 文件名前缀，用于区分不同平台的数据
             
         Returns:
-            保存的文件路径
+            str: 保存的文件路径，如果保存失败则返回None
         """
         try:
-            # 确保调试目录存在
-            data_dir = DATA_DIRS.get('data', 'data')
-            os.makedirs(data_dir, exist_ok=True)
+            # 创建调试数据目录
+            os.makedirs(DATA_DIRS['debug'], exist_ok=True)
             
-            # 创建文件名
-            timestamp = datetime.now().strftime('%Y%m%d')
-            filename = f"{filename_prefix}_{timestamp}.json"
-            file_path = os.path.join(data_dir, filename)
+            # 获取当前时间戳
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             
             # 保存到文件
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(data_list, f, ensure_ascii=False, indent=2)
+            filename = f"{prefix}_{timestamp}.json" if prefix else f"crypto_list_{timestamp}.json"
             
-            logger.info(f"已保存列表数据到: {file_path}")
+            # 使用crypto_formatter模块保存数据
+            file_path = save_crypto_data(crypto_list, filename, prefix)
+            
+            logger.info(f"已保存币安Alpha项目列表数据到: {file_path}")
             return file_path
+            
         except Exception as e:
-            logger.error(f"保存列表数据时出错: {str(e)}")
-            return "" 
+            logger.error(f"保存币安Alpha项目列表数据时出错: {str(e)}")
+            return None 
