@@ -54,7 +54,7 @@ class AlphaAdvisor:
             else:
                 market_cap = crypto.get("selfReportedCirculatingSupply", 0) * price
 
-        fdv = price * crypto.get("totalSupply", 0)
+        fdv = usd_quote.get("fullyDilutedMarketCap", 0)
         volume_24h = usd_quote.get("volume24h", 0)
         
         # 获取项目平台信息
@@ -64,13 +64,13 @@ class AlphaAdvisor:
         # 构建项目信息文本
         project_text = f"{name} ({symbol}):\n"
         project_text += f"   - 排名: {rank}\n"
-        if platform_name:
-            project_text += f"   - 平台: {platform_name}\n"
+        # if platform_name:
+        #     project_text += f"   - 平台: {platform_name}\n"
         project_text += f"   - 价格: ${price:.6f}\n"
         project_text += f"   - 价格变化: 24h {percent_change_24h:.2f}% | 7d {percent_change_7d:.2f}% | 30d {percent_change_30d:.2f}%\n"
-        project_text += f"   - 市值: ${market_cap:.2f}\n"
-        project_text += f"   - 完全稀释估值: ${fdv:.2f}\n"
-        project_text += f"   - 24小时交易量: ${volume_24h:.2f}\n"
+        project_text += f"   - MC: ${market_cap:.2f}\n"
+        project_text += f"   - FDV: ${fdv:.2f}\n"
+        project_text += f"   - 24h Vol: ${volume_24h:.2f}\n"
         
         # 添加项目标签信息
         tags = crypto.get("tags", [])
@@ -85,84 +85,6 @@ class AlphaAdvisor:
             project_text += f"   - 简介: {short_desc}\n"
             
         return project_text
-    
-    def _create_prompt_template(self, platform: str, date: str, crypto_count: int) -> str:
-        """创建提示词模板
-        
-        Args:
-            platform: 区块链平台名称
-            date: 数据日期
-            crypto_count: 加密货币数量
-            
-        Returns:
-            str: 提示词模板
-        """
-        # 开头部分
-        intro = f"""
-作为加密货币分析师，请针对以下{f"{platform}平台上的" if platform else ""}币安Alpha项目数据（{date}），分析并仅推荐3个最具投资潜力的代币。
-
-背景说明：
-币安Alpha是币安生态系统中的预上币池，专注于发掘Web3生态系统中有潜力的早期加密项目。作为币安交易所的上币渠道之一，它提高了上币审议过程的透明度。币安钱包和币安交易平台用户均可无缝访问Alpha平台，无需Web3钱包或外部转账即可直接在链上交易这些早期代币。
-
-币安上币流程与评估标准：
-1. 币安Alpha(预上币池) → 2. 币安合约 → 3. 币安现货
-
-币安Alpha项目评估重点：
-- 项目基本面：用户增长率、实际采用情况、可行商业模式、行业相关性
-- 代币经济学：代币分布、持币集中度、行权计划与解锁时间表
-- 技术与安全：代码质量、创新性、中心化风险、安全审计历史
-- 团队背景：核心团队资质、行业经验、合规状况
-- 二级市场表现：交易量、流动性深度、价格稳定性、市值与完全稀释估值比例
-
-从Alpha进入合约/现货平台的关键指标：
-- 在Alpha平台保持高且持续的交易量，表明社区和用户认可
-- 价格表现稳定，无重大崩盘或人为哄抬行为
-- 持续遵守合理的代币分配和解锁计划
-- 项目基本面持续改善，无重大负面变化
-
-分析要点:
-1. {"关注"+platform+"生态系统的独特优势和竞争格局" if platform else "项目在整体加密生态中的定位与竞争力"}
-2. {"代币在该生态中的具体作用和采用情况" if platform else "Token经济模型可持续性"}
-3. 当前链上数据分析（交易量、钱包地址增长、开发者活跃度）
-4. 进入币安合约和现货平台的潜力评估
-5. 近期价格走势与交易量的相关性分析
-6. 项目团队背景、投资方实力与执行力评估
-7. 代币未来价值催化剂（路线图关键节点、解锁事件、生态系统扩张）
-
-以下是当前{f"{platform}平台上的" if platform else ""}币安Alpha列表中的项目（按市值排序）：
-"""
-
-        # 结尾部分
-        conclusion = f"""
-请基于以上{f"{platform}平台上的" if platform else ""}币安Alpha项目数据，提供以下内容：
-
-1. 仅推荐3个最具投资潜力的{""+platform+"平台" if platform else ""}代币，每个包括：
-   - 代币名称和代码
-   - 详细推荐理由{f"（专注于{platform}生态系统中的作用）" if platform else ""}
-   - 币安上币路径评估（从Alpha到合约再到现货的可能性及时间框架）
-   - 技术亮点和实际应用场景
-   - 链上数据分析（交易活跃度、钱包地址增长、开发者贡献）
-   - 与同类项目的对比优势
-
-2. 每个代币的投资分析：
-   - 投资风险评估（低/中/高）及具体风险点
-   - 代币解锁计划及其对价格的潜在影响
-   - 建议的投资时间范围（短期/中期/长期）
-   - 适合的投资者类型
-   - 进入币安合约/现货的主要障碍（如有）
-   - 进入币安生态其他产品的可能性（如Launchpool、Megadrop、HODLer空投）
-
-3. 投资组合建议：
-   - 在所推荐的3个代币中如何分配投资比例
-   - 风险分散策略：如何平衡高潜力但高风险与相对稳健的选择
-   - 投资时间策略：分批建仓还是一次性投入
-   - 如何跟踪这些项目的关键发展指标
-
-请使用markdown格式输出，分析应该简明扼要但内容深入，重点关注每个项目从Alpha进入合约和现货平台的可能路径和时间表。
-"""
-        
-        return intro, conclusion
-    
     def _prepare_prompt(self, alpha_data: Dict[str, Any]) -> Tuple[str, str]:
         """准备提示词
         
@@ -198,19 +120,93 @@ class AlphaAdvisor:
                     platform = p_name
                     break
         
-        # 获取提示词模板
-        intro_template, conclusion_template = self._create_prompt_template(platform, date, len(crypto_list))
-        
-        # 构建项目数据部分
-        projects_text = ""
-        for i, crypto in enumerate(crypto_list, 1):
-            project_text = self._format_project_data(crypto)
-            projects_text += f"{i}. {project_text}\n"
-        
-        # 组合最终提示词
-        prompt = intro_template + projects_text + conclusion_template
+        # 构建全部提示词
+        prompt = self._create_complete_prompt(platform, date, crypto_list)
         
         return platform, prompt
+    
+    def _create_complete_prompt(self, platform: str, date: str, crypto_list: List[Dict[str, Any]]) -> str:
+        """创建简化的提示词，聚焦于币安官方上币要求
+        
+        Args:
+            platform: 区块链平台名称
+            date: 数据日期
+            crypto_list: 加密货币数据列表
+            
+        Returns:
+            str: 简化的提示词
+        """
+        # 1. 简化任务介绍
+        task_intro = f"""
+作为加密货币分析师，请评估以下{f"{platform}平台上的" if platform else ""}币安Alpha已流通项目中哪些最可能获得币安现货上币资格。
+"""
+
+        # 2. 简化背景和关键考量要素
+        background = """
+币安官方明确指出，已上线Alpha平台的流通项目上现货将主要考量四大关键因素：
+
+1. 交易量表现：Alpha平台上保持高且持续的交易量
+2. 价格稳定性：交易期间价格稳定，无重大暴跌或人为哄抬
+3. 监管合规性：满足所有监管合规要求
+4. 代币分配与解锁：遵守合理的代币分配和解锁计划
+
+"""
+
+        # 3. 简化评估标准，保留核心内容
+        evaluation_criteria = """
+各因素具体评估要点及权重：
+
+1. 交易量表现（核心，权重45%）：
+   - 日均交易量在同类项目中的排名
+   - 交易量稳定性与趋势
+   - 买卖比例平衡度
+   - 交易地址多样性
+   币安明确要求Alpha项目必须保持高且持续的交易量，作为向现货迁移的首要条件。
+
+2. 价格稳定性（核心，权重35%）：
+   - 价格波动率对比
+   - 异常价格波动监测
+   - 价格走势健康度
+   - 市场下跌时的抗压表现
+   币安特别关注项目在交易期间价格是否稳定，无重大暴跌或人为哄抬价格的行为。
+
+3. 监管合规性（门槛，权重10%）：
+   - 基本监管符合度
+   - 团队背景无重大问题
+   作为基本门槛要求，项目需满足基本合规要求。
+
+4. 代币分配与解锁（门槛，权重10%）：
+   - 解锁计划透明度和执行情况
+   - 近期解锁压力评估
+   - 持币集中度分析
+   - 代币分配合理性
+   币安要求项目持续遵守合理的代币分配和解锁计划，避免大额抛售风险。
+"""
+
+        # 4. 简化输出要求，聚焦核心输出
+        output_requirements = f"""
+请基于币安四大关键考量因素，对{f"{platform}平台上的" if platform else ""}币安Alpha项目进行分析。
+
+推荐3个最符合现货上币要求的代币，包括：
+   - 基本信息：名称、代码和上币概率评分(1-10分)， 补充MC/FDV/Rank形成一个表格
+   - 四大因素分析：交易量、价格稳定性、合规性和代币分配各方面表现
+   - 总体评估：项目优势、风险点和改进建议
+   - 四大因素符合度评分(1-10分)
+请使用markdown格式输出，分析必须基于币安公告的四大关键因素，数据驱动且重点突出。
+"""
+
+        # 5. 数据部分
+        data_section = f"以下是当前{f"{platform}平台上的" if platform else ""}币安Alpha已流通项目数据（{date}，按市值排序）：\n"
+        
+        # 格式化项目数据 -- 只取前20个
+        for i, crypto in enumerate(crypto_list[:20], 1):
+            project_text = self._format_project_data(crypto)
+            data_section += f"{i}. {project_text}\n"
+        
+        # 合并所有部分为完整提示词
+        complete_prompt = task_intro + background + evaluation_criteria + output_requirements + data_section
+        
+        return complete_prompt
     
     def get_investment_advice(self, alpha_data: Dict[str, Any], max_retries=3, retry_delay=2.0, debug=True, dry_run=False) -> Optional[str]:
         """获取投资建议
