@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional, Tuple
 import requests
 from datetime import datetime
 
-from config import DEEPSEEK_AI, DATA_DIRS, BLOCKCHAIN_PLATFORMS
+from config import DEEPSEEK_AI, DATA_DIRS, BLOCKCHAIN_PLATFORMS, BLOCK_TOKEN_LIST
 from src.utils.crypto_formatter import format_project_detailed, extract_basic_info, save_crypto_data
 
 # 设置日志
@@ -36,9 +36,42 @@ class AlphaAdvisor:
             str: 格式化后的项目数据文本
         """
         # 使用新的crypto_formatter模块
-        project_text = format_project_detailed(crypto, platform_name=False)
+        project_text = format_project_detailed(crypto)
             
         return project_text
+
+    def _filter_blocked_tokens(self, crypto_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """过滤掉被屏蔽的代币
+        
+        Args:
+            crypto_list: 加密货币数据列表
+            
+        Returns:
+            List[Dict[str, Any]]: 过滤后的加密货币数据列表
+        """
+        if not BLOCK_TOKEN_LIST or len(BLOCK_TOKEN_LIST) == 0:
+            return crypto_list
+        
+        filtered_list = []
+        blocked_count = 0
+        
+        for crypto in crypto_list:
+            # 获取代币的标识信息
+            symbol = crypto.get("symbol", "").upper()
+            name = crypto.get("name", "").upper()
+            id_str = str(crypto.get("id", "")).upper()
+            
+            # 检查是否在屏蔽列表中
+            if any(block_item.upper() in [symbol, name, id_str] for block_item in BLOCK_TOKEN_LIST):
+                blocked_count += 1
+                continue
+            
+            filtered_list.append(crypto)
+        
+        if blocked_count > 0:
+            logger.info(f"已过滤 {blocked_count} 个屏蔽代币")
+        
+        return filtered_list
 
     def _prepare_prompt(self, alpha_data: Dict[str, Any]) -> Tuple[str, str]:
         """准备提示词
@@ -53,6 +86,10 @@ class AlphaAdvisor:
         date = alpha_data.get("date", "")
         platform = alpha_data.get("platform", "") # 从传入的数据中获取平台信息
         prefix = f"alpha_crypto_list_{platform}"
+        
+        # 过滤屏蔽代币
+        crypto_list = self._filter_blocked_tokens(crypto_list)
+        
         # 保存币安Alpha项目列表数据到本地文件以便调试
         self.save_list_data_for_debug(crypto_list, prefix)
         
@@ -142,7 +179,7 @@ class AlphaAdvisor:
         output_requirements = f"""
 请基于币安四大关键考量因素，对{f"{platform}平台上的" if platform else ""}币安Alpha项目进行分析。
 
-推荐3个最符合现货上币要求的代币，包括：
+推荐3-5个最符合现货上币要求的代币，包括：
    - 基本信息：名称、代码和上币概率评分(1-10分)， 补充MC/FDV/Rank形成一个表格
    - 四大因素分析：交易量、价格稳定性、合规性和代币分配各方面表现
    - 总体评估：项目优势、风险点和改进建议
@@ -153,8 +190,8 @@ class AlphaAdvisor:
         # 5. 数据部分
         data_section = f"以下是当前{f"{platform}平台上的" if platform else ""}币安Alpha已流通项目数据（{date}，按市值排序）：\n"
         
-        # 格式化项目数据 -- 只取前20个
-        for i, crypto in enumerate(crypto_list[:20], 1):
+        # 格式化项目数据 -- 只取前30个
+        for i, crypto in enumerate(crypto_list[:30], 1):
             # 使用新的crypto_formatter模块
             project_text = self._format_project_data(crypto)
             data_section += f"{i}. {project_text}\n"
@@ -293,4 +330,4 @@ class AlphaAdvisor:
             
         except Exception as e:
             logger.error(f"保存币安Alpha项目列表数据时出错: {str(e)}")
-            return None 
+            return None
