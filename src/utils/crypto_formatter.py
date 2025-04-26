@@ -36,11 +36,21 @@ def extract_basic_info(crypto: Dict[str, Any]) -> Dict[str, Any]:
     percent_change_7d = usd_quote.get("percentChange7d", 0)
     percent_change_30d = usd_quote.get("percentChange30d", 0)
     volume_24h = usd_quote.get("volume24h", 0)
+    volume_7d = usd_quote.get("volume7d", 0)
+    volume_30d = usd_quote.get("volume30d", 0)
+    percentChange24h = usd_quote.get("percentChange24h", 0)
+    percentChange7d = usd_quote.get("percentChange7d", 0)
+    percentChange30d = usd_quote.get("percentChange30d", 0)
     # 计算市值
-    market_cap = usd_quote.get("marketCap", usd_quote.get("selfReportedMarketCap", 0))
+    market_cap = usd_quote.get("marketCap", 0)
+    if market_cap == 0:
+        market_cap = usd_quote.get("selfReportedMarketCap", 0)
     # 计算完全稀释估值(FDV)
     fdv = usd_quote.get("fullyDilluttedMarketCap", 0)
-    mc_fdv_ratio = market_cap / fdv if fdv > 0 else 0
+    # 添加除零检查
+    mc_fdv_ratio = 0
+    if fdv > 0:
+        mc_fdv_ratio = market_cap / fdv
     
     # 获取项目平台信息
     platform_info = crypto.get("platform", {})
@@ -63,12 +73,17 @@ def extract_basic_info(crypto: Dict[str, Any]) -> Dict[str, Any]:
         "fdv": fdv,
         "mc_fdv_ratio": mc_fdv_ratio,
         "volume_24h": volume_24h,
+        "volume_7d": volume_7d,
+        "volume_30d": volume_30d,
+        "percentChange24h": percentChange24h,
+        "percentChange7d": percentChange7d,
+        "percentChange30d": percentChange30d,
         "platform_name": platform_name,
         "tags": tags
     }
 
 
-def format_project_detailed(crypto: Dict[str, Any], platform_name: bool = True) -> str:
+def format_project_detailed(crypto: Dict[str, Any]) -> str:
     """
     格式化项目信息为详细文本格式（适用于alpha_advisor.py）
     
@@ -82,15 +97,17 @@ def format_project_detailed(crypto: Dict[str, Any], platform_name: bool = True) 
     
     project_text = f"{info['name']} ({info['symbol']}):\n"
     project_text += f"   - 排名: {info['rank']}\n"
-    if platform_name and info['platform_name']:
-        project_text += f"   - 平台: {info['platform_name']}\n"
     project_text += f"   - 价格: ${info['price']:.6f}\n"
     project_text += f"   - 价格变化: 24h {info['percent_change_24h']:.2f}% | 7d {info['percent_change_7d']:.2f}% | 30d {info['percent_change_30d']:.2f}%\n"
+    project_text += f"   - Vol: 24h ${info['volume_24h']:.2f} | 7d ${info['volume_7d']:.2f} | 30d ${info['volume_30d']:.2f}\n"
     project_text += f"   - MC: ${info['market_cap']:.2f}\n"
+    # 添加除零检查
+    vol_mc_ratio = 0.0
+    if info['market_cap'] > 0:
+        vol_mc_ratio = info['volume_24h'] / info['market_cap']
+    project_text += f"   - VOL/MC(24h): {vol_mc_ratio:.2f}\n"
     project_text += f"   - FDV: ${info['fdv']:.2f}\n"
     project_text += f"   - MC/FDV: {info['mc_fdv_ratio']:.2f}\n"
-    project_text += f"   - 24h Vol: ${info['volume_24h']:.2f}\n"
-    
     # 添加项目标签信息
     if info['tags']:
         project_text += f"   - 标签: {', '.join(info['tags'][:5])}{' ...' if len(info['tags']) > 5 else ''}\n"
@@ -123,7 +140,17 @@ def format_project_summary(crypto: Dict[str, Any], index: int, listing_status: O
         message += f"   🔔 已上线币安\n"
     
     message += f"   💰 价格: ${info['price']:.2f}, 24h变化: {change_emoji} {info['percent_change_24h']:.2f}%\n"
-    message += f"   💎 MC: ${info['market_cap']/1000000:.2f}M, FDV: ${info['fdv']/1000000:.2f}M, MC/FDV: {info['mc_fdv_ratio']:.2f}\n"
+    
+    # 安全计算市值和FDV（百万美元）
+    market_cap_m = 0
+    if info['market_cap'] > 0:
+        market_cap_m = info['market_cap'] / 1000000
+    
+    fdv_m = 0
+    if info['fdv'] > 0:
+        fdv_m = info['fdv'] / 1000000
+    
+    message += f"   💎 MC: ${market_cap_m:.2f}M, FDV: ${fdv_m:.2f}M, MC/FDV: {info['mc_fdv_ratio']:.2f}\n"
     
     return message
 
