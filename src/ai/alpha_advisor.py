@@ -271,7 +271,7 @@ Binance Alpha是币安钱包中的一个新平台，专注于具有Web3生态系
         for attempt in range(max_retries):
             try:
                 logger.info(f"正在请求AI建议，尝试 {attempt + 1}/{max_retries}")
-                response = requests.post(self.api_url, headers=headers, json=payload, timeout=60)
+                response = requests.post(self.api_url, headers=headers, json=payload, timeout=DEEPSEEK_AI.get('timeout', 180))
                 
                 if response.status_code == 200:
                     result = response.json()
@@ -294,6 +294,10 @@ Binance Alpha是币安钱包中的一个新平台，专注于具有Web3生态系
                 else:
                     logger.error(f"API请求失败，状态码: {response.status_code}, 响应: {response.text}")
                     
+            except requests.exceptions.Timeout as e:
+                logger.error(f"API请求超时: {str(e)}")
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"API连接错误: {str(e)}")
             except Exception as e:
                 logger.error(f"API请求过程中出错: {str(e)}")
             

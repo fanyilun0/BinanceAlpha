@@ -52,5 +52,6 @@ DEEPSEEK_AI = {
     'temperature': 0,
     'max_tokens': 4096,
     'top_p': 1.0,
-    'stream': False
+    'stream': False,
+    'timeout': int(os.getenv('DEEPSEEK_API_TIMEOUT', '180'))  # API请求超时时间(秒)
 }

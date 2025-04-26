@@ -511,7 +511,12 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         
         # 按平台获取投资建议
         results = {}
+        failed_platforms = []
         all_advice = f"# 币安Alpha项目投资建议 (按区块链平台分类，{date})\n\n"
+        
+        # 添加断路器计数
+        consecutive_failures = 0
+        max_consecutive_failures = 3
         
         for platform in platforms_to_process:
             projects = platform_projects.get(platform, [])
@@ -522,6 +527,14 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
                 logger.info(message)
                 print(message)
                 continue
+                
+            # 如果连续失败次数过多，激活断路器，跳过后续平台
+            if consecutive_failures >= max_consecutive_failures:
+                message = f"⚠️ 连续 {consecutive_failures} 次请求失败，跳过后续平台处理"
+                logger.warning(message)
+                print(message)
+                failed_platforms.extend([p for p in platforms_to_process if p not in [platform for platform in results.keys()] + [platform for platform in failed_platforms]])
+                break
             
             print(f"\n处理 {platform} 平台的 {len(projects)} 个项目...")
             
@@ -535,36 +548,47 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             
             # 获取该平台的投资建议
             if os.getenv('DEEPSEEK_API_KEY') or debug_only:
-                platform_advice = advisor.get_investment_advice(
-                    alpha_data=platform_alpha_data,
-                    max_retries=max_retries,
-                    retry_delay=retry_delay,
-                    debug=True,
-                    dry_run=debug_only
-                )
-                
-                if platform_advice:
-                    results[platform] = platform_advice
+                try:
+                    platform_advice = advisor.get_investment_advice(
+                        alpha_data=platform_alpha_data,
+                        max_retries=max_retries,
+                        retry_delay=retry_delay,
+                        debug=True,
+                        dry_run=debug_only
+                    )
                     
-                    # 添加到全部建议中
-                    all_advice += f"## {platform} 平台\n\n{platform_advice}\n\n"
-                    
-                    # 如果是调试模式，不发送消息到webhook
-                    if not debug_only:
-                        # 构建并推送该平台的消息
-                        platform_message = f"🤖 币安Alpha {platform}平台项目AI投资建议\n\n"
-                        platform_message += f"{platform_advice}"
+                    if platform_advice:
+                        results[platform] = platform_advice
+                        consecutive_failures = 0  # 重置连续失败计数
                         
-                        # 推送消息
-                        await send_message_async(platform_message, msg_type="text")
-                        logger.info(f"{platform} 平台投资建议已推送")
+                        # 添加到全部建议中
+                        all_advice += f"## {platform} 平台\n\n{platform_advice}\n\n"
+                        
+                        # 如果是调试模式，不发送消息到webhook
+                        if not debug_only:
+                            # 构建并推送该平台的消息
+                            platform_message = f"🤖 币安Alpha {platform}平台项目AI投资建议\n\n"
+                            platform_message += f"{platform_advice}"
+                            
+                            # 推送消息
+                            await send_message_async(platform_message, msg_type="text")
+                            logger.info(f"{platform} 平台投资建议已推送")
+                        else:
+                            print(f"{platform} 平台提示词已生成")
+                        
+                        # 文件保存已在advisor.get_investment_advice中处理
                     else:
-                        print(f"{platform} 平台提示词已生成")
-                    
-                    # 文件保存已在advisor.get_investment_advice中处理
-                else:
-                    logger.error(f"{platform} 平台生成投资建议失败")
-                    
+                        logger.error(f"{platform} 平台生成投资建议失败")
+                        failed_platforms.append(platform)
+                        consecutive_failures += 1  # 增加连续失败计数
+                except Exception as e:
+                    logger.error(f"{platform} 平台生成投资建议过程中出错: {str(e)}")
+                    failed_platforms.append(platform)
+                    consecutive_failures += 1  # 增加连续失败计数
+                    import traceback
+                    error_details = traceback.format_exc()
+                    logger.debug(error_details)
+                
                 # 添加延迟，避免API调用过于频繁（在非调试模式下）
                 if not debug_only:
                     await asyncio.sleep(2)
@@ -583,12 +607,22 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             if not debug_only:
                 summary_message = "📊 币安Alpha项目投资建议 (按区块链平台分类)\n\n"
                 summary_message += f"分析时间: {date}\n"
-                summary_message += f"已分析平台: {', '.join(results.keys())}\n\n"
-                summary_message += "各平台详细建议已单独发送，请查看。"
+                summary_message += f"已分析平台: {', '.join(results.keys())}\n"
+                
+                if failed_platforms:
+                    summary_message += f"\n处理失败平台: {', '.join(failed_platforms)}\n"
+                
+                summary_message += "\n各平台详细建议已单独发送，请查看。"
                 
                 await send_message_async(summary_message)
             
-            return True
+            # 打印成功/失败统计
+            print(f"\n处理完成：")
+            print(f"成功处理平台: {len(results)}个 - {', '.join(results.keys())}")
+            if failed_platforms:
+                print(f"处理失败平台: {len(failed_platforms)}个 - {', '.join(failed_platforms)}")
+            
+            return True if not failed_platforms else "partial_success"
         else:
             logger.error("没有生成任何平台的投资建议")
             return False
@@ -678,13 +712,15 @@ async def main():
                 listed_tokens=listed_tokens
             )
             
-            if success:
+            if success == True:
                 if args.debug_only:
                     print("\n成功：提示词生成完成")
                 else:
                     print("\n成功：所有平台投资建议处理完成")
+            elif success == "partial_success":
+                print("\n部分成功：某些平台处理成功，某些平台处理失败")
             else:
-                print("\n警告：部分平台处理过程中出现错误")
+                print("\n警告：所有平台处理过程中出现错误")
         except Exception as e:
             logger.error(f"生成投资建议过程中出错: {str(e)}")
             print(f"\n错误: 生成投资建议过程中出错: {str(e)}")
