@@ -8,8 +8,6 @@ import requests
 from datetime import datetime
 
 from config import DEEPSEEK_AI, DATA_DIRS, BLOCKCHAIN_PLATFORMS
-# 导入调试保存功能
-from ai.prompt import save_list_data_for_debug
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -175,7 +173,7 @@ Binance Alpha是币安钱包中的一个新平台，专注于具有Web3生态系
         platform = alpha_data.get("platform", "") # 从传入的数据中获取平台信息
         prefix = f"alpha_crypto_list_{platform}"
         # 保存币安Alpha项目列表数据到本地文件以便调试
-        save_list_data_for_debug(crypto_list, prefix)
+        self.save_list_data_for_debug(crypto_list, prefix)
         
         # 如果未直接指定平台，尝试识别平台
         if not platform and crypto_list and len(crypto_list) > 0:
@@ -309,3 +307,34 @@ Binance Alpha是币安钱包中的一个新平台，专注于具有Web3生态系
         
         logger.error(f"在 {max_retries} 次尝试后放弃获取AI建议")
         return None 
+        
+
+    def save_list_data_for_debug(self, data_list: List[Dict], filename_prefix: str = "list_data") -> str:
+        """保存列表数据到文件用于调试
+        
+        Args:
+            data_list: 要保存的数据列表
+            filename_prefix: 文件名前缀
+            
+        Returns:
+            保存的文件路径
+        """
+        try:
+            # 确保调试目录存在
+            data_dir = DATA_DIRS.get('data', 'data')
+            os.makedirs(data_dir, exist_ok=True)
+            
+            # 创建文件名
+            timestamp = datetime.now().strftime('%Y%m%d')
+            filename = f"{filename_prefix}_{timestamp}.json"
+            file_path = os.path.join(data_dir, filename)
+            
+            # 保存到文件
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data_list, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"已保存列表数据到: {file_path}")
+            return file_path
+        except Exception as e:
+            logger.error(f"保存列表数据时出错: {str(e)}")
+            return "" 

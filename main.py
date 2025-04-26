@@ -18,9 +18,6 @@ from src.utils.historical_data import BinanceAlphaDataCollector
 from src.utils.binance_symbols import update_tokens, check_token_listing_status, prepare_token_listing_data
 from src.ai import AlphaAdvisor
 
-# 从新的AI模块导入DeepseekAdvisor
-from src.ai.advisor import DeepseekAdvisor
-
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
@@ -31,85 +28,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-async def get_ai_investment_advice():
-    """获取AI投资建议（使用DeepSeek R1模型）"""
-    print("=== AI投资顾问 (DeepSeek R1) ===\n")
-    
-    # 检查是否存在整合后的数据
-    data_file = "data/daily_data.json"
-    if not os.path.exists(data_file):
-        print("错误: 未找到整合后的数据文件，请先运行数据重组工具")
-        return
-    
-    # 初始化AI顾问
-    advisor = DeepseekAdvisor()
-    
-    # 设置分析月数和重试参数
-    months = 6
-    max_retries = 3
-    retry_delay = 2.0
-    
-    print(f"将分析最近{months}个月的数据")
-    print(f"已配置最大重试次数: {max_retries}，重试间隔: {retry_delay}秒")
-    
-    try:
-        # 处理数据格式
-        try:
-            with open(data_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-            # 如果数据是直接的列表(不是包含responses的字典)，包装成期望的格式
-            if isinstance(data, list):
-                print("注意: 正在准备数据格式以供AI处理...")
-                wrapped_data = {"responses": data}
-                
-                # 创建临时文件
-                temp_file = data_file + ".temp"
-                with open(temp_file, 'w', encoding='utf-8') as f:
-                    json.dump(wrapped_data, f, ensure_ascii=False, indent=2)
-                
-                # 使用临时文件代替原始文件
-                data_file = temp_file
-                print("数据格式已调整")
-        except Exception as e:
-            logger.warning(f"读取数据文件时出错: {str(e)}")
-            print(f"警告: 读取数据文件时出错: {str(e)}，将继续尝试处理")
-        
-        # 获取投资建议
-        print("\n正在获取AI投资建议，请稍候...\n")
-        
-        # 调用AI获取建议
-        advice = advisor.get_investment_advice(
-            data_file=data_file, 
-            months=months, 
-            max_retries=max_retries, 
-            retry_delay=retry_delay,
-            debug=True
-        )
-        
-        if advice:
-            print("\n成功获取AI投资建议:")
-            print(advice)
-            
-            # 构建推送消息
-            push_message = "🤖 AI投资顾问建议\n\n"
-            push_message += f"{advice}"
-            
-            # 推送消息
-            await send_message_async(push_message)
-            return advice
-        else:
-            print("错误: 获取AI投资建议失败")
-            print("可能原因: API服务器连接问题、API密钥无效或请求超时")
-    
-    except Exception as e:
-        logger.error(f"AI投资建议处理过程中出错: {str(e)}")
-        print(f"错误: {str(e)}")
-        import traceback
-        error_details = traceback.format_exc()
-        logger.debug(error_details)
-        print(f"错误详情已记录到日志文件")
 
 async def get_binance_tokens():
     """获取Binance交易对列表并更新"""
