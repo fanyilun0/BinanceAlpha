@@ -102,10 +102,10 @@ def format_project_detailed(crypto: Dict[str, Any]) -> str:
     project_text += f"   - 交易量[权重45%]: 24h ${info['volume_24h']:.2f} | 7d ${info['volume_7d']:.2f} | 30d ${info['volume_30d']:.2f}\n"
     project_text += f"   - MC: ${info['market_cap']:.2f}\n"
     # 添加除零检查
-    # vol_mc_ratio = 0.0
-    # if info['market_cap'] > 0:
-    #     vol_mc_ratio = info['volume_24h'] / info['market_cap']
-    # project_text += f"   - VOL/MC(24h): {vol_mc_ratio:.4f}\n"
+    vol_mc_ratio = 0.0
+    if info['market_cap'] > 0:
+        vol_mc_ratio = info['volume_24h'] / info['market_cap']
+    project_text += f"   - VOL/MC(24h): {vol_mc_ratio:.4f}\n"
     project_text += f"   - FDV: ${info['fdv']:.2f}\n"
     project_text += f"   - MC/FDV[权重10%]: {info['mc_fdv_ratio']:.2f}\n"
     # 添加项目标签信息（可能与监管合规性相关）
