@@ -25,7 +25,7 @@ class BinanceAlphaDataCollector:
         os.makedirs(data_dir, exist_ok=True)
         
         # 初始化币安Alpha项目收集器
-        self.binance_alpha_collector = BinanceAlphaCollector(data_dir)
+        self.binance_alpha_collector = BinanceAlphaCollector(data_dir, proxy_url=PROXY_URL, use_proxy=USE_PROXY)
     
     async def collect_current_data(self) -> Dict[str, Any]:
         """收集当前币安Alpha数据"""
