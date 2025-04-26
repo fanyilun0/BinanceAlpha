@@ -35,7 +35,7 @@ def save_list_data_for_debug(data_list: List[Dict], filename_prefix: str = "list
         os.makedirs(data_dir, exist_ok=True)
         
         # 创建文件名
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d')
         filename = f"{filename_prefix}_{timestamp}.json"
         file_path = os.path.join(data_dir, filename)
         

@@ -173,9 +173,9 @@ Binance Alpha是币安钱包中的一个新平台，专注于具有Web3生态系
         crypto_list = alpha_data.get("data", {}).get("cryptoCurrencyList", [])
         date = alpha_data.get("date", "")
         platform = alpha_data.get("platform", "") # 从传入的数据中获取平台信息
-        
+        prefix = f"alpha_crypto_list_{platform}"
         # 保存币安Alpha项目列表数据到本地文件以便调试
-        save_list_data_for_debug(crypto_list, "alpha_crypto_list")
+        save_list_data_for_debug(crypto_list, prefix)
         
         # 如果未直接指定平台，尝试识别平台
         if not platform and crypto_list and len(crypto_list) > 0:
