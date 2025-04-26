@@ -96,21 +96,21 @@ def format_project_detailed(crypto: Dict[str, Any]) -> str:
     info = extract_basic_info(crypto)
     
     project_text = f"{info['name']} ({info['symbol']}):\n"
-    project_text += f"   - 排名: {info['rank']}\n"
-    project_text += f"   - 价格: ${info['price']:.6f}\n"
-    project_text += f"   - 价格变化: 24h {info['percent_change_24h']:.2f}% | 7d {info['percent_change_7d']:.2f}% | 30d {info['percent_change_30d']:.2f}%\n"
-    project_text += f"   - Vol: 24h ${info['volume_24h']:.2f} | 7d ${info['volume_7d']:.2f} | 30d ${info['volume_30d']:.2f}\n"
+    #project_text += f"   - 排名: {info['rank']}\n"
+    #project_text += f"   - 价格: ${info['price']:.6f}\n"
+    project_text += f"   - 价格变化[权重35%]: 24h {info['percent_change_24h']:.2f}% | 7d {info['percent_change_7d']:.2f}% | 30d {info['percent_change_30d']:.2f}%\n"
+    project_text += f"   - 交易量[权重45%]: 24h ${info['volume_24h']:.2f} | 7d ${info['volume_7d']:.2f} | 30d ${info['volume_30d']:.2f}\n"
     project_text += f"   - MC: ${info['market_cap']:.2f}\n"
     # 添加除零检查
-    vol_mc_ratio = 0.0
-    if info['market_cap'] > 0:
-        vol_mc_ratio = info['volume_24h'] / info['market_cap']
-    project_text += f"   - VOL/MC(24h): {vol_mc_ratio:.2f}\n"
+    # vol_mc_ratio = 0.0
+    # if info['market_cap'] > 0:
+    #     vol_mc_ratio = info['volume_24h'] / info['market_cap']
+    # project_text += f"   - VOL/MC(24h): {vol_mc_ratio:.4f}\n"
     project_text += f"   - FDV: ${info['fdv']:.2f}\n"
-    project_text += f"   - MC/FDV: {info['mc_fdv_ratio']:.2f}\n"
-    # 添加项目标签信息
+    project_text += f"   - MC/FDV[权重10%]: {info['mc_fdv_ratio']:.2f}\n"
+    # 添加项目标签信息（可能与监管合规性相关）
     if info['tags']:
-        project_text += f"   - 标签: {', '.join(info['tags'][:5])}{' ...' if len(info['tags']) > 5 else ''}\n"
+        project_text += f"   - 标签[权重10%]: {', '.join(info['tags'][:5])}{' ...' if len(info['tags']) > 5 else ''}\n"
     
     return project_text
 
