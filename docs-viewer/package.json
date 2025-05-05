@@ -8,7 +8,6 @@
     "build": "node scripts/generate-list.js && vite build",
     "preview": "vite preview",
     "start": "node server.js",
-    "vercel-build": "npm run build",
     "copy-files": "mkdir -p dist/advices && cp -r ../advices/all-platforms/*.md dist/advices && ls -la dist/advices",
     "clean": "rm -rf dist",
     "generate-list": "node scripts/generate-list.js"
