@@ -199,10 +199,12 @@ body {
   text-align: left;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
+  position: relative;
 }
 
 .file-list li:hover {
@@ -211,7 +213,16 @@ body {
 
 .file-list li.active {
   background-color: var(--active-color);
-  font-weight: 500;
+  color: #1976d2;
+}
+
+.file-list li.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: #1976d2;
+  border-radius: 0 2px 2px 0;
 }
 
 .content {
@@ -220,7 +231,10 @@ body {
   padding: 0;
   position: relative;
   background-color: var(--bg-color);
-  min-width: 0;
+  width: 1200px;
+  min-width: 1200px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .loading {
