@@ -501,8 +501,8 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
     
     # 保存所有平台的建议到一个文件
     if results:
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        all_advice_file = os.path.join(config.DATA_DIRS['all-platforms'], f"advice_{timestamp}_all_platforms.md")
+        timestamp = datetime.now().strftime('%Y%m%d')
+        all_advice_file = os.path.join(config.DATA_DIRS['all-platforms'], f"advice_{timestamp}.md")
         
         with open(all_advice_file, 'w', encoding='utf-8') as f:
             f.write(all_advice)
