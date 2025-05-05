@@ -43,6 +43,10 @@ onMounted(async () => {
     const response = await fetch('/api/files')
     const data = await response.json()
     files.value = data.sort((a, b) => b.name.localeCompare(a.name))
+    // 默认选中第一个文件（最新的）
+    if (files.value.length > 0) {
+      selectFile(files.value[0])
+    }
   } catch (error) {
     console.error('Error fetching files:', error)
   }
@@ -192,6 +196,7 @@ body {
 
 .file-list li {
   padding: 12px 20px;
+  text-align: left;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
   transition: background-color 0.2s;
