@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "concurrently \"npm run dev\" \"node server.js\""
+    "start": "concurrently \"npm run dev\" \"node server.js\"",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@vueuse/core": "^10.7.0",
