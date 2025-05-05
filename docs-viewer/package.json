@@ -4,11 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/generate-list.js && vite",
+    "build": "node scripts/generate-list.js && vite build",
     "preview": "vite preview",
-    "start": "concurrently \"npm run dev\" \"node server.js\"",
-    "vercel-build": "npm run build"
+    "start": "node server.js",
+    "vercel-build": "npm run build",
+    "copy-files": "mkdir -p dist/advices && cp -r ../advices/all-platforms/*.md dist/advices && ls -la dist/advices",
+    "clean": "rm -rf dist",
+    "generate-list": "node scripts/generate-list.js"
   },
   "dependencies": {
     "@vueuse/core": "^10.7.0",
@@ -16,12 +19,13 @@
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "highlight.js": "^11.9.0",
-    "marked": "^11.1.1",
-    "vue": "^3.3.4"
+    "marked": "^12.0.0",
+    "react-markdown": "^10.1.0",
+    "vue": "^3.4.15"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.2.3",
+    "@vitejs/plugin-vue": "^5.0.3",
     "concurrently": "^8.2.2",
-    "vite": "^4.4.5"
+    "vite": "^5.0.12"
   }
 }

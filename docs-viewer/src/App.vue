@@ -14,7 +14,7 @@ const filteredFiles = computed(() => {
   if (!searchQuery.value) return files.value
   const query = searchQuery.value.toLowerCase()
   return files.value.filter(file => 
-    file.name.toLowerCase().includes(query)
+    file.title.toLowerCase().includes(query)
   )
 })
 
@@ -23,7 +23,7 @@ const selectFile = async (file) => {
   currentFile.value = file.name
   isLoading.value = true
   try {
-    const response = await fetch(file.path)
+    const response = await fetch(`/advices/${file.name}`)
     currentContent.value = await response.text()
   } catch (error) {
     console.error('Error loading file:', error)
@@ -40,9 +40,9 @@ const toggleDarkMode = () => {
 
 onMounted(async () => {
   try {
-    const response = await fetch('/api/files')
+    const response = await fetch('/advices/list.json')
     const data = await response.json()
-    files.value = data.sort((a, b) => b.name.localeCompare(a.name))
+    files.value = data.files.sort((a, b) => b.name.localeCompare(a.name))
     // 默认选中第一个文件（最新的）
     if (files.value.length > 0) {
       selectFile(files.value[0])
