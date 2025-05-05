@@ -20,6 +20,7 @@ DATA_DIRS = {
     'prompts': 'prompts',           # 提示词保存目录
     'responses': 'responses',       # AI响应内容保存目录
     'advices': 'advices',           # AI建议保存目录
+    'all-platforms': 'advices/all-platforms', # 所有平台建议保存目录
     'records': 'investment_records', # 投资建议记录保存目录
     'debug': 'debug_logs',          # 调试日志保存目录
     'data': 'data',                 # 市场数据保存目录
