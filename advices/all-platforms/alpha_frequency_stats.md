@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (BinanceAlpha)
+# Alpha项目频率统计 (2025-05-07)
 
 | 项目名称 | 出现次数 |
 | --- | --- |
@@ -9,20 +9,19 @@
 | SPX6900 (SPX) | 13 |
 | Grass (GRASS) | 12 |
 | Popcat (POPCAT) | 11 |
+| SIREN (SIREN) | 10 |
 | Drift (DRIFT) | 7 |
 | Mog Coin (MOG) | 6 |
 | Fartcoin (FARTCOIN) | 6 |
 | Particle Network (PARTI) | 5 |
 | Morpho (MORPHO) | 5 |
-| Siren (SIREN) | 5 |
 | CreatorBid (BID) | 5 |
 | Vita Inu (VINU) | 5 |
 | Alchemist AI (ALCH) | 4 |
 | Haedal Protocol (HAEDAL) | 4 |
-| siren (SIREN) | 4 |
+| AI16Z (AI16Z) | 4 |
 | ZetaChain (ZETA) | 3 |
 | PumpBTC (PUMP) | 3 |
-| ai16z (AI16Z) | 3 |
 | KiloEx (KILO) | 3 |
 | Koma Inu (KOMA) | 3 |
 | Maple Finance (SYRUP) | 2 |
@@ -35,7 +34,5 @@
 | Bedrock (BR) | 2 |
 | Broccoli (BROCCOLI) | 1 |
 | SKYAI (SKYAI) | 1 |
-| SIREN (SIREN) | 1 |
-| AI16Z (AI16Z) | 1 |
 | Swarms (SWARMS) | 1 |
 | Fartcoin (FART) | 1 |
