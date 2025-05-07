@@ -13,7 +13,6 @@
 | Drift (DRIFT) | 7 |
 | Mog Coin (MOG) | 6 |
 | Fartcoin (FARTCOIN) | 6 |
-| Particle Network (PARTI) | 5 |
 | Morpho (MORPHO) | 5 |
 | CreatorBid (BID) | 5 |
 | Vita Inu (VINU) | 5 |
@@ -24,13 +23,11 @@
 | PumpBTC (PUMP) | 3 |
 | KiloEx (KILO) | 3 |
 | Koma Inu (KOMA) | 3 |
-| Maple Finance (SYRUP) | 2 |
 | Solidus Ai Tech (AITECH) | 2 |
 | Vine Coin (VINE) | 2 |
 | AGON Agent (AGON) | 2 |
 | Mind Network (FHE) | 2 |
 | cat in a dogs world (MEW) | 2 |
-| Popcat (SOL) | 2 |
 | Bedrock (BR) | 2 |
 | Broccoli (BROCCOLI) | 1 |
 | SKYAI (SKYAI) | 1 |

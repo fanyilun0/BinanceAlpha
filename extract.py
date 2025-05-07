@@ -1,10 +1,15 @@
 import re
 import os
+import json
 
-spots = [
-    'ONDO',
-    'KMNO'
-]
+# 从symbol.json文件读取需要过滤的symbol列表
+try:
+    with open('symbols/symbol.json', 'r', encoding='utf-8') as f:
+        spots = json.load(f)
+    print(f"已加载 {len(spots)} 个需要过滤的symbol")
+except Exception as e:
+    print(f"加载symbol.json失败: {e}，将使用默认空列表")
+    spots = []
 
 folder = 'advices/all-platforms'
 # 匹配带序号和不带序号的格式
