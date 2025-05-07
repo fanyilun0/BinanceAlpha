@@ -11,6 +11,8 @@ folder = 'advices/all-platforms'
 pattern = re.compile(r'(?:\d+\.\s+)?\*\*([^\*]+?)\s*\(([A-Z0-9\-]+)\)\*\*')
 
 result = {}
+symbol_map = {}  # 用于记录符号到标准化名称的映射
+
 for filename in os.listdir(folder):
     if filename.endswith('.md'):
         with open(os.path.join(folder, filename), 'r', encoding='utf-8') as f:
@@ -21,14 +23,21 @@ for filename in os.listdir(folder):
                 name = name.strip()
                 # 移除名称开头可能存在的序号格式 (如 "1. ", "2. " 等)
                 name = re.sub(r'^\d+\.\s+', '', name)
-                symbol = symbol.strip()
+                symbol = symbol.strip().upper()  # 将符号转为大写以避免大小写问题
                 
                 # 如果symbol在spots列表中，则跳过
-                if symbol in spots:
+                if symbol.upper() in [s.upper() for s in spots]:
                     continue
                 
+                # 如果这个符号已经出现过，使用第一次遇到的项目名称作为标准名称
+                if symbol in symbol_map:
+                    standardized_name = symbol_map[symbol]
+                else:
+                    standardized_name = name
+                    symbol_map[symbol] = name
+                
                 # 创建统一格式的键
-                key = f"{name} ({symbol})"
+                key = f"{standardized_name} ({symbol})"
                 result[key] = result.get(key, 0) + 1
 
 # 按出现次数降序排列
@@ -39,7 +48,8 @@ for k, v in sorted_results:
     print(f"{k}: {v} 次")
 
 # 生成Markdown格式的内容
-current_date = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+import datetime
+current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 md_content = f"# Alpha项目频率统计 ({current_date})\n\n"
 md_content += "| 项目名称 | 出现次数 |\n"
 md_content += "| --- | --- |\n"
