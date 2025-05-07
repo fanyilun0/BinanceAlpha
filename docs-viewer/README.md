@@ -99,7 +99,7 @@ docs-viewer/
 
 1. 文档位置：`advices/all-platforms/` 目录
 2. 文档格式：`.md` 文件
-3. 文档命名：建议使用 `advice_YYYYMMDD_all_platforms.md` 格式
+3. 文档命名：建议使用 `advice_YYYYMMDD.md` 格式
 4. 文档更新：添加新文档后，运行 `npm run generate-list` 更新列表
 
 ## 注意事项
