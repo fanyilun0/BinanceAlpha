@@ -55,6 +55,7 @@ MARKET_SENTIMENT = {
 DEEPSEEK_AI = {
     'api_url': os.getenv('DEEPSEEK_API_URL', 'https://api.deepseek.com/v1/chat/completions'),
     'model': os.getenv('DEEPSEEK_MODEL', 'deepseek-reasoner'),
+    'api_key': os.getenv('DEEPSEEK_API_KEY', ''),
     'temperature': 0,
     'max_tokens': 4096,
     'top_p': 1.0,

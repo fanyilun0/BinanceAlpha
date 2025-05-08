@@ -19,9 +19,10 @@ class AlphaAdvisor:
     
     def __init__(self):
         """初始化币安Alpha项目投资顾问"""
+        """初始化币安Alpha项目投资顾问"""
         self.api_url = DEEPSEEK_AI.get('api_url')
         self.model = DEEPSEEK_AI.get('model')
-        self.api_key = os.getenv('DEEPSEEK_API_KEY', '')
+        self.api_key = DEEPSEEK_AI.get('api_key')
         
         if not self.api_key:
             logger.warning("未设置DEEPSEEK_API_KEY环境变量")
