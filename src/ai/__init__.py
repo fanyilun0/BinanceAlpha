@@ -12,11 +12,9 @@ AI模块 - 提供基于大模型的分析和建议功能
 """
 
 # 导出主要类供外部使用
-from .deepseek import DeepseekAPI
 from .alpha_advisor import AlphaAdvisor
 
 # 定义包的公共接口
 __all__ = [
-    'DeepseekAPI',
     'AlphaAdvisor'
 ] 
