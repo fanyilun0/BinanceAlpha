@@ -354,6 +354,49 @@ def update_tokens():
             "symbols_changed": False
         }
 
+def is_token_listed(symbol: str, symbol_list_path: str = None) -> bool:
+    """
+    检查token是否已在币安上线，通过直接读取symbol.json文件
+    
+    Args:
+        symbol: 要检查的token符号
+        symbol_list_path: symbol.json文件路径，如果为None则使用默认路径
+        
+    Returns:
+        bool: 是否已上线
+    """
+    # 确保symbol是大写
+    symbol = symbol.upper() if symbol else ""
+    
+    if not symbol:
+        return False
+        
+    # 如果没有指定路径，使用默认路径
+    if not symbol_list_path:
+        # 获取项目根目录的symbols目录
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        symbol_list_path = os.path.join(root_dir, 'symbols', 'symbol.json')
+    
+    try:
+        # 读取symbol.json文件
+        with open(symbol_list_path, 'r') as f:
+            listed_tokens = json.load(f)
+            
+        # 检查标准形式token
+        if symbol in listed_tokens:
+            return True
+            
+        # 检查1000x形式token
+        for token in listed_tokens:
+            if token.startswith('1000') and token[4:] == symbol:
+                return True
+                
+        return False
+        
+    except Exception as e:
+        print(f"检查token上线状态时出错: {str(e)}")
+        return False
+
 if __name__ == "__main__":
     # 当作为独立脚本运行时执行的代码
     result = update_tokens()

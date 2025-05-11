@@ -13,19 +13,17 @@ import matplotlib
 matplotlib.use('Agg')  # 使用非交互式后端
 import pandas as pd
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 from config import DATA_DIRS
+from src.utils.binance_symbols import is_token_listed
 
 def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str, 
-                             title: str = "币安Alpha项目列表", 
-                             max_items: int = 100) -> Tuple[str, str]:
+                            max_items: int = 100) -> Tuple[str, str]:
     """
     将币安Alpha项目列表转换为表格图片
     
     Args:
         crypto_list: 加密货币项目列表
         date: 数据日期
-        title: 图片标题
         max_items: 最大项目数量
         
     Returns:
@@ -44,6 +42,9 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
         name = crypto.get("name", "未知")
         symbol = crypto.get("symbol", "未知")
         rank = crypto.get("cmcRank", "未知")
+        
+        # 使用简化的函数直接检查symbol是否上线
+        is_listed = is_token_listed(symbol)
         
         # 提取价格和价格变化数据（USD）
         quotes = crypto.get("quotes", [])
@@ -74,11 +75,12 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
             "排名": rank,
             "名称": name,
             "代码": symbol,
+            "是否上线": "是" if is_listed else "否",
             "价格($)": round(price, 4),
             "24h变化(%)": round(percent_change_24h, 2),
-            "交易量(百万$)": round(volume_24h / 1000000, 2),
-            "市值(百万$)": round(market_cap / 1000000, 2),
-            "FDV(百万$)": round(fdv / 1000000, 2),
+            "交易量(M$)": round(volume_24h / 1000000, 2),
+            "市值(M$)": round(market_cap / 1000000, 2),
+            "FDV(M$)": round(fdv / 1000000, 2),
             "MC/FDV": round(mc_fdv_ratio, 2)
         })
     
@@ -89,19 +91,20 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
     plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei']  # 设置中文字体
     plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
     
-    # 根据数据量调整图片尺寸
+    # 根据数据量和列数调整图片尺寸
     rows = min(len(data), max_items)
+    cols = len(df.columns)
+    # 增加宽度以适应更多列
+    fig_width = 18  # 调整宽度
     fig_height = 0.5 * rows + 3  # 基础高度加上每行高度
     
     # 创建图表
-    fig, ax = plt.subplots(figsize=(16, fig_height))
+    ax = plt.subplots(figsize=(fig_width, fig_height))
     
     # 隐藏轴
     ax.axis('tight')
     ax.axis('off')
     
-    # 设置标题
-    plt.suptitle(f"{title} (更新时间: {date})", fontsize=20, y=0.98)
     
     # 为变化列添加颜色映射
     cell_colors = []
@@ -116,22 +119,33 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
             row_colors[change_index] = '#d8f3dc'  # 浅绿色
         elif change_value < 0:
             row_colors[change_index] = '#ffccd5'  # 浅红色
+        
+        # 设置"是否上线"列的颜色
+        listing_index = df.columns.get_loc("是否上线")
+        is_listed_value = df.iloc[i, listing_index]
+        
+        if is_listed_value == "是":
+            row_colors[listing_index] = '#d8f3dc'  # 浅绿色
             
         cell_colors.append(row_colors)
     
-    # 创建表格
+    # 创建表格，调整列宽
     the_table = ax.table(
         cellText=df.values,
         colLabels=df.columns,
         cellLoc='center',
-        loc='center',
+        loc='center',  # 可以尝试修改为'upper center'减少与标题的间距
         cellColours=cell_colors
     )
     
     # 设置表格样式
     the_table.auto_set_font_size(False)
-    the_table.set_fontsize(12)
+    the_table.set_fontsize(11)  # 字体略小以适应更多列
     the_table.scale(1, 1.5)  # 调整表格比例
+    
+    # 调整列宽，使其适应列数增加的情况
+    for i in range(len(df.columns)):
+        the_table.auto_set_column_width([i])
     
     # 设置列标题行样式
     for i, key in enumerate(df.columns):
@@ -139,10 +153,11 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
         cell.set_text_props(weight='bold', color='white')
         cell.set_facecolor('#2a9d8f')
     
-    # 保存图片
+    # 保存图片，增加分辨率
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     image_path = os.path.join(image_dir, f"alpha_list_{timestamp}.png")
-    plt.savefig(image_path, bbox_inches='tight', dpi=150)
+    # 减少图片边距，使得标题和表格间距更小
+    plt.savefig(image_path, bbox_inches='tight', dpi=210, pad_inches=0)  # 减小pad_inches参数
     plt.close()
     
     # 返回图片路径和base64编码

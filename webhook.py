@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import base64
 import os
+import hashlib
 from config import WEBHOOK_URL, PROXY_URL, USE_PROXY
 
 async def _send_single_message(session, content, headers, proxy, msg_type="text"):
@@ -58,37 +59,58 @@ async def _send_image(session, image_path=None, image_base64=None, headers=None,
     Returns:
         bool: 是否发送成功
     """
+    # 读取图片数据
+    image_data = None
+    
     # 优先使用已有的base64编码
-    if not image_base64 and image_path:
+    if image_base64:
+        # 如果提供的是已编码的base64字符串，直接使用
+        image_base64_str = image_base64
+        # 将base64字符串解码为二进制数据用于计算MD5
+        try:
+            image_data = base64.b64decode(image_base64)
+        except Exception as e:
+            print(f"解码base64数据失败: {str(e)}")
+            return False
+    elif image_path:
         if not os.path.exists(image_path):
             print(f"图片不存在: {image_path}")
             return False
             
         # 读取图片并转换为base64
         with open(image_path, "rb") as img_file:
-            image_base64 = base64.b64encode(img_file.read()).decode('utf-8')
-    
-    if not image_base64:
+            image_data = img_file.read()
+            image_base64_str = base64.b64encode(image_data).decode('utf-8')
+    else:
         print("未提供图片数据")
         return False
     
-    # 构建图片消息
+    # 计算图片的MD5值
+    md5_hash = hashlib.md5(image_data).hexdigest()
+    
+    # 构建图片消息，严格按照企业微信API要求格式
     payload = {
         "msgtype": "image",
         "image": {
-            "base64": image_base64,
-            "md5": "",  # 可选，不是所有webhook服务都需要
+            "base64": image_base64_str,
+            "md5": md5_hash
         }
     }
     
     # 尝试发送
     try:
         async with session.post(WEBHOOK_URL, json=payload, headers=headers, proxy=proxy) as response:
+            response_text = await response.text()
             if response.status == 200:
-                print(f"图片消息发送成功!")
-                return True
+                response_json = await response.json()
+                if response_json.get("errcode") == 0:
+                    print(f"图片消息发送成功!")
+                    return True
+                else:
+                    print(f"图片消息发送失败: 错误码 {response_json.get('errcode')}, 错误信息: {response_json.get('errmsg')}")
+                    return False
             else:
-                print(f"图片消息发送失败: {response.status}, {await response.text()}")
+                print(f"图片消息发送失败: 状态码 {response.status}, 响应: {response_text}")
                 return False
     except Exception as e:
         print(f"图片消息发送出错: {str(e)}")
