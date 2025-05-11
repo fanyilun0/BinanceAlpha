@@ -15,9 +15,10 @@ sys.path.append(src_dir)
 # 导入自定义模块
 from config import DATA_DIRS, BLOCKCHAIN_PLATFORMS, PLATFORMS_TO_QUERY
 from src.utils.historical_data import BinanceAlphaDataCollector
-from src.utils.binance_symbols import update_tokens, check_token_listing_status, prepare_token_listing_data
-from src.utils.crypto_formatter import extract_basic_info, format_project_summary, save_crypto_list_by_platform, save_crypto_data
+from src.utils.binance_symbols import is_token_listed, update_tokens, check_token_listing_status
+from src.utils.crypto_formatter import format_project_summary, save_crypto_list_by_platform, save_crypto_data
 from src.ai import AlphaAdvisor
+from src.utils.image_generator import create_alpha_table_image
 
 # 配置日志
 logging.basicConfig(
@@ -134,55 +135,24 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
             # 统计已上线的项目
             already_listed_tokens = []
             
-            # 按标准形式和1000Token形式分类
-            standard_listed = []
-            thousand_form_listed = []
-            
             for crypto in crypto_list:
                 symbol = crypto.get("symbol", "")
                 if not symbol:
                     continue
                 
-                # 使用公共函数检查上币状态
-                status = check_token_listing_status(symbol, listed_tokens)
-                
-                if status["is_listed"]:
+                if is_token_listed(symbol):
                     already_listed_tokens.append(symbol)
-                    
-                    if status["listing_type"] == "standard":
-                        standard_listed.append(symbol)
-                    elif status["listing_type"] == "1000x":
-                        thousand_form_listed.append((symbol, status["listed_as"]))
-            
+
             # 打印统计信息
-            print(f"已有{len(already_listed_tokens)}个项目上线币安现货或创新区")
-            print(f"  - 标准形式Token: {len(standard_listed)}个")
-            print(f"  - 1000Token形式: {len(thousand_form_listed)}个")
-            
-            # 打印部分已上线的token示例
-            print(f"标准形式已上线Token示例: {', '.join(standard_listed[:5])}{' ...' if len(standard_listed) > 5 else ''}")
-            
-            # 显示1000Token形式的匹配示例
-            matched_thousand_tokens = thousand_form_listed
-            
-            if matched_thousand_tokens:
-                print("1000Token形式已上线Token示例:")
-                for original, thousand in matched_thousand_tokens[:3]:
-                    print(f"  - {original} (在币安上线为: {thousand})")
-                if len(matched_thousand_tokens) > 3:
-                    print(f"  ...以及其他 {len(matched_thousand_tokens)-3} 个")
-        
+            print(f"已有{len(already_listed_tokens)}个项目上线币安现货")
+          
         if as_image:
-            # 导入图片生成模块
-            from src.utils.image_generator import create_alpha_table_image
-            
             # 创建图片表格
-            title = "📊 币安Alpha项目列表"
             image_path, image_base64 = create_alpha_table_image(
                 crypto_list=crypto_list, 
                 date=alpha_data.get('date', ''),
-                title=title,
-                max_items=100  # 最多显示100个项目
+                listed_tokens=listed_tokens,
+                max_items=100
             )
             
             # 发送图片消息
@@ -190,9 +160,8 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
             
             if not debug_only:
                 from webhook import send_image_async
-                # 发送简要消息和图片
-                summary_message = f"{title} (更新时间: {alpha_data.get('date')})\n"
-                summary_message += f"项目总数: {total_count}\n"
+                summary_message = f"📊 币安Alpha项目列表 (更新时间: {alpha_data.get('date')})\n"
+                summary_message += "🔝 Top 100 币安Alpha项目 (按市值排序):"
                 
                 await send_image_async(
                     image_path=image_path, 
@@ -396,54 +365,26 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         # 过滤标准形式和1000Token形式的token
         filtered_crypto_list = []
         
-        # 记录匹配到的token，用于日志输出
-        matched_tokens = []
-        matched_thousand_tokens = []
-        
         for crypto in crypto_list:
             symbol = crypto.get("symbol", "")
             if not symbol:
                 filtered_crypto_list.append(crypto)  # 保留没有symbol的项目
                 continue
             
-            # 使用通用函数检查token上线状态
-            status = check_token_listing_status(symbol, listed_tokens)
-            
-            if not status["is_listed"]:
+            if not is_token_listed(symbol):
                 filtered_crypto_list.append(crypto)
-            else:
-                # 记录已匹配的token
-                if status["listing_type"] == "standard":
-                    matched_tokens.append(symbol)
-                elif status["listing_type"] == "1000x":
-                    matched_thousand_tokens.append((symbol, status["listed_as"]))
         
         # 统计结果
         removed_count = original_count - len(filtered_crypto_list)
         
         # 打印详细过滤信息
         print(f"已从Alpha项目列表中移除{removed_count}个已上线的Token，剩余{len(filtered_crypto_list)}个项目")
-        print(f"  - 标准形式Token移除: {len(matched_tokens)}个")
-        print(f"  - 1000Token形式移除: {len(matched_thousand_tokens)}个")
-        
-        # 打印部分被过滤的token示例
-        if matched_tokens:
-            print(f"移除的标准Token: {', '.join(matched_tokens[:5])}{' ...' if len(matched_tokens) > 5 else ''}")
-        
-        if matched_thousand_tokens:
-            print("移除的1000Token示例:")
-            for original, thousand in matched_thousand_tokens[:3]:
-                print(f"  - {original} (对应1000形式: {thousand})")
-            if len(matched_thousand_tokens) > 3:
-                print(f"  ...以及其他 {len(matched_thousand_tokens)-3} 个")
-        
-        crypto_list = filtered_crypto_list
         
         # 更新alpha_data中的项目列表
-        alpha_data["data"]["cryptoCurrencyList"] = crypto_list
+        alpha_data["data"]["cryptoCurrencyList"] = filtered_crypto_list
         
         # 保存过滤后的数据
-        save_crypto_data(crypto_list, f"filtered_crypto_list_{datetime.now().strftime('%Y%m%d')}.json", "filtered")
+        save_crypto_data(filtered_crypto_list, f"filtered_crypto_list_{datetime.now().strftime('%Y%m%d')}.json", "filtered")
     
     # 使用配置中的区块链平台定义
     platforms = BLOCKCHAIN_PLATFORMS
