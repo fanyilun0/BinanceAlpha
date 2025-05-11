@@ -93,8 +93,18 @@ async def get_binance_tokens():
         print(f"错误详情已记录到日志文件")
         return None
 
-async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_only=False):
-    """获取币安Alpha项目列表数据并推送"""
+async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_only=False, as_image=True):
+    """获取币安Alpha项目列表数据并推送
+    
+    Args:
+        force_update: 是否强制更新数据
+        listed_tokens: 已上线币安的token列表
+        debug_only: 是否仅调试（不推送）
+        as_image: 是否以图片形式推送
+    
+    Returns:
+        获取的Alpha数据或失败时返回False
+    """
     print("=== 币安Alpha项目列表数据 ===\n")
     
     # 创建数据目录
@@ -162,24 +172,54 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
                 if len(matched_thousand_tokens) > 3:
                     print(f"  ...以及其他 {len(matched_thousand_tokens)-3} 个")
         
-        # 构建消息内容
-        message = f"📊 币安Alpha项目列表 (更新时间: {alpha_data.get('date')})\n\n"
-        message += f"🔢 项目总数: {total_count}\n\n"
-        message += "🔝 Top 100 币安Alpha项目 (按市值排序):\n\n"
-        
-        # 添加前100个项目信息
-        for i, crypto in enumerate(crypto_list[:100], 1):
-            # 使用crypto_formatter模块处理加密货币数据
-            status = check_token_listing_status(crypto.get("symbol", ""), listed_tokens) if listed_tokens else None
-            message += format_project_summary(crypto, i, status)
-        
-        # 向webhook发送消息
-        print(f"消息长度: {len(message)} 字符")
-        
-        print("正在向webhook发送消息...")
-        
-        if not debug_only:
-            await send_message_async(message)
+        if as_image:
+            # 导入图片生成模块
+            from src.utils.image_generator import create_alpha_table_image
+            
+            # 创建图片表格
+            title = "📊 币安Alpha项目列表"
+            image_path, image_base64 = create_alpha_table_image(
+                crypto_list=crypto_list, 
+                date=alpha_data.get('date', ''),
+                title=title,
+                max_items=100  # 最多显示100个项目
+            )
+            
+            # 发送图片消息
+            print(f"准备发送表格图片到webhook...")
+            
+            if not debug_only:
+                from webhook import send_image_async
+                # 发送简要消息和图片
+                summary_message = f"{title} (更新时间: {alpha_data.get('date')})\n"
+                summary_message += f"项目总数: {total_count}\n"
+                
+                await send_image_async(
+                    image_path=image_path, 
+                    image_base64=image_base64,
+                    title=summary_message
+                )
+                print("表格图片已成功发送到webhook")
+        else:
+            # 原始文本方式
+            # 构建消息内容
+            message = f"📊 币安Alpha项目列表 (更新时间: {alpha_data.get('date')})\n\n"
+            message += f"🔢 项目总数: {total_count}\n\n"
+            message += "🔝 Top 100 币安Alpha项目 (按市值排序):\n\n"
+            
+            # 添加前100个项目信息
+            for i, crypto in enumerate(crypto_list[:100], 1):
+                # 使用crypto_formatter模块处理加密货币数据
+                status = check_token_listing_status(crypto.get("symbol", ""), listed_tokens) if listed_tokens else None
+                message += format_project_summary(crypto, i, status)
+            
+            # 向webhook发送消息
+            print(f"消息长度: {len(message)} 字符")
+            
+            print("正在向webhook发送消息...")
+            
+            if not debug_only:
+                await send_message_async(message)
         
         return alpha_data
         
@@ -326,15 +366,6 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         bool: 操作是否成功
     """
     print("=== 币安Alpha投资建议 ===\n")
-    
-    # 如果未提供Alpha数据，尝试获取
-    if not alpha_data:
-        print("未提供币安Alpha数据，将自动获取...")
-        alpha_data = await get_binance_alpha_list(force_update=False, listed_tokens=listed_tokens)
-        
-        if not alpha_data:
-            print("获取币安Alpha数据失败，无法继续生成投资建议")
-            return False
     
     # 初始化AI顾问
     advisor = AlphaAdvisor()
@@ -576,7 +607,7 @@ async def main():
         # 获取币安Alpha项目列表数据
         step_num = 2 if not args.skip_tokens_update else 1
         print(f"步骤{step_num}: 获取币安Alpha项目列表数据...\n")
-        alpha_data = await get_binance_alpha_list(force_update=args.force_update, listed_tokens=listed_tokens, debug_only=args.debug_only)
+        alpha_data = await get_binance_alpha_list(force_update=args.force_update, listed_tokens=listed_tokens, debug_only=args.debug_only, as_image=True)
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
