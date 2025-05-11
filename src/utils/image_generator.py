@@ -1,0 +1,153 @@
+"""
+图片生成工具
+用于将数据转换为图片格式
+"""
+
+import os
+import io
+import base64
+from datetime import datetime
+from typing import Dict, List, Any, Optional, Tuple
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # 使用非交互式后端
+import pandas as pd
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from config import DATA_DIRS
+
+def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str, 
+                             title: str = "币安Alpha项目列表", 
+                             max_items: int = 100) -> Tuple[str, str]:
+    """
+    将币安Alpha项目列表转换为表格图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        title: 图片标题
+        max_items: 最大项目数量
+        
+    Returns:
+        Tuple[str, str]: (图片路径, 图片base64编码)
+    """
+    # 确保目录存在
+    image_dir = os.path.join(DATA_DIRS.get('data', 'data'), 'images')
+    os.makedirs(image_dir, exist_ok=True)
+    
+    # 准备数据
+    data = []
+    
+    # 只处理最多max_items个项目
+    for crypto in crypto_list[:max_items]:
+        # 提取基本数据
+        name = crypto.get("name", "未知")
+        symbol = crypto.get("symbol", "未知")
+        rank = crypto.get("cmcRank", "未知")
+        
+        # 提取价格和价格变化数据（USD）
+        quotes = crypto.get("quotes", [])
+        usd_quote = next((q for q in quotes if q.get("name") == "USD"), {})
+        
+        # 如果找不到名为"USD"的报价，尝试使用索引2（假设这是USD）
+        if not usd_quote and len(quotes) > 2:
+            usd_quote = quotes[2]
+        
+        # 提取数据
+        price = usd_quote.get("price", 0)
+        percent_change_24h = usd_quote.get("percentChange24h", 0)
+        volume_24h = usd_quote.get("volume24h", 0)
+        
+        # 计算市值
+        market_cap = usd_quote.get("marketCap", 0)
+        if market_cap == 0:
+            market_cap = usd_quote.get("selfReportedMarketCap", 0)
+            
+        # 计算完全稀释估值(FDV)
+        fdv = usd_quote.get("fullyDilluttedMarketCap", 0)
+        
+        # 计算MC/FDV比率
+        mc_fdv_ratio = market_cap / fdv if fdv > 0 else 0
+        
+        # 数据格式化
+        data.append({
+            "排名": rank,
+            "名称": name,
+            "代码": symbol,
+            "价格($)": round(price, 4),
+            "24h变化(%)": round(percent_change_24h, 2),
+            "交易量(百万$)": round(volume_24h / 1000000, 2),
+            "市值(百万$)": round(market_cap / 1000000, 2),
+            "FDV(百万$)": round(fdv / 1000000, 2),
+            "MC/FDV": round(mc_fdv_ratio, 2)
+        })
+    
+    # 创建DataFrame
+    df = pd.DataFrame(data)
+    
+    # 设置样式
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei']  # 设置中文字体
+    plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+    
+    # 根据数据量调整图片尺寸
+    rows = min(len(data), max_items)
+    fig_height = 0.5 * rows + 3  # 基础高度加上每行高度
+    
+    # 创建图表
+    fig, ax = plt.subplots(figsize=(16, fig_height))
+    
+    # 隐藏轴
+    ax.axis('tight')
+    ax.axis('off')
+    
+    # 设置标题
+    plt.suptitle(f"{title} (更新时间: {date})", fontsize=20, y=0.98)
+    
+    # 为变化列添加颜色映射
+    cell_colors = []
+    for i in range(len(df)):
+        row_colors = ['white'] * len(df.columns)
+        
+        # 设置24h变化的颜色
+        change_index = df.columns.get_loc("24h变化(%)")
+        change_value = df.iloc[i, change_index]
+        
+        if change_value > 0:
+            row_colors[change_index] = '#d8f3dc'  # 浅绿色
+        elif change_value < 0:
+            row_colors[change_index] = '#ffccd5'  # 浅红色
+            
+        cell_colors.append(row_colors)
+    
+    # 创建表格
+    the_table = ax.table(
+        cellText=df.values,
+        colLabels=df.columns,
+        cellLoc='center',
+        loc='center',
+        cellColours=cell_colors
+    )
+    
+    # 设置表格样式
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(12)
+    the_table.scale(1, 1.5)  # 调整表格比例
+    
+    # 设置列标题行样式
+    for i, key in enumerate(df.columns):
+        cell = the_table[(0, i)]
+        cell.set_text_props(weight='bold', color='white')
+        cell.set_facecolor('#2a9d8f')
+    
+    # 保存图片
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    image_path = os.path.join(image_dir, f"alpha_list_{timestamp}.png")
+    plt.savefig(image_path, bbox_inches='tight', dpi=150)
+    plt.close()
+    
+    # 返回图片路径和base64编码
+    with open(image_path, "rb") as img_file:
+        img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+    
+    print(f"已生成Alpha项目表格图片: {image_path}")
+    return image_path, img_base64 

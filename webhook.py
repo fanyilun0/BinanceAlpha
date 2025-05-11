@@ -1,5 +1,7 @@
 import aiohttp
 import asyncio
+import base64
+import os
 from config import WEBHOOK_URL, PROXY_URL, USE_PROXY
 
 async def _send_single_message(session, content, headers, proxy, msg_type="text"):
@@ -12,13 +14,23 @@ async def _send_single_message(session, content, headers, proxy, msg_type="text"
         proxy: 代理设置
         msg_type: 消息类型，支持"text"和"markdown"
     """
-
-    payload = {
-        "msgtype": "text",
-        "text": {
-            "content": content
+    if msg_type == "text":
+        payload = {
+            "msgtype": "text",
+            "text": {
+                "content": content
+            }
         }
-    }
+    elif msg_type == "markdown":
+        payload = {
+            "msgtype": "markdown",
+            "markdown": {
+                "content": content
+            }
+        }
+    else:
+        print(f"不支持的消息类型: {msg_type}")
+        return False
     
     try:
         async with session.post(WEBHOOK_URL, json=payload, headers=headers, proxy=proxy) as response:
@@ -30,6 +42,56 @@ async def _send_single_message(session, content, headers, proxy, msg_type="text"
                 return False
     except Exception as e:
         print(f"消息片段发送出错: {str(e)}")
+        return False
+        
+async def _send_image(session, image_path=None, image_base64=None, headers=None, proxy=None, title="图片"):
+    """发送图片消息
+    
+    Args:
+        session: aiohttp会话
+        image_path: 图片路径
+        image_base64: 图片base64编码，优先使用
+        headers: 请求头
+        proxy: 代理设置
+        title: 图片标题
+        
+    Returns:
+        bool: 是否发送成功
+    """
+    # 优先使用已有的base64编码
+    if not image_base64 and image_path:
+        if not os.path.exists(image_path):
+            print(f"图片不存在: {image_path}")
+            return False
+            
+        # 读取图片并转换为base64
+        with open(image_path, "rb") as img_file:
+            image_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+    
+    if not image_base64:
+        print("未提供图片数据")
+        return False
+    
+    # 构建图片消息
+    payload = {
+        "msgtype": "image",
+        "image": {
+            "base64": image_base64,
+            "md5": "",  # 可选，不是所有webhook服务都需要
+        }
+    }
+    
+    # 尝试发送
+    try:
+        async with session.post(WEBHOOK_URL, json=payload, headers=headers, proxy=proxy) as response:
+            if response.status == 200:
+                print(f"图片消息发送成功!")
+                return True
+            else:
+                print(f"图片消息发送失败: {response.status}, {await response.text()}")
+                return False
+    except Exception as e:
+        print(f"图片消息发送出错: {str(e)}")
         return False
 
 def split_message(message, max_length=1000):
@@ -115,3 +177,28 @@ async def send_message_async(message_content, msg_type="text"):
         print(f"所有 {total_segments} 段消息发送完成")
     else:
         print("消息发送成功!")
+
+async def send_image_async(image_path=None, image_base64=None, title=None):
+    """发送图片到webhook
+    
+    Args:
+        image_path: 图片路径
+        image_base64: 图片base64编码，优先使用
+        title: 图片标题，可选
+        
+    Returns:
+        bool: 是否发送成功
+    """
+    headers = {'Content-Type': 'application/json'}
+    proxy = PROXY_URL if USE_PROXY else None
+    
+    # 先发送标题消息（如果有）
+    if title:
+        await send_message_async(title)
+        # 等待一小段时间以避免触发频率限制
+        await asyncio.sleep(0.5)
+    
+    # 发送图片
+    async with aiohttp.ClientSession() as session:
+        success = await _send_image(session, image_path, image_base64, headers, proxy)
+        return success
