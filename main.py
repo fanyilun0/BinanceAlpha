@@ -151,7 +151,6 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
             image_path, image_base64 = create_alpha_table_image(
                 crypto_list=crypto_list, 
                 date=alpha_data.get('date', ''),
-                listed_tokens=listed_tokens,
                 max_items=100
             )
             
