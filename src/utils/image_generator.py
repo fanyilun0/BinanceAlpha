@@ -99,7 +99,7 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
     fig_height = 0.5 * rows + 3  # 基础高度加上每行高度
     
     # 创建图表
-    ax = plt.subplots(figsize=(fig_width, fig_height))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     
     # 隐藏轴
     ax.axis('tight')
