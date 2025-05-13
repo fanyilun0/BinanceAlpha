@@ -394,7 +394,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
     
     # 对项目按区块链平台分类
     platform_projects, unclassified_projects = await classify_crypto_projects_by_platform(
-        crypto_list, platforms, platforms_to_process
+        filtered_crypto_list, platforms, platforms_to_process
     )
     
     # 创建建议目录
