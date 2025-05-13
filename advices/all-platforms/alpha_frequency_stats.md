@@ -1,9 +1,9 @@
-# Alpha项目频率统计 (2025-05-12)
+# Alpha项目频率统计 (2025-05-13)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Plume (PLUME) | 31 |  |
-| Safe (SAFE) | 26 |  |
+| Plume (PLUME) | 33 |  |
+| Safe (SAFE) | 28 |  |
 | Aethir (ATH) | 21 |  |
 | SPX6900 (SPX) | 18 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
@@ -11,9 +11,9 @@
 | SIREN (SIREN) | 11 |  |
 | Popcat (POPCAT) | 11 |  |
 | Mog Coin (MOG) | 11 |  |
-| Ondo (ONDO) | 7 | 🔔 已上币 |
+| Ondo (ONDO) | 9 | 🔔 已上币 |
 | Drift (DRIFT) | 7 |  |
-| Fartcoin (FARTCOIN) | 6 |  |
+| Fartcoin (FARTCOIN) | 7 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | Morpho (MORPHO) | 5 |  |
 | CreatorBid (BID) | 5 |  |
@@ -24,16 +24,19 @@
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
+| Vine Coin (VINE) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
+| cat in a dogs world (MEW) | 3 |  |
 | KiloEx (KILO) | 3 |  |
+| Test (TST) | 3 | 🔔 已上币 |
+| Cookie DAO (COOKIE) | 3 | 🔔 已上币 |
+| GoPlus Security (GPS) | 3 | 🔔 已上币 |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
 | SKYAI (SKYAI) | 2 |  |
-| Vine Coin (VINE) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
 | Polyhedra Network (ZKJ) | 2 |  |
 | Mind Network (FHE) | 2 |  |
-| cat in a dogs world (MEW) | 2 |  |
 | Bedrock (BR) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
