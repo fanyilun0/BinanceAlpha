@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-05-15)
+# Alpha项目频率统计 (2025-05-16)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -6,16 +6,16 @@
 | Safe (SAFE) | 28 |  |
 | Aethir (ATH) | 22 |  |
 | SPX6900 (SPX) | 19 |  |
+| Grass (GRASS) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
-| Grass (GRASS) | 12 |  |
+| Popcat (POPCAT) | 12 |  |
 | SIREN (SIREN) | 11 |  |
-| Popcat (POPCAT) | 11 |  |
 | Mog Coin (MOG) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| Fartcoin (FARTCOIN) | 8 |  |
 | Drift (DRIFT) | 7 |  |
-| Fartcoin (FARTCOIN) | 7 |  |
+| Haedal Protocol (HAEDAL) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
-| Haedal Protocol (HAEDAL) | 5 |  |
 | Morpho (MORPHO) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
@@ -42,3 +42,5 @@
 | Swarms (SWARMS) | 1 |  |
 | Avalon Labs (AVL) | 1 |  |
 | Fartcoin (FART) | 1 |  |
+| BSquared Network (B2) | 1 |  |
+| Privasea AI (PRAI) | 1 |  |
