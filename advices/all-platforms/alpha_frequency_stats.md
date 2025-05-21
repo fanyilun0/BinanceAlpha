@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-05-20)
+# Alpha项目频率统计 (2025-05-21)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -17,15 +17,16 @@
 | Alchemist AI (ALCH) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
+| SKYAI (SKYAI) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
 | Morpho (MORPHO) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
-| SKYAI (SKYAI) | 4 |  |
 | AI16Z (AI16Z) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
+| BSquared Network (B2) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Polyhedra Network (ZKJ) | 3 |  |
 | Bedrock (BR) | 3 |  |
@@ -36,13 +37,12 @@
 | GoPlus Security (GPS) | 3 | 🔔 已上币 |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
+| 48 Club Token (KOGE) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
-| BSquared Network (B2) | 2 |  |
 | Moo Deng (MOODENG) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
 | Avalon Labs (AVL) | 1 |  |
-| 48 Club Token (KOGE) | 1 |  |
 | Fartcoin (FART) | 1 |  |
 | Privasea AI (PRAI) | 1 |  |
