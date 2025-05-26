@@ -1,32 +1,32 @@
-# Alpha项目频率统计 (2025-05-25)
+# Alpha项目频率统计 (2025-05-26)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Plume (PLUME) | 34 |  |
-| Safe (SAFE) | 28 |  |
+| Safe (SAFE) | 29 |  |
 | Aethir (ATH) | 23 |  |
 | SPX6900 (SPX) | 20 |  |
-| Popcat (POPCAT) | 15 |  |
-| Grass (GRASS) | 14 |  |
+| Popcat (POPCAT) | 16 |  |
+| Grass (GRASS) | 15 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
+| Fartcoin (FARTCOIN) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
-| Fartcoin (FARTCOIN) | 12 |  |
 | SIREN (SIREN) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Drift (DRIFT) | 7 |  |
 | SKYAI (SKYAI) | 7 |  |
+| Polyhedra Network (ZKJ) | 7 |  |
 | Alchemist AI (ALCH) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
-| Polyhedra Network (ZKJ) | 6 |  |
+| BSquared Network (B2) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | AI16Z (AI16Z) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
 | Morpho (MORPHO) | 5 |  |
-| BSquared Network (B2) | 5 |  |
+| 48 Club Token (KOGE) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | cat in a dogs world (MEW) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
-| 48 Club Token (KOGE) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
@@ -47,3 +47,5 @@
 | Fartcoin (FART) | 1 |  |
 | PAAL AI (PAAL) | 1 |  |
 | Privasea AI (PRAI) | 1 |  |
+| BUILDon (B) | 1 |  |
+| Merlin Chain (MERL) | 1 |  |
