@@ -254,7 +254,8 @@ class AlphaAdvisor:
             logger.info("调试模式：已生成提示词，跳过API请求")
             return f"## 调试模式 - {platform or '通用'}平台提示词生成\n\n提示词已保存到: {prompt_file}\n\n此为调试模式，未发送API请求。"
         
-        # 准备API请求参数
+        # 准备API请求参数 - 优化超时设置
+        base_timeout = DEEPSEEK_AI.get('timeout', 600)
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -270,46 +271,124 @@ class AlphaAdvisor:
                 }
             ],
             "temperature": DEEPSEEK_AI.get('temperature', 0),
-            "max_tokens": DEEPSEEK_AI.get('max_tokens', 2048),
+            "max_tokens": DEEPSEEK_AI.get('max_tokens', 32000),
             "top_p": DEEPSEEK_AI.get('top_p', 1.0),
             "stream": DEEPSEEK_AI.get('stream', False)
         }
         
         # 尝试请求API
         for attempt in range(max_retries):
+            last_exception = None  # 初始化异常变量
             try:
-                logger.info(f"正在请求AI建议，尝试 {attempt + 1}/{max_retries}")
-                response = requests.post(self.api_url, headers=headers, json=payload, timeout=DEEPSEEK_AI.get('timeout', 300))
+                # 动态调整超时时间：第一次使用基础超时，后续尝试逐渐增加
+                current_timeout = base_timeout + (attempt * 300)  # 每次重试增加5分钟
+                
+                logger.info(f"正在请求AI建议，尝试 {attempt + 1}/{max_retries}，超时设置: {current_timeout}秒")
+                
+                # 使用计时器测量请求时间
+                def make_request():
+                    return requests.post(
+                        self.api_url, 
+                        headers=headers, 
+                        json=payload, 
+                        timeout=current_timeout
+                    )
+                
+                response, request_time = self._measure_request_time(make_request)
+                
+                logger.info(f"API请求完成，耗时: {request_time:.2f}秒，状态码: {response.status_code}")
                 
                 if response.status_code == 200:
                     result = response.json()
-                    message = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    
+                    # 处理deepseek-reasoner模型的特殊响应格式
+                    choice = result.get("choices", [{}])[0]
+                    message_data = choice.get("message", {})
+                    
+                    # 获取主要内容
+                    content = message_data.get("content", "")
+                    
+                    # 检查是否有reasoning_content（deepseek-reasoner模型特有）
+                    reasoning_content = message_data.get("reasoning_content", "")
+                    
+                    # 记录响应详细信息
+                    usage_info = result.get("usage", {})
+                    if usage_info:
+                        logger.info(f"API使用统计 - 输入tokens: {usage_info.get('prompt_tokens', 'N/A')}, "
+                                  f"输出tokens: {usage_info.get('completion_tokens', 'N/A')}, "
+                                  f"总tokens: {usage_info.get('total_tokens', 'N/A')}")
+                    
+                    # 记录推理内容信息（如果存在）
+                    if reasoning_content:
+                        logger.info(f"检测到推理内容，长度: {len(reasoning_content)}字符")
+                        logger.debug(f"推理内容预览: {reasoning_content[:200]}...")
+                    
+                    # 决定使用哪个内容作为最终结果
+                    final_message = content
+                    
+                    # 如果content为空但有reasoning_content，考虑使用reasoning_content
+                    if not content.strip() and reasoning_content.strip():
+                        logger.warning("主要内容为空，但存在推理内容。这可能是因为max_tokens不足导致content被截断")
+                        logger.info("尝试使用推理内容作为备选方案")
+                        
+                        # 可以选择使用推理内容，或者提示用户增加max_tokens
+                        # 这里我们记录详细信息，但不直接使用推理内容，因为它通常不是最终答案
+                        final_message = f"⚠️ 检测到响应被截断\n\n推理过程长度: {len(reasoning_content)}字符\n最终内容长度: {len(content)}字符\n\n建议增加max_tokens配置以获得完整响应。\n\n推理内容摘要:\n{reasoning_content[:500]}..."
                     
                     # 如果返回内容有效，保存并返回
-                    if message and len(message) > 100:
-                        logger.info("成功获取AI建议")
-    
-                        return message
+                    if final_message and len(final_message) > 100:
+                        logger.info(f"成功获取AI建议，响应长度: {len(final_message)}字符，总耗时: {request_time:.2f}秒")
+                        
+                        # 如果使用了推理内容作为备选，记录警告
+                        if not content.strip() and reasoning_content.strip():
+                            logger.warning("返回的是基于推理内容的摘要，建议增加max_tokens获得完整响应")
+                        
+                        return final_message
                     else:
-                        logger.warning(f"API返回内容过短或为空: {message}")
+                        logger.warning(f"API返回内容过短或为空，content长度: {len(content)}字符，reasoning_content长度: {len(reasoning_content)}字符，耗时: {request_time:.2f}秒")
+                        logger.debug(f"返回的content: {content}")
+                        if reasoning_content:
+                            logger.debug(f"推理内容预览: {reasoning_content[:200]}...")
+                        
+                        # 如果返回空内容，可能是模型处理时间过长，尝试增加超时时间
+                        if attempt < max_retries - 1:
+                            logger.info("检测到空响应，将在下次重试时增加超时时间")
+                        # 设置一个标识，表示这是空响应而不是异常
+                        last_exception = "empty_response"
                 else:
-                    logger.error(f"API请求失败，状态码: {response.status_code}, 响应: {response.text}")
+                    logger.error(f"API请求失败，状态码: {response.status_code}, 耗时: {request_time:.2f}秒")
+                    logger.error(f"响应内容: {response.text}")
+                    # 设置一个标识，表示这是HTTP错误
+                    last_exception = f"http_error_{response.status_code}"
                     
             except requests.exceptions.Timeout as e:
-                logger.error(f"API请求超时: {str(e)}")
+                logger.error(f"API请求超时 (设置: {current_timeout}秒): {str(e)}")
+                if attempt < max_retries - 1:
+                    logger.info(f"将在下次重试时增加超时时间到 {base_timeout + ((attempt + 1) * 300)}秒")
+                last_exception = e
             except requests.exceptions.ConnectionError as e:
                 logger.error(f"API连接错误: {str(e)}")
+                last_exception = e
             except Exception as e:
                 logger.error(f"API请求过程中出错: {str(e)}")
+                last_exception = e
             
             # 如果不是最后一次尝试，等待后重试
             if attempt < max_retries - 1:
-                delay = retry_delay * (1 + random.random() * 0.5)  # 添加随机抖动，最多额外50%
+                # 根据失败原因调整重试延迟
+                if last_exception and (
+                    (isinstance(last_exception, Exception) and "timeout" in str(last_exception).lower()) or
+                    last_exception == "empty_response"
+                ):
+                    delay = retry_delay * 2  # 超时错误或空响应延迟更长
+                else:
+                    delay = retry_delay * (1 + random.random() * 0.5)  # 添加随机抖动
+                
                 logger.info(f"等待 {delay:.2f} 秒后重试...")
                 time.sleep(delay)
         
         logger.error(f"在 {max_retries} 次尝试后放弃获取AI建议")
-        return None 
+        return None
         
 
     def save_list_data_for_debug(self, crypto_list: List[Dict[str, Any]], prefix: str = ""):
@@ -341,3 +420,26 @@ class AlphaAdvisor:
         except Exception as e:
             logger.error(f"保存币安Alpha项目列表数据时出错: {str(e)}")
             return None
+
+    def _measure_request_time(self, func, *args, **kwargs):
+        """测量请求执行时间的装饰器函数
+        
+        Args:
+            func: 要执行的函数
+            *args: 函数参数
+            **kwargs: 函数关键字参数
+            
+        Returns:
+            tuple: (执行结果, 执行时间(秒))
+        """
+        start_time = time.time()
+        try:
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            execution_time = end_time - start_time
+            return result, execution_time
+        except Exception as e:
+            end_time = time.time()
+            execution_time = end_time - start_time
+            logger.error(f"请求执行失败，耗时: {execution_time:.2f}秒, 错误: {str(e)}")
+            raise e
