@@ -1,11 +1,12 @@
 import os
 import json
 import logging
+import requests
 import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 
-from collectors.base_collector import BaseDataCollector
+from .base_collector import BaseDataCollector
 from config import MARKET_SENTIMENT
 
 # 设置日志

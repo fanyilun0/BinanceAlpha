@@ -339,7 +339,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
     advisor = AlphaAdvisor()
     
     # 设置重试参数
-    max_retries = 3
+    max_retries = 2
     retry_delay = 2.0
     
     # 确认有Alpha数据
@@ -356,6 +356,9 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         logger.error("币安Alpha数据中未包含项目列表")
         print("错误: 币安Alpha数据中未包含项目列表")
         return False
+    
+    # 初始化filtered_crypto_list，默认使用原始crypto_list
+    filtered_crypto_list = crypto_list
     
     # 如果提供了已上线Token列表，过滤掉这些token
     if listed_tokens and listed_tokens.get('all_tokens'):
@@ -384,6 +387,8 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         
         # 保存过滤后的数据
         save_crypto_data(filtered_crypto_list, f"filtered_crypto_list_{datetime.now().strftime('%Y%m%d')}.json", "filtered")
+    else:
+        print(f"未提供已上线Token列表或列表为空，将处理所有{len(filtered_crypto_list)}个Alpha项目")
     
     # 使用配置中的区块链平台定义
     platforms = BLOCKCHAIN_PLATFORMS

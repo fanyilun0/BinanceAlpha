@@ -3,10 +3,10 @@ import os
 import json
 import logging
 import time
-from datetime import datetime
-from typing import Dict, Any, Optional
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional
 
-from collectors import BinanceAlphaCollector
+from ..collectors import BinanceAlphaCollector
 from config import PROXY_URL, USE_PROXY
 
 # 设置日志
