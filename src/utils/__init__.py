@@ -5,4 +5,4 @@ This package contains utility modules for data processing, storage, and manipula
 """
 
 # Import utility modules to make them accessible from the utils package
-from utils.historical_data import BinanceAlphaDataCollector
+from .historical_data import BinanceAlphaDataCollector
