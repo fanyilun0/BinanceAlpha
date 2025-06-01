@@ -1,11 +1,11 @@
 """
-数据收集器模块
-包含以下收集器：
-- 币安Alpha项目列表数据收集器
+Data collectors package for BinanceAlpha.
+
+This package contains data collection modules for various cryptocurrency data sources.
 """
 
-from collectors.base_collector import BaseDataCollector
-from collectors.binance_alpha_collector import BinanceAlphaCollector
+from .base_collector import BaseDataCollector
+from .binance_alpha_collector import BinanceAlphaCollector
 
 __all__ = [
     'BaseDataCollector',
