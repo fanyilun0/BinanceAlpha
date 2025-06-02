@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-01)
+# Alpha项目频率统计 (2025-06-02)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -13,16 +13,16 @@
 | Mog Coin (MOG) | 13 |  |
 | SIREN (SIREN) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| Alchemist AI (ALCH) | 9 |  |
+| ai16z (AI16Z) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | SKYAI (SKYAI) | 7 |  |
 | 48 Club Token (KOGE) | 7 |  |
 | Polyhedra Network (ZKJ) | 7 |  |
-| Alchemist AI (ALCH) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | cat in a dogs world (MEW) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
-| AI16Z (AI16Z) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
 | Morpho (MORPHO) | 5 |  |
 | CreatorBid (BID) | 5 |  |
@@ -31,6 +31,7 @@
 | Moo Deng (MOODENG) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
+| GRIFFAIN (GRIFFAIN) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Bedrock (BR) | 3 |  |
 | KiloEx (KILO) | 3 |  |
