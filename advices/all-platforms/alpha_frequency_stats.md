@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-02)
+# Alpha项目频率统计 (2025-06-03)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -23,6 +23,7 @@
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | cat in a dogs world (MEW) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
+| GRIFFAIN (GRIFFAIN) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
 | Morpho (MORPHO) | 5 |  |
 | CreatorBid (BID) | 5 |  |
@@ -31,7 +32,6 @@
 | Moo Deng (MOODENG) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
-| GRIFFAIN (GRIFFAIN) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Bedrock (BR) | 3 |  |
 | KiloEx (KILO) | 3 |  |
