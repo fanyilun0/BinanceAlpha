@@ -38,7 +38,7 @@ BLOCKCHAIN_PLATFORMS = {
 # 要查询的区块链平台
 # 留空数组表示查询所有BLOCKCHAIN_PLATFORMS中定义的平台
 # 填入平台名数组则只查询指定的平台，例如: ["Ethereum", "Solana"]
-PLATFORMS_TO_QUERY = []
+PLATFORMS_TO_QUERY = ['Solana']
 
 # 需要屏蔽的代币列表
 # 可以使用符号(symbol)、名称(name)或ID进行匹配
