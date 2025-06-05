@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-04)
+# Alpha项目频率统计 (2025-06-05)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -12,9 +12,9 @@
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
 | SIREN (SIREN) | 11 |  |
+| Alchemist AI (ALCH) | 10 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
-| Alchemist AI (ALCH) | 9 |  |
-| ai16z (AI16Z) | 8 |  |
+| ai16z (AI16Z) | 9 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | SKYAI (SKYAI) | 7 |  |
@@ -49,4 +49,5 @@
 | Fartcoin (FART) | 1 |  |
 | PAAL AI (PAAL) | 1 |  |
 | Privasea AI (PRAI) | 1 |  |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 1 |  |
 | Merlin Chain (MERL) | 1 |  |
