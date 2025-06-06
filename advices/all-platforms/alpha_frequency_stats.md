@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-05)
+# Alpha项目频率统计 (2025-06-06)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -6,13 +6,13 @@
 | Safe (SAFE) | 29 |  |
 | Aethir (ATH) | 23 |  |
 | SPX6900 (SPX) | 20 |  |
-| Popcat (POPCAT) | 16 |  |
+| Popcat (POPCAT) | 18 |  |
+| Fartcoin (FARTCOIN) | 16 |  |
 | Grass (GRASS) | 15 |  |
-| Fartcoin (FARTCOIN) | 14 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
+| Alchemist AI (ALCH) | 12 |  |
 | SIREN (SIREN) | 11 |  |
-| Alchemist AI (ALCH) | 10 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | ai16z (AI16Z) | 9 |  |
 | BSquared Network (B2) | 8 |  |
