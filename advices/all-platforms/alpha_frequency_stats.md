@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-06)
+# Alpha项目频率统计 (2025-06-07)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -6,8 +6,8 @@
 | Safe (SAFE) | 29 |  |
 | Aethir (ATH) | 23 |  |
 | SPX6900 (SPX) | 20 |  |
+| Fartcoin (FARTCOIN) | 19 |  |
 | Popcat (POPCAT) | 18 |  |
-| Fartcoin (FARTCOIN) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
@@ -15,13 +15,13 @@
 | SIREN (SIREN) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | ai16z (AI16Z) | 9 |  |
+| cat in a dogs world (MEW) | 9 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | SKYAI (SKYAI) | 7 |  |
 | 48 Club Token (KOGE) | 7 |  |
 | Polyhedra Network (ZKJ) | 7 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
-| cat in a dogs world (MEW) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
@@ -33,6 +33,7 @@
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
+| Huma Finance (HUMA) | 3 | 🔔 已上币 |
 | Bedrock (BR) | 3 |  |
 | KiloEx (KILO) | 3 |  |
 | BUILDon (B) | 3 |  |
