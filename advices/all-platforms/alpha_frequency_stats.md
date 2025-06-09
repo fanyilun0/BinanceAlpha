@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-08)
+# Alpha项目频率统计 (2025-06-09)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | Fartcoin (FARTCOIN) | 19 |  |
 | Popcat (POPCAT) | 18 |  |
 | Grass (GRASS) | 15 |  |
-| Alchemist AI (ALCH) | 13 |  |
+| Alchemist AI (ALCH) | 14 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
 | SIREN (SIREN) | 11 |  |
@@ -21,8 +21,8 @@
 | SKYAI (SKYAI) | 7 |  |
 | 48 Club Token (KOGE) | 7 |  |
 | Polyhedra Network (ZKJ) | 7 |  |
+| Moo Deng (MOODENG) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
-| Moo Deng (MOODENG) | 5 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
@@ -30,6 +30,7 @@
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Koma Inu (KOMA) | 4 |  |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
@@ -40,7 +41,6 @@
 | Test (TST) | 3 | 🔔 已上币 |
 | Cookie DAO (COOKIE) | 3 | 🔔 已上币 |
 | GoPlus Security (GPS) | 3 | 🔔 已上币 |
-| HarryPotterObamaSonic10Inu (BITCOIN) | 2 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
