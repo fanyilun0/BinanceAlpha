@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-09)
+# Alpha项目频率统计 (2025-06-10)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -8,13 +8,13 @@
 | SPX6900 (SPX) | 20 |  |
 | Fartcoin (FARTCOIN) | 19 |  |
 | Popcat (POPCAT) | 18 |  |
+| Alchemist AI (ALCH) | 17 |  |
 | Grass (GRASS) | 15 |  |
-| Alchemist AI (ALCH) | 14 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
+| ai16z (AI16Z) | 12 |  |
 | SIREN (SIREN) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
-| ai16z (AI16Z) | 9 |  |
 | cat in a dogs world (MEW) | 9 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
@@ -41,6 +41,7 @@
 | Test (TST) | 3 | 🔔 已上币 |
 | Cookie DAO (COOKIE) | 3 | 🔔 已上币 |
 | GoPlus Security (GPS) | 3 | 🔔 已上币 |
+| Goatseus Maximus (GOAT) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
