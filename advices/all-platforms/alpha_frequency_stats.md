@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-11)
+# Alpha项目频率统计 (2025-06-12)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -6,15 +6,15 @@
 | Safe (SAFE) | 29 |  |
 | Aethir (ATH) | 23 |  |
 | Fartcoin (FARTCOIN) | 23 |  |
+| Alchemist AI (ALCH) | 20 |  |
 | SPX6900 (SPX) | 20 |  |
 | Popcat (POPCAT) | 18 |  |
-| Alchemist AI (ALCH) | 17 |  |
 | ai16z (AI16Z) | 16 |  |
 | Grass (GRASS) | 15 |  |
+| Moo Deng (MOODENG) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
 | SIREN (SIREN) | 11 |  |
-| Moo Deng (MOODENG) | 10 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | cat in a dogs world (MEW) | 9 |  |
 | BSquared Network (B2) | 8 |  |
@@ -23,6 +23,7 @@
 | 48 Club Token (KOGE) | 7 |  |
 | Polyhedra Network (ZKJ) | 7 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
+| Goatseus Maximus (GOAT) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
@@ -41,7 +42,6 @@
 | Test (TST) | 3 | 🔔 已上币 |
 | Cookie DAO (COOKIE) | 3 | 🔔 已上币 |
 | GoPlus Security (GPS) | 3 | 🔔 已上币 |
-| Goatseus Maximus (GOAT) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
