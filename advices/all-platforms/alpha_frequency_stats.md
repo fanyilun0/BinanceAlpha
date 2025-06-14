@@ -1,22 +1,22 @@
-# Alpha项目频率统计 (2025-06-13)
+# Alpha项目频率统计 (2025-06-14)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Plume (PLUME) | 34 |  |
 | Safe (SAFE) | 29 |  |
-| Fartcoin (FARTCOIN) | 25 |  |
+| Fartcoin (FARTCOIN) | 28 |  |
 | Aethir (ATH) | 23 |  |
+| Popcat (POPCAT) | 21 |  |
 | Alchemist AI (ALCH) | 20 |  |
 | SPX6900 (SPX) | 20 |  |
 | ai16z (AI16Z) | 18 |  |
-| Popcat (POPCAT) | 18 |  |
 | Moo Deng (MOODENG) | 15 |  |
 | Grass (GRASS) | 15 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
+| cat in a dogs world (MEW) | 12 |  |
 | SIREN (SIREN) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
-| cat in a dogs world (MEW) | 9 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | SKYAI (SKYAI) | 7 |  |
