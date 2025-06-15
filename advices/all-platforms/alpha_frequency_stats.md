@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-06-14)
+# Alpha项目频率统计 (2025-06-15)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -6,11 +6,11 @@
 | Safe (SAFE) | 29 |  |
 | Fartcoin (FARTCOIN) | 28 |  |
 | Aethir (ATH) | 23 |  |
+| Alchemist AI (ALCH) | 22 |  |
 | Popcat (POPCAT) | 21 |  |
-| Alchemist AI (ALCH) | 20 |  |
 | SPX6900 (SPX) | 20 |  |
 | ai16z (AI16Z) | 18 |  |
-| Moo Deng (MOODENG) | 15 |  |
+| Moo Deng (MOODENG) | 17 |  |
 | Grass (GRASS) | 15 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
@@ -24,6 +24,7 @@
 | Polyhedra Network (ZKJ) | 7 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Goatseus Maximus (GOAT) | 6 |  |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 5 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
@@ -31,7 +32,6 @@
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Koma Inu (KOMA) | 4 |  |
-| HarryPotterObamaSonic10Inu (BITCOIN) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
