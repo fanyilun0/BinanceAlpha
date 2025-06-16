@@ -1,10 +1,10 @@
-# Alpha项目频率统计 (2025-06-15)
+# Alpha项目频率统计 (2025-06-16)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Plume (PLUME) | 34 |  |
+| Fartcoin (FARTCOIN) | 31 |  |
 | Safe (SAFE) | 29 |  |
-| Fartcoin (FARTCOIN) | 28 |  |
 | Aethir (ATH) | 23 |  |
 | Alchemist AI (ALCH) | 22 |  |
 | Popcat (POPCAT) | 21 |  |
@@ -12,11 +12,12 @@
 | ai16z (AI16Z) | 18 |  |
 | Moo Deng (MOODENG) | 17 |  |
 | Grass (GRASS) | 15 |  |
+| cat in a dogs world (MEW) | 15 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
-| cat in a dogs world (MEW) | 12 |  |
 | SIREN (SIREN) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | SKYAI (SKYAI) | 7 |  |
@@ -24,7 +25,6 @@
 | Polyhedra Network (ZKJ) | 7 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Goatseus Maximus (GOAT) | 6 |  |
-| HarryPotterObamaSonic10Inu (BITCOIN) | 5 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Vine Coin (VINE) | 5 |  |
