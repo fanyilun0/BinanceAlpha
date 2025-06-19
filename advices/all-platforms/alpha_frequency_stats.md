@@ -1,8 +1,8 @@
-# Alpha项目频率统计 (2025-06-18)
+# Alpha项目频率统计 (2025-06-19)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 36 |  |
+| Fartcoin (FARTCOIN) | 39 |  |
 | Plume (PLUME) | 34 |  |
 | Safe (SAFE) | 29 |  |
 | Aethir (ATH) | 23 |  |
@@ -14,37 +14,38 @@
 | siren (SIREN) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
+| 48 Club Token (KOGE) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
-| 48 Club Token (KOGE) | 10 |  |
+| SKYAI (SKYAI) | 10 |  |
+| Polyhedra Network (ZKJ) | 10 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| Velo (VELO) | 8 |  |
+| Vine Coin (VINE) | 8 |  |
 | BSquared Network (B2) | 8 |  |
+| Lagrange (LA) | 7 |  |
 | Drift (DRIFT) | 7 |  |
-| SKYAI (SKYAI) | 7 |  |
-| Polyhedra Network (ZKJ) | 7 |  |
+| Housecoin (HOUSE) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Morpho (MORPHO) | 6 |  |
 | Goatseus Maximus (GOAT) | 6 |  |
 | Magpie (MGP) | 5 |  |
-| Velo (VELO) | 5 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
-| Vine Coin (VINE) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Merlin Chain (MERL) | 4 |  |
-| Lagrange (LA) | 4 |  |
 | PAAL AI (PAAL) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
+| Zircuit (ZRC) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Huma Finance (HUMA) | 3 | 🔔 已上币 |
 | AB (AB) | 3 |  |
 | Subsquid (SQD) | 3 |  |
-| Housecoin (HOUSE) | 3 |  |
 | tokenbot (CLANKER) | 3 |  |
 | Venice Token (VVV) | 3 |  |
 | Bedrock (BR) | 3 |  |
