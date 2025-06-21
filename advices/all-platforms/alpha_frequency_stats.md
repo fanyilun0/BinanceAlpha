@@ -1,36 +1,37 @@
-# Alpha项目频率统计 (2025-06-20)
+# Alpha项目频率统计 (2025-06-21)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 42 |  |
 | Plume (PLUME) | 34 |  |
 | Safe (SAFE) | 29 |  |
-| Alchemist AI (ALCH) | 25 |  |
+| Alchemist AI (ALCH) | 28 |  |
 | Aethir (ATH) | 23 |  |
+| SPX6900 (SPX) | 23 |  |
 | Popcat (POPCAT) | 21 |  |
 | Moo Deng (MOODENG) | 20 |  |
-| SPX6900 (SPX) | 20 |  |
 | ai16z (AI16Z) | 18 |  |
 | siren (SIREN) | 16 |  |
+| Polyhedra Network (ZKJ) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
-| 48 Club Token (KOGE) | 13 |  |
-| Polyhedra Network (ZKJ) | 13 |  |
+| 48 Club Token (KOGE) | 14 |  |
+| Lagrange (LA) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
-| Lagrange (LA) | 10 |  |
 | SKYAI (SKYAI) | 10 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| Goatseus Maximus (GOAT) | 9 |  |
 | Velo (VELO) | 8 |  |
 | Vine Coin (VINE) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
+| Magpie (MGP) | 6 |  |
+| Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Morpho (MORPHO) | 6 |  |
-| Goatseus Maximus (GOAT) | 6 |  |
-| Magpie (MGP) | 5 |  |
 | Roam (ROAM) | 5 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
@@ -38,17 +39,16 @@
 | Vita Inu (VINU) | 5 |  |
 | Merlin Chain (MERL) | 4 |  |
 | PAAL AI (PAAL) | 4 |  |
+| AB (AB) | 4 |  |
+| tokenbot (CLANKER) | 4 |  |
+| Venice Token (VVV) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
-| Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Huma Finance (HUMA) | 3 | 🔔 已上币 |
-| AB (AB) | 3 |  |
 | Subsquid (SQD) | 3 |  |
-| tokenbot (CLANKER) | 3 |  |
-| Venice Token (VVV) | 3 |  |
 | Bedrock (BR) | 3 |  |
 | KiloEx (KILO) | 3 |  |
 | BUILDon (B) | 3 |  |
