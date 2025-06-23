@@ -1,29 +1,29 @@
-# Alpha项目频率统计 (2025-06-22)
+# Alpha项目频率统计 (2025-06-23)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 42 |  |
 | Plume (PLUME) | 34 |  |
+| Alchemist AI (ALCH) | 31 |  |
 | Safe (SAFE) | 31 |  |
-| Alchemist AI (ALCH) | 28 |  |
 | Aethir (ATH) | 25 |  |
 | SPX6900 (SPX) | 25 |  |
 | Popcat (POPCAT) | 21 |  |
 | Moo Deng (MOODENG) | 20 |  |
+| Polyhedra Network (ZKJ) | 18 |  |
 | ai16z (AI16Z) | 18 |  |
 | 48 Club Token (KOGE) | 17 |  |
 | siren (SIREN) | 16 |  |
-| Polyhedra Network (ZKJ) | 16 |  |
+| Lagrange (LA) | 15 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
-| Lagrange (LA) | 13 |  |
+| Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 13 |  |
+| SKYAI (SKYAI) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Mog Coin (MOG) | 13 |  |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 12 |  |
+| Roam (ROAM) | 12 |  |
 | Velo (VELO) | 11 |  |
-| Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 10 |  |
-| SKYAI (SKYAI) | 10 |  |
-| HarryPotterObamaSonic10Inu (BITCOIN) | 9 |  |
-| Roam (ROAM) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Goatseus Maximus (GOAT) | 9 |  |
 | Vine Coin (VINE) | 8 |  |
