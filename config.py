@@ -32,18 +32,18 @@ BLOCKCHAIN_PLATFORMS = {
     "BNB Chain": ["BNB", "BSC", "BEP20", "BEP-20", "Binance Smart Chain", "币安智能链", "bnb-chain-ecosystem", "binance-chain"],
     "Solana": ["SOL", "Solana", "SPL", "索拉纳", "solana-ecosystem"], 
     "Ethereum": ["ETH", "ERC20", "Ethereum", "ERC-20", "ERC 20", "以太坊", "ethereum-ecosystem"],
-    #"Base": ["Base", "Base-Ecosystem", "base-ecosystem"],
+    "Base": ["Base", "Base-Ecosystem", "base-ecosystem"],
 }
 
 # 要查询的区块链平台
 # 留空数组表示查询所有BLOCKCHAIN_PLATFORMS中定义的平台
 # 填入平台名数组则只查询指定的平台，例如: ["Ethereum", "Solana"]
-PLATFORMS_TO_QUERY = ['Solana']
+PLATFORMS_TO_QUERY = []
 
 # 需要屏蔽的代币列表
 # 可以使用符号(symbol)、名称(name)或ID进行匹配
 # 例如: ["BTC", "Bitcoin", "ETH", "Ethereum"]
-BLOCK_TOKEN_LIST = ["AITECH","BROCCOLI"]
+BLOCK_TOKEN_LIST = []
 
 # 市场情绪指标配置
 MARKET_SENTIMENT = {

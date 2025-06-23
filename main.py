@@ -339,7 +339,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
     advisor = AlphaAdvisor()
     
     # 设置重试参数
-    max_retries = 2
+    max_retries = 1
     retry_delay = 2.0
     
     # 确认有Alpha数据
