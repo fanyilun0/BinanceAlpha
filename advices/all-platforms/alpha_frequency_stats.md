@@ -1,52 +1,52 @@
-# Alpha项目频率统计 (2025-06-25)
+# Alpha项目频率统计 (2025-06-26)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 42 |  |
+| Alchemist AI (ALCH) | 36 |  |
 | Plume (PLUME) | 34 |  |
-| Alchemist AI (ALCH) | 33 |  |
 | Safe (SAFE) | 31 |  |
-| SPX6900 (SPX) | 28 |  |
+| SPX6900 (SPX) | 31 |  |
 | Aethir (ATH) | 25 |  |
 | ai16z (AI16Z) | 21 |  |
 | Popcat (POPCAT) | 21 |  |
 | Moo Deng (MOODENG) | 20 |  |
+| Roam (ROAM) | 20 |  |
 | 48 Club Token (KOGE) | 19 |  |
+| Mog Coin (MOG) | 19 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
-| Roam (ROAM) | 17 |  |
 | siren (SIREN) | 16 |  |
-| Mog Coin (MOG) | 16 |  |
 | Lagrange (LA) | 15 |  |
+| SKYAI (SKYAI) | 15 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
 | Velo (VELO) | 13 |  |
-| SKYAI (SKYAI) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 12 |  |
+| Vine Coin (VINE) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| Morpho (MORPHO) | 9 |  |
+| AB (AB) | 9 |  |
+| tokenbot (CLANKER) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
-| Vine Coin (VINE) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
-| AB (AB) | 7 |  |
-| tokenbot (CLANKER) | 7 |  |
+| BUILDon (B) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
-| Morpho (MORPHO) | 6 |  |
+| Aerodrome Finance (AERO) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
+| Venice Token (VVV) | 5 |  |
 | CreatorBid (BID) | 5 |  |
-| BUILDon (B) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Merlin Chain (MERL) | 4 |  |
 | PAAL AI (PAAL) | 4 |  |
+| ZORA (ZORA) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
-| Aerodrome Finance (AERO) | 4 |  |
-| Venice Token (VVV) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
-| ZORA (ZORA) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
@@ -62,10 +62,14 @@
 | CARV (CARV) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
+| FLock.io (FLOCK) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | SPX (SPX6900) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
+| B3 (B3) | 1 |  |
+| Ski Mask Dog (SKI) | 1 |  |
+| Redacted (RDAC) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
 | Avalon Labs (AVL) | 1 |  |
 | Fartcoin (FART) | 1 |  |
