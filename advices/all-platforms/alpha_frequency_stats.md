@@ -1,28 +1,28 @@
-# Alpha项目频率统计 (2025-06-27)
+# Alpha项目频率统计 (2025-06-28)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 45 |  |
-| Alchemist AI (ALCH) | 39 |  |
+| Fartcoin (FARTCOIN) | 48 |  |
+| Alchemist AI (ALCH) | 41 |  |
+| SPX6900 (SPX) | 34 |  |
 | Plume (PLUME) | 34 |  |
 | Safe (SAFE) | 31 |  |
-| SPX6900 (SPX) | 31 |  |
 | Aethir (ATH) | 25 |  |
+| Roam (ROAM) | 22 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 21 |  |
+| SKYAI (SKYAI) | 21 |  |
 | ai16z (AI16Z) | 21 |  |
 | Popcat (POPCAT) | 21 |  |
 | Moo Deng (MOODENG) | 20 |  |
-| Roam (ROAM) | 20 |  |
 | Mog Coin (MOG) | 20 |  |
 | 48 Club Token (KOGE) | 19 |  |
-| SKYAI (SKYAI) | 18 |  |
+| Lagrange (LA) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 16 |  |
 | siren (SIREN) | 16 |  |
-| Lagrange (LA) | 15 |  |
+| Velo (VELO) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
-| HarryPotterObamaSonic10Inu (BITCOIN) | 13 |  |
-| Velo (VELO) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | Vine Coin (VINE) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
@@ -31,15 +31,15 @@
 | tokenbot (CLANKER) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | BSquared Network (B2) | 8 |  |
+| Aerodrome Finance (AERO) | 7 |  |
 | Drift (DRIFT) | 7 |  |
 | BUILDon (B) | 7 |  |
 | Magpie (MGP) | 6 |  |
+| Venice Token (VVV) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
-| Aerodrome Finance (AERO) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
-| Venice Token (VVV) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Merlin Chain (MERL) | 4 |  |
@@ -48,6 +48,7 @@
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | CARV (CARV) | 4 |  |
+| Bulla (BULLA) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
