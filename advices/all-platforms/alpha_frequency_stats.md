@@ -1,54 +1,55 @@
-# Alpha项目频率统计 (2025-06-28)
+# Alpha项目频率统计 (2025-06-29)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 48 |  |
-| Alchemist AI (ALCH) | 41 |  |
+| Alchemist AI (ALCH) | 44 |  |
 | SPX6900 (SPX) | 34 |  |
 | Plume (PLUME) | 34 |  |
 | Safe (SAFE) | 31 |  |
 | Aethir (ATH) | 25 |  |
+| Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | Roam (ROAM) | 22 |  |
-| Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 21 |  |
+| Lagrange (LA) | 21 |  |
 | SKYAI (SKYAI) | 21 |  |
 | ai16z (AI16Z) | 21 |  |
 | Popcat (POPCAT) | 21 |  |
 | Moo Deng (MOODENG) | 20 |  |
 | Mog Coin (MOG) | 20 |  |
+| HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | 48 Club Token (KOGE) | 19 |  |
-| Lagrange (LA) | 18 |  |
+| Velo (VELO) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
-| HarryPotterObamaSonic10Inu (BITCOIN) | 16 |  |
 | siren (SIREN) | 16 |  |
-| Velo (VELO) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
+| Vine Coin (VINE) | 14 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
-| Vine Coin (VINE) | 11 |  |
+| AB (AB) | 11 |  |
+| Aerodrome Finance (AERO) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Morpho (MORPHO) | 9 |  |
-| AB (AB) | 9 |  |
 | tokenbot (CLANKER) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | BSquared Network (B2) | 8 |  |
-| Aerodrome Finance (AERO) | 7 |  |
+| CARV (CARV) | 7 |  |
 | Drift (DRIFT) | 7 |  |
 | BUILDon (B) | 7 |  |
 | Magpie (MGP) | 6 |  |
+| ZORA (ZORA) | 6 |  |
 | Venice Token (VVV) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
+| Bulla (BULLA) | 5 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Merlin Chain (MERL) | 4 |  |
 | PAAL AI (PAAL) | 4 |  |
-| ZORA (ZORA) | 4 |  |
+| FLock.io (FLOCK) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
-| CARV (CARV) | 4 |  |
-| Bulla (BULLA) | 3 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
@@ -63,7 +64,6 @@
 | Taiko (TAIKO) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 2 |  |
-| FLock.io (FLOCK) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | SPX (SPX6900) | 2 |  |
