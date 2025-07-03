@@ -1,23 +1,23 @@
-# Alpha项目频率统计 (2025-07-02)
+# Alpha项目频率统计 (2025-07-03)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 51 |  |
-| Alchemist AI (ALCH) | 49 |  |
+| Fartcoin (FARTCOIN) | 54 |  |
+| Alchemist AI (ALCH) | 52 |  |
 | SPX6900 (SPX) | 34 |  |
 | Plume (PLUME) | 34 |  |
 | Safe (SAFE) | 31 |  |
+| Velo (VELO) | 27 |  |
 | Roam (ROAM) | 27 |  |
+| Lagrange (LA) | 27 |  |
 | SKYAI (SKYAI) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
+| 48 Club Token (KOGE) | 25 |  |
 | Aethir (ATH) | 25 |  |
-| Velo (VELO) | 24 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
-| Lagrange (LA) | 24 |  |
+| Popcat (POPCAT) | 24 |  |
 | Moo Deng (MOODENG) | 23 |  |
-| 48 Club Token (KOGE) | 22 |  |
 | ai16z (AI16Z) | 21 |  |
-| Popcat (POPCAT) | 21 |  |
 | Vine Coin (VINE) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
@@ -25,11 +25,11 @@
 | Aerodrome Finance (AERO) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | cat in a dogs world (MEW) | 15 |  |
+| PAAL AI (PAAL) | 13 |  |
 | ZORA (ZORA) | 13 |  |
+| Venice Token (VVV) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
-| Venice Token (VVV) | 11 |  |
 | AB (AB) | 11 |  |
-| PAAL AI (PAAL) | 10 |  |
 | CARV (CARV) | 10 |  |
 | BUILDon (B) | 10 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
@@ -45,6 +45,7 @@
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
+| Solidus Ai Tech (AITECH) | 5 |  |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
@@ -54,6 +55,7 @@
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
+| Humanity Protocol (H) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
@@ -66,7 +68,6 @@
 | Taiko (TAIKO) | 3 |  |
 | Degen (DEGEN) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
-| Solidus Ai Tech (AITECH) | 2 |  |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | SPX (SPX6900) | 2 |  |
