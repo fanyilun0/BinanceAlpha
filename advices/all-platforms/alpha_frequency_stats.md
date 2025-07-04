@@ -1,8 +1,8 @@
-# Alpha项目频率统计 (2025-07-03)
+# Alpha项目频率统计 (2025-07-04)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 54 |  |
+| Fartcoin (FARTCOIN) | 57 |  |
 | Alchemist AI (ALCH) | 52 |  |
 | SPX6900 (SPX) | 34 |  |
 | Plume (PLUME) | 34 |  |
@@ -10,24 +10,24 @@
 | Velo (VELO) | 27 |  |
 | Roam (ROAM) | 27 |  |
 | Lagrange (LA) | 27 |  |
+| Popcat (POPCAT) | 27 |  |
 | SKYAI (SKYAI) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
 | 48 Club Token (KOGE) | 25 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
-| Popcat (POPCAT) | 24 |  |
 | Moo Deng (MOODENG) | 23 |  |
 | ai16z (AI16Z) | 21 |  |
 | Vine Coin (VINE) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
+| cat in a dogs world (MEW) | 18 |  |
+| Aerodrome Finance (AERO) | 17 |  |
 | siren (SIREN) | 16 |  |
-| Aerodrome Finance (AERO) | 16 |  |
 | Grass (GRASS) | 15 |  |
-| cat in a dogs world (MEW) | 15 |  |
+| Venice Token (VVV) | 14 |  |
 | PAAL AI (PAAL) | 13 |  |
 | ZORA (ZORA) | 13 |  |
-| Venice Token (VVV) | 13 |  |
 | Lorenzo Protocol (BANK) | 13 |  |
 | AB (AB) | 11 |  |
 | CARV (CARV) | 10 |  |
