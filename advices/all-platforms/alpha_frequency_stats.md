@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-07-05)
+# Alpha项目频率统计 (2025-07-06)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -6,10 +6,10 @@
 | Alchemist AI (ALCH) | 54 |  |
 | SPX6900 (SPX) | 34 |  |
 | Plume (PLUME) | 34 |  |
-| Safe (SAFE) | 31 |  |
-| Velo (VELO) | 30 |  |
+| Safe (SAFE) | 33 |  |
+| Velo (VELO) | 31 |  |
 | Roam (ROAM) | 29 |  |
-| 48 Club Token (KOGE) | 28 |  |
+| 48 Club Token (KOGE) | 29 |  |
 | Lagrange (LA) | 27 |  |
 | Popcat (POPCAT) | 27 |  |
 | SKYAI (SKYAI) | 26 |  |
@@ -69,6 +69,7 @@
 | Degen (DEGEN) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | AGON Agent (AGON) | 2 |  |
+| Pocket Network (POKT) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
@@ -78,5 +79,6 @@
 | Redacted (RDAC) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
 | Avalon Labs (AVL) | 1 |  |
+| EGL1 (EGL1) | 1 |  |
 | Fartcoin (FART) | 1 |  |
 | Privasea AI (PRAI) | 1 |  |
