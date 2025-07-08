@@ -1,14 +1,14 @@
-# Alpha项目频率统计 (2025-07-07)
+# Alpha项目频率统计 (2025-07-08)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 57 |  |
 | Alchemist AI (ALCH) | 54 |  |
-| Velo (VELO) | 35 |  |
+| Velo (VELO) | 38 |  |
+| SPX6900 (SPX) | 37 |  |
+| 48 Club Token (KOGE) | 36 |  |
 | Safe (SAFE) | 35 |  |
-| SPX6900 (SPX) | 34 |  |
 | Plume (PLUME) | 34 |  |
-| 48 Club Token (KOGE) | 33 |  |
 | Roam (ROAM) | 29 |  |
 | Lagrange (LA) | 27 |  |
 | Popcat (POPCAT) | 27 |  |
@@ -21,17 +21,17 @@
 | ai16z (AI16Z) | 21 |  |
 | Vine Coin (VINE) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
+| Venice Token (VVV) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
 | ZORA (ZORA) | 17 |  |
+| CARV (CARV) | 17 |  |
 | siren (SIREN) | 16 |  |
-| Venice Token (VVV) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Grass (GRASS) | 15 |  |
-| CARV (CARV) | 14 |  |
 | PAAL AI (PAAL) | 13 |  |
+| BUILDon (B) | 13 |  |
 | AB (AB) | 11 |  |
-| BUILDon (B) | 10 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Morpho (MORPHO) | 9 |  |
 | tokenbot (CLANKER) | 9 |  |
@@ -42,6 +42,7 @@
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
+| Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
@@ -58,10 +59,10 @@
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
+| B3 (Base) (B3) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
-| Clearpool (CPOOL) | 3 |  |
 | Rekt (REKT) | 3 |  |
 | KiloEx (KILO) | 3 |  |
 | Test (TST) | 3 | 🔔 已上币 |
@@ -75,7 +76,6 @@
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
-| B3 (B3) | 1 |  |
 | Ski Mask Dog (SKI) | 1 |  |
 | Redacted (RDAC) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
