@@ -1,36 +1,36 @@
-# Alpha项目频率统计 (2025-07-08)
+# Alpha项目频率统计 (2025-07-09)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 57 |  |
-| Alchemist AI (ALCH) | 54 |  |
+| Fartcoin (FARTCOIN) | 60 |  |
+| Alchemist AI (ALCH) | 57 |  |
 | Velo (VELO) | 38 |  |
 | SPX6900 (SPX) | 37 |  |
 | 48 Club Token (KOGE) | 36 |  |
 | Safe (SAFE) | 35 |  |
 | Plume (PLUME) | 34 |  |
 | Roam (ROAM) | 29 |  |
+| Moo Deng (MOODENG) | 28 |  |
 | Lagrange (LA) | 27 |  |
 | Popcat (POPCAT) | 27 |  |
 | SKYAI (SKYAI) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
-| Moo Deng (MOODENG) | 25 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | Aerodrome Finance (AERO) | 21 |  |
 | ai16z (AI16Z) | 21 |  |
+| Venice Token (VVV) | 20 |  |
 | Vine Coin (VINE) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
-| Venice Token (VVV) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
 | ZORA (ZORA) | 17 |  |
 | CARV (CARV) | 17 |  |
 | siren (SIREN) | 16 |  |
+| BUILDon (B) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | PAAL AI (PAAL) | 13 |  |
-| BUILDon (B) | 13 |  |
 | AB (AB) | 11 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Morpho (MORPHO) | 9 |  |
@@ -70,6 +70,7 @@
 | GoPlus Security (GPS) | 3 | 🔔 已上币 |
 | Taiko (TAIKO) | 3 |  |
 | Degen (DEGEN) | 3 |  |
+| Odos (ODOS) | 2 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
