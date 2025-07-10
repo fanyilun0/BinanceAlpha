@@ -1,31 +1,31 @@
-# Alpha项目频率统计 (2025-07-09)
+# Alpha项目频率统计 (2025-07-10)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 60 |  |
-| Alchemist AI (ALCH) | 57 |  |
+| Fartcoin (FARTCOIN) | 63 |  |
+| Alchemist AI (ALCH) | 60 |  |
+| SPX6900 (SPX) | 40 |  |
 | Velo (VELO) | 38 |  |
-| SPX6900 (SPX) | 37 |  |
 | 48 Club Token (KOGE) | 36 |  |
 | Safe (SAFE) | 35 |  |
 | Plume (PLUME) | 34 |  |
+| Moo Deng (MOODENG) | 31 |  |
 | Roam (ROAM) | 29 |  |
-| Moo Deng (MOODENG) | 28 |  |
-| Lagrange (LA) | 27 |  |
+| Lagrange (LA) | 27 | 🔔 已上币 |
 | Popcat (POPCAT) | 27 |  |
 | SKYAI (SKYAI) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
-| Aerodrome Finance (AERO) | 21 |  |
+| Aerodrome Finance (AERO) | 23 |  |
+| Venice Token (VVV) | 22 |  |
 | ai16z (AI16Z) | 21 |  |
-| Venice Token (VVV) | 20 |  |
 | Vine Coin (VINE) | 20 |  |
+| CARV (CARV) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
 | ZORA (ZORA) | 17 |  |
-| CARV (CARV) | 17 |  |
 | siren (SIREN) | 16 |  |
 | BUILDon (B) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
@@ -40,12 +40,14 @@
 | FLock.io (FLOCK) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
+| Pocket Network (POKT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
+| B3 (Base) (B3) | 5 |  |
 | Solidus Ai Tech (AITECH) | 5 |  |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Humanity Protocol (H) | 5 |  |
@@ -53,13 +55,11 @@
 | EGL1 (EGL1) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Merlin Chain (MERL) | 4 |  |
-| Pocket Network (POKT) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
-| B3 (Base) (B3) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
