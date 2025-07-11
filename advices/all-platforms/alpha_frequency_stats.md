@@ -1,31 +1,31 @@
-# Alpha项目频率统计 (2025-07-10)
+# Alpha项目频率统计 (2025-07-11)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 63 |  |
+| Fartcoin (FARTCOIN) | 66 |  |
 | Alchemist AI (ALCH) | 60 |  |
 | SPX6900 (SPX) | 40 |  |
+| 48 Club Token (KOGE) | 39 |  |
 | Velo (VELO) | 38 |  |
-| 48 Club Token (KOGE) | 36 |  |
+| Plume (PLUME) | 36 |  |
+| Moo Deng (MOODENG) | 35 |  |
 | Safe (SAFE) | 35 |  |
-| Plume (PLUME) | 34 |  |
-| Moo Deng (MOODENG) | 31 |  |
+| Popcat (POPCAT) | 30 |  |
 | Roam (ROAM) | 29 |  |
+| SKYAI (SKYAI) | 29 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
-| Popcat (POPCAT) | 27 |  |
-| SKYAI (SKYAI) | 26 |  |
+| Aerodrome Finance (AERO) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
-| Aerodrome Finance (AERO) | 23 |  |
 | Venice Token (VVV) | 22 |  |
 | ai16z (AI16Z) | 21 |  |
+| ZORA (ZORA) | 20 |  |
 | Vine Coin (VINE) | 20 |  |
 | CARV (CARV) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| ZORA (ZORA) | 17 |  |
 | siren (SIREN) | 16 |  |
 | BUILDon (B) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
@@ -38,23 +38,23 @@
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
 | FLock.io (FLOCK) | 8 |  |
+| B3 (Base) (B3) | 8 |  |
 | BSquared Network (B2) | 8 |  |
+| EGL1 (EGL1) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | Pocket Network (POKT) | 7 |  |
 | Magpie (MGP) | 6 |  |
+| Merlin Chain (MERL) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
-| B3 (Base) (B3) | 5 |  |
 | Solidus Ai Tech (AITECH) | 5 |  |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | Humanity Protocol (H) | 5 |  |
 | CreatorBid (BID) | 5 |  |
-| EGL1 (EGL1) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
-| Merlin Chain (MERL) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
