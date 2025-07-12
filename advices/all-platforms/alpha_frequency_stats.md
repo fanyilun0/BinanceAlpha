@@ -1,28 +1,28 @@
-# Alpha项目频率统计 (2025-07-11)
+# Alpha项目频率统计 (2025-07-12)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 66 |  |
+| Fartcoin (FARTCOIN) | 68 |  |
 | Alchemist AI (ALCH) | 60 |  |
 | SPX6900 (SPX) | 40 |  |
-| 48 Club Token (KOGE) | 39 |  |
+| 48 Club Token (KOGE) | 40 |  |
+| Plume (PLUME) | 39 |  |
 | Velo (VELO) | 38 |  |
-| Plume (PLUME) | 36 |  |
-| Moo Deng (MOODENG) | 35 |  |
+| Moo Deng (MOODENG) | 37 |  |
 | Safe (SAFE) | 35 |  |
+| Roam (ROAM) | 31 |  |
 | Popcat (POPCAT) | 30 |  |
-| Roam (ROAM) | 29 |  |
 | SKYAI (SKYAI) | 29 |  |
+| Aerodrome Finance (AERO) | 28 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
-| Aerodrome Finance (AERO) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
+| CARV (CARV) | 23 |  |
+| ZORA (ZORA) | 22 |  |
 | Venice Token (VVV) | 22 |  |
 | ai16z (AI16Z) | 21 |  |
-| ZORA (ZORA) | 20 |  |
 | Vine Coin (VINE) | 20 |  |
-| CARV (CARV) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
@@ -32,19 +32,19 @@
 | Grass (GRASS) | 15 |  |
 | PAAL AI (PAAL) | 13 |  |
 | AB (AB) | 11 |  |
+| B3 (Base) (B3) | 10 |  |
+| Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Morpho (MORPHO) | 9 |  |
 | tokenbot (CLANKER) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
+| EGL1 (EGL1) | 9 |  |
 | Bulla (BULLA) | 8 |  |
 | FLock.io (FLOCK) | 8 |  |
-| B3 (Base) (B3) | 8 |  |
 | BSquared Network (B2) | 8 |  |
-| EGL1 (EGL1) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | Pocket Network (POKT) | 7 |  |
 | Magpie (MGP) | 6 |  |
-| Merlin Chain (MERL) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
@@ -74,6 +74,7 @@
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
+| REX (REVOX) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
@@ -81,5 +82,6 @@
 | Redacted (RDAC) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
 | Avalon Labs (AVL) | 1 |  |
+| REVOX (REX) | 1 |  |
 | Fartcoin (FART) | 1 |  |
 | Privasea AI (PRAI) | 1 |  |
