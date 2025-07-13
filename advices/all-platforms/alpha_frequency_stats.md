@@ -1,27 +1,27 @@
-# Alpha项目频率统计 (2025-07-12)
+# Alpha项目频率统计 (2025-07-13)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 68 |  |
+| Fartcoin (FARTCOIN) | 71 |  |
 | Alchemist AI (ALCH) | 60 |  |
+| Moo Deng (MOODENG) | 40 |  |
 | SPX6900 (SPX) | 40 |  |
 | 48 Club Token (KOGE) | 40 |  |
 | Plume (PLUME) | 39 |  |
 | Velo (VELO) | 38 |  |
-| Moo Deng (MOODENG) | 37 |  |
 | Safe (SAFE) | 35 |  |
 | Roam (ROAM) | 31 |  |
 | Popcat (POPCAT) | 30 |  |
 | SKYAI (SKYAI) | 29 |  |
 | Aerodrome Finance (AERO) | 28 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
+| CARV (CARV) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
-| CARV (CARV) | 23 |  |
+| ai16z (AI16Z) | 24 |  |
 | ZORA (ZORA) | 22 |  |
 | Venice Token (VVV) | 22 |  |
-| ai16z (AI16Z) | 21 |  |
 | Vine Coin (VINE) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
@@ -33,6 +33,7 @@
 | PAAL AI (PAAL) | 13 |  |
 | AB (AB) | 11 |  |
 | B3 (Base) (B3) | 10 |  |
+| Pocket Network (POKT) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Morpho (MORPHO) | 9 |  |
@@ -43,7 +44,6 @@
 | FLock.io (FLOCK) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
-| Pocket Network (POKT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
@@ -60,6 +60,7 @@
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
+| APENFT (NFT) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
