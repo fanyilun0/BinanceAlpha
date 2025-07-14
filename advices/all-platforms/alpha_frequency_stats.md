@@ -1,28 +1,28 @@
-# Alpha项目频率统计 (2025-07-13)
+# Alpha项目频率统计 (2025-07-14)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 71 |  |
+| Fartcoin (FARTCOIN) | 74 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| Moo Deng (MOODENG) | 40 |  |
-| SPX6900 (SPX) | 40 |  |
+| Moo Deng (MOODENG) | 43 |  |
+| SPX6900 (SPX) | 43 |  |
 | 48 Club Token (KOGE) | 40 |  |
 | Plume (PLUME) | 39 |  |
 | Velo (VELO) | 38 |  |
 | Safe (SAFE) | 35 |  |
 | Roam (ROAM) | 31 |  |
+| Aerodrome Finance (AERO) | 30 |  |
 | Popcat (POPCAT) | 30 |  |
 | SKYAI (SKYAI) | 29 |  |
-| Aerodrome Finance (AERO) | 28 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
 | CARV (CARV) | 26 |  |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
+| ZORA (ZORA) | 24 |  |
 | ai16z (AI16Z) | 24 |  |
-| ZORA (ZORA) | 22 |  |
+| Vine Coin (VINE) | 23 |  |
 | Venice Token (VVV) | 22 |  |
-| Vine Coin (VINE) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
@@ -31,8 +31,8 @@
 | Lorenzo Protocol (BANK) | 16 |  |
 | Grass (GRASS) | 15 |  |
 | PAAL AI (PAAL) | 13 |  |
+| B3 (Base) (B3) | 12 |  |
 | AB (AB) | 11 |  |
-| B3 (Base) (B3) | 10 |  |
 | Pocket Network (POKT) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
@@ -42,17 +42,18 @@
 | EGL1 (EGL1) | 9 |  |
 | Bulla (BULLA) | 8 |  |
 | FLock.io (FLOCK) | 8 |  |
+| Humanity Protocol (H) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
+| APENFT (NFT) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
 | Solidus Ai Tech (AITECH) | 5 |  |
 | GRIFFAIN (GRIFFAIN) | 5 |  |
-| Humanity Protocol (H) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | Zerebro (ZEREBRO) | 4 |  |
@@ -60,7 +61,6 @@
 | ZetaChain (ZETA) | 3 |  |
 | PumpBTC (PUMP) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
-| APENFT (NFT) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
