@@ -1,22 +1,22 @@
-# Alpha项目频率统计 (2025-07-17)
+# Alpha项目频率统计 (2025-07-18)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 74 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| Moo Deng (MOODENG) | 46 |  |
+| Moo Deng (MOODENG) | 49 |  |
 | SPX6900 (SPX) | 45 |  |
 | 48 Club Token (KOGE) | 45 |  |
-| Plume (PLUME) | 39 |  |
+| Plume (PLUME) | 42 |  |
 | Velo (VELO) | 38 |  |
+| Aerodrome Finance (AERO) | 35 |  |
 | Safe (SAFE) | 35 |  |
-| Aerodrome Finance (AERO) | 32 |  |
 | Roam (ROAM) | 31 |  |
+| CARV (CARV) | 31 |  |
+| ai16z (AI16Z) | 30 |  |
 | Popcat (POPCAT) | 30 |  |
 | SKYAI (SKYAI) | 29 |  |
-| CARV (CARV) | 28 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
-| ai16z (AI16Z) | 27 |  |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
@@ -26,15 +26,16 @@
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
+| EGL1 (EGL1) | 17 |  |
 | siren (SIREN) | 16 |  |
+| PAAL AI (PAAL) | 16 |  |
 | BUILDon (B) | 16 |  |
 | B3 (Base) (B3) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Grass (GRASS) | 15 |  |
-| EGL1 (EGL1) | 14 |  |
-| PAAL AI (PAAL) | 13 |  |
+| FLock.io (FLOCK) | 13 |  |
 | AB (AB) | 11 |  |
-| FLock.io (FLOCK) | 10 |  |
+| Solidus Ai Tech (AITECH) | 10 |  |
 | Pocket Network (POKT) | 10 |  |
 | Humanity Protocol (H) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
@@ -44,8 +45,8 @@
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
 | BSquared Network (B2) | 8 |  |
+| Odos (ODOS) | 7 |  |
 | Drift (DRIFT) | 7 |  |
-| Solidus Ai Tech (AITECH) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | PumpBTC (PUMP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
@@ -57,10 +58,11 @@
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
-| Odos (ODOS) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
+| APX (APX) | 3 |  |
+| Metaplex (MPLX) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | TAC Protocol (TAC) | 3 |  |
