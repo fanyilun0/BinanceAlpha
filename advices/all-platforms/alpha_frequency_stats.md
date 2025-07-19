@@ -1,19 +1,19 @@
-# Alpha项目频率统计 (2025-07-18)
+# Alpha项目频率统计 (2025-07-19)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 74 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| Moo Deng (MOODENG) | 49 |  |
-| SPX6900 (SPX) | 45 |  |
-| 48 Club Token (KOGE) | 45 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 53 |  |
+| SPX6900 (SPX) | 48 |  |
+| 48 Club Token (KOGE) | 46 |  |
 | Plume (PLUME) | 42 |  |
 | Velo (VELO) | 38 |  |
 | Aerodrome Finance (AERO) | 35 |  |
 | Safe (SAFE) | 35 |  |
+| CARV (CARV) | 34 |  |
+| ai16z (AI16Z) | 33 |  |
 | Roam (ROAM) | 31 |  |
-| CARV (CARV) | 31 |  |
-| ai16z (AI16Z) | 30 |  |
 | Popcat (POPCAT) | 30 |  |
 | SKYAI (SKYAI) | 29 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
@@ -23,29 +23,29 @@
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
 | Vine Coin (VINE) | 23 |  |
+| PAAL AI (PAAL) | 19 |  |
+| B3 (Base) (B3) | 19 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
+| EGL1 (EGL1) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| EGL1 (EGL1) | 17 |  |
 | siren (SIREN) | 16 |  |
-| PAAL AI (PAAL) | 16 |  |
 | BUILDon (B) | 16 |  |
-| B3 (Base) (B3) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Grass (GRASS) | 15 |  |
+| Solidus Ai Tech (AITECH) | 13 |  |
 | FLock.io (FLOCK) | 13 |  |
+| tokenbot (CLANKER) | 12 |  |
 | AB (AB) | 11 |  |
-| Solidus Ai Tech (AITECH) | 10 |  |
+| Odos (ODOS) | 10 |  |
 | Pocket Network (POKT) | 10 |  |
 | Humanity Protocol (H) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Morpho (MORPHO) | 9 |  |
-| tokenbot (CLANKER) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
 | BSquared Network (B2) | 8 |  |
-| Odos (ODOS) | 7 |  |
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | PumpBTC (PUMP) | 6 |  |
@@ -58,6 +58,7 @@
 | GRIFFAIN (GRIFFAIN) | 5 |  |
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
+| TAC Protocol (TAC) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
@@ -65,7 +66,6 @@
 | Metaplex (MPLX) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
-| TAC Protocol (TAC) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
 | Rekt (REKT) | 3 |  |
