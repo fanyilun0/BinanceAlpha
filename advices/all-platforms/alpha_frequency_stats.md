@@ -1,21 +1,21 @@
-# Alpha项目频率统计 (2025-07-20)
+# Alpha项目频率统计 (2025-07-21)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 74 |  |
+| Fartcoin (FARTCOIN) | 75 |  |
 | Alchemist AI (ALCH) | 60 |  |
 | TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 56 |  |
-| 48 Club Token (KOGE) | 48 |  |
+| 48 Club Token (KOGE) | 52 |  |
 | SPX6900 (SPX) | 48 |  |
 | Plume (PLUME) | 42 |  |
+| Aerodrome Finance (AERO) | 40 |  |
+| ai16z (AI16Z) | 39 |  |
 | Velo (VELO) | 38 |  |
 | CARV (CARV) | 37 |  |
-| Aerodrome Finance (AERO) | 37 |  |
-| ai16z (AI16Z) | 36 |  |
 | Safe (SAFE) | 35 |  |
+| SKYAI (SKYAI) | 33 |  |
+| Popcat (POPCAT) | 33 |  |
 | Roam (ROAM) | 31 |  |
-| Popcat (POPCAT) | 30 |  |
-| SKYAI (SKYAI) | 29 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
 | Mog Coin (MOG) | 26 |  |
 | Aethir (ATH) | 25 |  |
@@ -23,25 +23,26 @@
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
 | Vine Coin (VINE) | 23 |  |
+| PAAL AI (PAAL) | 21 |  |
 | EGL1 (EGL1) | 20 |  |
-| PAAL AI (PAAL) | 19 |  |
+| siren (SIREN) | 20 |  |
 | B3 (Base) (B3) | 19 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | BUILDon (B) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| siren (SIREN) | 16 |  |
+| Grass (GRASS) | 16 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | FLock.io (FLOCK) | 15 |  |
-| Grass (GRASS) | 15 |  |
+| Humanity Protocol (H) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
-| Humanity Protocol (H) | 13 |  |
 | tokenbot (CLANKER) | 12 |  |
 | AB (AB) | 11 |  |
 | Odos (ODOS) | 10 |  |
 | Pocket Network (POKT) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| Metaplex (MPLX) | 9 |  |
 | Morpho (MORPHO) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
@@ -49,11 +50,11 @@
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | PumpBTC (PUMP) | 6 |  |
-| Metaplex (MPLX) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | APENFT (NFT) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
+| Redacted (RDAC) | 6 |  |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
 | Degen (DEGEN) | 6 |  |
 | Particle Network (PARTI) | 5 | 🔔 已上币 |
@@ -66,7 +67,6 @@
 | ZetaChain (ZETA) | 3 |  |
 | APX (APX) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
-| Redacted (RDAC) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
