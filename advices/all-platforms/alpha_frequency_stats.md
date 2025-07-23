@@ -1,40 +1,40 @@
-# Alpha项目频率统计 (2025-07-22)
+# Alpha项目频率统计 (2025-07-23)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 75 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 56 |  |
-| 48 Club Token (KOGE) | 52 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 59 |  |
+| 48 Club Token (KOGE) | 55 |  |
 | SPX6900 (SPX) | 48 |  |
+| ai16z (AI16Z) | 42 |  |
+| Aerodrome Finance (AERO) | 42 |  |
 | Plume (PLUME) | 42 |  |
-| Aerodrome Finance (AERO) | 40 |  |
-| ai16z (AI16Z) | 39 |  |
+| CARV (CARV) | 40 |  |
 | Velo (VELO) | 38 |  |
-| CARV (CARV) | 37 |  |
 | Safe (SAFE) | 35 |  |
 | SKYAI (SKYAI) | 33 |  |
 | Popcat (POPCAT) | 33 |  |
 | Roam (ROAM) | 31 |  |
+| Aethir (ATH) | 28 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
 | Mog Coin (MOG) | 26 |  |
-| Aethir (ATH) | 25 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
+| EGL1 (EGL1) | 23 |  |
 | Vine Coin (VINE) | 23 |  |
 | PAAL AI (PAAL) | 21 |  |
-| EGL1 (EGL1) | 20 |  |
+| B3 (Base) (B3) | 21 |  |
 | siren (SIREN) | 20 |  |
-| B3 (Base) (B3) | 19 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
+| Grass (GRASS) | 19 |  |
 | BUILDon (B) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
+| Humanity Protocol (H) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| Grass (GRASS) | 16 |  |
+| FLock.io (FLOCK) | 17 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
-| FLock.io (FLOCK) | 15 |  |
-| Humanity Protocol (H) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
 | tokenbot (CLANKER) | 12 |  |
 | AB (AB) | 11 |  |
@@ -67,6 +67,7 @@
 | ZetaChain (ZETA) | 3 |  |
 | APX (APX) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
+| Fair and Free (FAIR3) | 3 |  |
 | MilkyWay (MILK) | 3 |  |
 | Subsquid (SQD) | 3 |  |
 | Bedrock (BR) | 3 |  |
