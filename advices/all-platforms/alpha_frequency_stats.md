@@ -1,14 +1,14 @@
-# Alpha项目频率统计 (2025-07-23)
+# Alpha项目频率统计 (2025-07-24)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 75 |  |
+| Fartcoin (FARTCOIN) | 78 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 62 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 59 |  |
-| 48 Club Token (KOGE) | 55 |  |
-| SPX6900 (SPX) | 48 |  |
-| ai16z (AI16Z) | 42 |  |
-| Aerodrome Finance (AERO) | 42 |  |
+| 48 Club Token (KOGE) | 58 |  |
+| SPX6900 (SPX) | 50 |  |
+| ai16z (AI16Z) | 45 |  |
+| Aerodrome Finance (AERO) | 45 |  |
 | Plume (PLUME) | 42 |  |
 | CARV (CARV) | 40 |  |
 | Velo (VELO) | 38 |  |
@@ -17,32 +17,33 @@
 | Popcat (POPCAT) | 33 |  |
 | Roam (ROAM) | 31 |  |
 | Aethir (ATH) | 28 |  |
+| Mog Coin (MOG) | 28 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
-| Mog Coin (MOG) | 26 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
 | EGL1 (EGL1) | 23 |  |
+| siren (SIREN) | 23 |  |
 | Vine Coin (VINE) | 23 |  |
 | PAAL AI (PAAL) | 21 |  |
 | B3 (Base) (B3) | 21 |  |
-| siren (SIREN) | 20 |  |
+| FLock.io (FLOCK) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | BUILDon (B) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | Humanity Protocol (H) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| FLock.io (FLOCK) | 17 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
+| Odos (ODOS) | 13 |  |
 | tokenbot (CLANKER) | 12 |  |
 | AB (AB) | 11 |  |
-| Odos (ODOS) | 10 |  |
 | Pocket Network (POKT) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | Metaplex (MPLX) | 9 |  |
+| APENFT (NFT) | 9 |  |
 | Morpho (MORPHO) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
@@ -52,7 +53,6 @@
 | PumpBTC (PUMP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
-| APENFT (NFT) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
 | Redacted (RDAC) | 6 |  |
 | Huma Finance (HUMA) | 6 | 🔔 已上币 |
@@ -77,6 +77,7 @@
 | Cookie DAO (COOKIE) | 3 | 🔔 已上币 |
 | GoPlus Security (GPS) | 3 | 🔔 已上币 |
 | Taiko (TAIKO) | 3 |  |
+| CROSS (CROSS) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
