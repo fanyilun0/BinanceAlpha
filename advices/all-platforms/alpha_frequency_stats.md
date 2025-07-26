@@ -1,15 +1,15 @@
-# Alpha项目频率统计 (2025-07-25)
+# Alpha项目频率统计 (2025-07-26)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 78 |  |
+| Fartcoin (FARTCOIN) | 81 |  |
 | TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 62 |  |
 | Alchemist AI (ALCH) | 60 |  |
 | 48 Club Token (KOGE) | 58 |  |
 | SPX6900 (SPX) | 53 |  |
 | Aerodrome Finance (AERO) | 47 |  |
 | ai16z (AI16Z) | 45 |  |
-| Plume (PLUME) | 42 |  |
+| Plume (PLUME) | 45 |  |
 | CARV (CARV) | 40 |  |
 | Velo (VELO) | 38 |  |
 | Safe (SAFE) | 35 |  |
@@ -20,29 +20,30 @@
 | Mog Coin (MOG) | 28 |  |
 | siren (SIREN) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
+| Vine Coin (VINE) | 26 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
 | EGL1 (EGL1) | 23 |  |
 | B3 (Base) (B3) | 23 |  |
-| Vine Coin (VINE) | 23 |  |
+| FLock.io (FLOCK) | 23 |  |
 | PAAL AI (PAAL) | 21 |  |
-| FLock.io (FLOCK) | 20 |  |
+| Humanity Protocol (H) | 21 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | BUILDon (B) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
-| Humanity Protocol (H) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
+| tokenbot (CLANKER) | 17 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | AB (AB) | 15 |  |
-| tokenbot (CLANKER) | 14 |  |
+| APENFT (NFT) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
 | Odos (ODOS) | 13 |  |
 | Pocket Network (POKT) | 13 |  |
-| APENFT (NFT) | 12 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
+| PumpBTC (PUMP) | 9 |  |
 | Metaplex (MPLX) | 9 |  |
 | Morpho (MORPHO) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
@@ -51,7 +52,6 @@
 | Drift (DRIFT) | 7 |  |
 | Subsquid (SQD) | 7 |  |
 | Magpie (MGP) | 6 |  |
-| PumpBTC (PUMP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
