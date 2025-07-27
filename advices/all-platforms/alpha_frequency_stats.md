@@ -1,16 +1,16 @@
-# Alpha项目频率统计 (2025-07-26)
+# Alpha项目频率统计 (2025-07-27)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 81 |  |
+| 48 Club Token (KOGE) | 62 |  |
 | TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 62 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| 48 Club Token (KOGE) | 58 |  |
-| SPX6900 (SPX) | 53 |  |
+| SPX6900 (SPX) | 56 |  |
 | Aerodrome Finance (AERO) | 47 |  |
 | ai16z (AI16Z) | 45 |  |
 | Plume (PLUME) | 45 |  |
-| CARV (CARV) | 40 |  |
+| CARV (CARV) | 43 |  |
 | Velo (VELO) | 38 |  |
 | Safe (SAFE) | 35 |  |
 | SKYAI (SKYAI) | 33 |  |
@@ -18,29 +18,30 @@
 | Roam (ROAM) | 31 |  |
 | Aethir (ATH) | 28 |  |
 | Mog Coin (MOG) | 28 |  |
+| EGL1 (EGL1) | 27 |  |
 | siren (SIREN) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
+| B3 (Base) (B3) | 26 |  |
 | Vine Coin (VINE) | 26 |  |
+| FLock.io (FLOCK) | 26 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
-| EGL1 (EGL1) | 23 |  |
-| B3 (Base) (B3) | 23 |  |
-| FLock.io (FLOCK) | 23 |  |
 | PAAL AI (PAAL) | 21 |  |
 | Humanity Protocol (H) | 21 |  |
+| tokenbot (CLANKER) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | BUILDon (B) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
+| APENFT (NFT) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| tokenbot (CLANKER) | 17 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | AB (AB) | 15 |  |
-| APENFT (NFT) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
 | Odos (ODOS) | 13 |  |
 | Pocket Network (POKT) | 13 |  |
+| Subsquid (SQD) | 11 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | PumpBTC (PUMP) | 9 |  |
@@ -50,7 +51,6 @@
 | Bulla (BULLA) | 8 |  |
 | BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
-| Subsquid (SQD) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
