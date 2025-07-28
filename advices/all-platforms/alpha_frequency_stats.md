@@ -1,12 +1,12 @@
-# Alpha项目频率统计 (2025-07-27)
+# Alpha项目频率统计 (2025-07-28)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 81 |  |
+| Fartcoin (FARTCOIN) | 84 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 65 |  |
 | 48 Club Token (KOGE) | 62 |  |
-| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 62 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| SPX6900 (SPX) | 56 |  |
+| SPX6900 (SPX) | 59 |  |
 | Aerodrome Finance (AERO) | 47 |  |
 | ai16z (AI16Z) | 45 |  |
 | Plume (PLUME) | 45 |  |
@@ -16,30 +16,30 @@
 | SKYAI (SKYAI) | 33 |  |
 | Popcat (POPCAT) | 33 |  |
 | Roam (ROAM) | 31 |  |
+| EGL1 (EGL1) | 30 |  |
+| siren (SIREN) | 30 |  |
+| Vine Coin (VINE) | 29 |  |
+| B3 (Base) (B3) | 28 |  |
+| FLock.io (FLOCK) | 28 |  |
 | Aethir (ATH) | 28 |  |
 | Mog Coin (MOG) | 28 |  |
-| EGL1 (EGL1) | 27 |  |
-| siren (SIREN) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
-| B3 (Base) (B3) | 26 |  |
-| Vine Coin (VINE) | 26 |  |
-| FLock.io (FLOCK) | 26 |  |
+| PAAL AI (PAAL) | 24 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
 | Venice Token (VVV) | 24 |  |
-| PAAL AI (PAAL) | 21 |  |
+| BUILDon (B) | 21 |  |
+| APENFT (NFT) | 21 |  |
 | Humanity Protocol (H) | 21 |  |
 | tokenbot (CLANKER) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Grass (GRASS) | 19 |  |
-| BUILDon (B) | 18 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
-| APENFT (NFT) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
+| Odos (ODOS) | 15 |  |
 | AB (AB) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
-| Odos (ODOS) | 13 |  |
 | Pocket Network (POKT) | 13 |  |
 | Subsquid (SQD) | 11 |  |
 | Merlin Chain (MERL) | 9 |  |
