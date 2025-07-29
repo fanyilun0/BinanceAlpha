@@ -1,37 +1,37 @@
-# Alpha项目频率统计 (2025-07-28)
+# Alpha项目频率统计 (2025-07-29)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 84 |  |
+| Fartcoin (FARTCOIN) | 87 |  |
 | TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 65 |  |
 | 48 Club Token (KOGE) | 62 |  |
 | Alchemist AI (ALCH) | 60 |  |
 | SPX6900 (SPX) | 59 |  |
+| ai16z (AI16Z) | 48 |  |
 | Aerodrome Finance (AERO) | 47 |  |
-| ai16z (AI16Z) | 45 |  |
+| CARV (CARV) | 46 |  |
 | Plume (PLUME) | 45 |  |
-| CARV (CARV) | 43 |  |
 | Velo (VELO) | 38 |  |
 | Safe (SAFE) | 35 |  |
 | SKYAI (SKYAI) | 33 |  |
 | Popcat (POPCAT) | 33 |  |
+| Vine Coin (VINE) | 32 |  |
 | Roam (ROAM) | 31 |  |
 | EGL1 (EGL1) | 30 |  |
 | siren (SIREN) | 30 |  |
-| Vine Coin (VINE) | 29 |  |
+| FLock.io (FLOCK) | 30 |  |
 | B3 (Base) (B3) | 28 |  |
-| FLock.io (FLOCK) | 28 |  |
 | Aethir (ATH) | 28 |  |
 | Mog Coin (MOG) | 28 |  |
+| PAAL AI (PAAL) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
-| PAAL AI (PAAL) | 24 |  |
+| Venice Token (VVV) | 26 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
-| Venice Token (VVV) | 24 |  |
+| APENFT (NFT) | 24 |  |
+| tokenbot (CLANKER) | 22 |  |
 | BUILDon (B) | 21 |  |
-| APENFT (NFT) | 21 |  |
 | Humanity Protocol (H) | 21 |  |
-| tokenbot (CLANKER) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
