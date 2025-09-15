@@ -42,7 +42,8 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
         name = crypto.get("name", "未知")
         symbol = crypto.get("symbol", "未知")
         rank = crypto.get("cmcRank", "未知")
-        
+        chain = crypto.get("platform", {}).get("name", "未知")
+
         # 使用简化的函数直接检查symbol是否上线
         is_listed = is_token_listed(symbol)
         
@@ -75,6 +76,7 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
             "排名": rank,
             "名称": name,
             "代码": symbol,
+            "chain": chain,
             "是否上线": "是" if is_listed else "否",
             "价格($)": round(price, 4),
             "24h变化(%)": round(percent_change_24h, 2),
