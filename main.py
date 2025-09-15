@@ -321,6 +321,50 @@ def determine_platforms_to_process(platforms, target_platform=None, debug_only=F
         
     return platforms_to_process
 
+async def process_platform_advice(advisor, platform_data, max_retries, retry_delay, debug_only, platform):
+    """处理单个平台的投资建议
+    
+    Args:
+        advisor: AI顾问实例
+        platform_data: 平台数据
+        max_retries: 最大重试次数
+        retry_delay: 重试延迟
+        debug_only: 是否仅调试
+        platform: 平台名称
+        
+    Returns:
+        Tuple[str, str, bool]: 平台名称、投资建议、是否成功
+    """
+    print(f"正在为平台 {platform} ({len(platform_data['data']['cryptoCurrencyList'])}个项目) 获取投资建议...")
+    
+    # 获取投资建议
+    advice = await advisor.get_investment_advice_async(
+        platform_data, 
+        max_retries=max_retries, 
+        retry_delay=retry_delay,
+        debug=True,
+        dry_run=debug_only
+    )
+    
+    if advice:
+        # 发送建议
+        if not debug_only:
+            await send_message_async(advice)
+        
+        # 保存建议到文件
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        platform_filename = platform.lower().replace(' ', '_')
+        advice_file = os.path.join(DATA_DIRS['advices'], f"advice_{timestamp}_{platform_filename}.md")
+        
+        with open(advice_file, 'w', encoding='utf-8') as f:
+            f.write(advice)
+            
+        print(f"已保存{platform}平台投资建议到: {advice_file}")
+        return platform, advice, True
+    else:
+        print(f"获取{platform}平台投资建议失败")
+        return platform, "", False
+
 async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_platform=None, listed_tokens=None):
     """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
     
@@ -405,25 +449,21 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
     # 创建建议目录
     advice_dir = DATA_DIRS['advices']
     os.makedirs(advice_dir, exist_ok=True)
+    os.makedirs(DATA_DIRS['all-platforms'], exist_ok=True)
     
     # 按平台获取投资建议
     results = {}
     failed_platforms = []
     all_advice = f"# 币安Alpha项目投资建议 (按区块链平台分类，{date})\n\n"
     
-    # 添加断路器计数
-    consecutive_failures = 0
-    max_consecutive_failures = 3
-    
-    # 遍历每个平台，请求投资建议
+    # 准备平台数据
+    platform_data_list = []
     for platform in platforms_to_process:
         projects = platform_projects.get(platform, [])
         if not projects:
             print(f"平台 {platform} 没有项目，跳过")
             continue
             
-        print(f"正在为平台 {platform} ({len(projects)}个项目) 获取投资建议...")
-        
         # 准备针对当前平台的数据
         platform_data = {
             "data": {
@@ -433,52 +473,36 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
             "platform": platform,
             "total_count": len(projects)
         }
-        
-        # 获取投资建议
-        advice = advisor.get_investment_advice(
+        platform_data_list.append((platform, platform_data))
+    
+    # 并行处理所有平台
+    tasks = []
+    for platform, platform_data in platform_data_list:
+        task = process_platform_advice(
+            advisor, 
             platform_data, 
-            max_retries=max_retries, 
-            retry_delay=retry_delay,
-            debug=True,
-            dry_run=debug_only
+            max_retries, 
+            retry_delay, 
+            debug_only, 
+            platform
         )
-        
-        if advice:
-            await send_message_async(advice)
-
-            # 保存建议到文件
-            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            platform_filename = platform.lower().replace(' ', '_')
-            advice_file = os.path.join(advice_dir, f"advice_{timestamp}_{platform_filename}.md")
-            
-            with open(advice_file, 'w', encoding='utf-8') as f:
-                f.write(advice)
-                
-            print(f"已保存{platform}平台投资建议到: {advice_file}")
-            
-            # 添加到总建议中
+        tasks.append(task)
+    
+    # 等待所有任务完成
+    platform_results = await asyncio.gather(*tasks)
+    
+    # 处理结果
+    for platform, advice, success in platform_results:
+        if success:
             results[platform] = advice
             all_advice += f"## {platform}平台投资建议\n\n{advice}\n\n---\n\n"
-            
-            # 重置连续失败计数
-            consecutive_failures = 0
-            
         else:
-            print(f"获取{platform}平台投资建议失败")
             failed_platforms.append(platform)
-            
-            # 增加连续失败计数
-            consecutive_failures += 1
-            
-            # 如果连续失败次数达到阈值，中断后续请求
-            if consecutive_failures >= max_consecutive_failures:
-                print(f"连续{consecutive_failures}次请求失败，中断后续平台处理")
-                break
     
     # 保存所有平台的建议到一个文件
     if results:
         timestamp = datetime.now().strftime('%Y%m%d')
-        all_advice_file = os.path.join(DATA_DIRS['all-platforms'], f"advice_{timestamp}.md")
+        all_advice_file = os.path.join(DATA_DIRS['all-platforms'], f"advice_{timestamp}_all_platforms.md")
         
         with open(all_advice_file, 'w', encoding='utf-8') as f:
             f.write(all_advice)
@@ -494,34 +518,52 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         
     return len(results) > 0
 
-async def main():
-    """主函数
-    
-    执行流程:
-    - 获取并更新Binance交易对列表
-    - 获取币安Alpha项目列表数据
-    - 按区块链平台分类项目
-    - 为每个平台分别调用AI生成投资建议
-    - 推送到webhook
-    """
-    
-    # 从配置中获取支持的平台列表
-    supported_platforms = list(BLOCKCHAIN_PLATFORMS.keys())
-    
-    # 解析命令行参数
-    parser = argparse.ArgumentParser(description="Crypto Monitor - 币安Alpha项目分析工具")
-    parser.add_argument("--debug-only", action="store_true", help="启用调试模式，仅生成提示词不发送API请求")
-    parser.add_argument("--platform", type=str, choices=supported_platforms, 
-                       help=f"指定要处理的平台（仅在调试模式下有效）: {', '.join(supported_platforms)}")
-    parser.add_argument("--force-update", action="store_true", help="强制更新数据，不使用缓存")
-    parser.add_argument("--skip-tokens-update", action="store_true", help="跳过更新Binance交易对列表")
-    args = parser.parse_args()
+async def run_coinmarket_only():
+    """仅运行CoinMarket数据获取和图片推送功能"""
+    print("\n===============================================================")
+    print(" 币安Alpha项目CoinMarket数据获取")
+    print("===============================================================\n")
     
     try:
-        print("\n===============================================================")
-        print(" 币安Alpha项目分析工具")
-        print("===============================================================\n")
+        # 获取并更新Binance交易对列表
+        print("步骤1: 获取并更新Binance交易对列表...\n")
+        listed_tokens = await get_binance_tokens()
         
+        # 获取币安Alpha项目列表数据并推送图片
+        print("步骤2: 获取币安Alpha项目列表数据并推送图片...\n")
+        alpha_data = await get_binance_alpha_list(
+            force_update=True, 
+            listed_tokens=listed_tokens, 
+            debug_only=False, 
+            as_image=True
+        )
+        
+        if not alpha_data:
+            logger.error("获取币安Alpha项目列表数据失败，程序退出")
+            print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
+            return 1
+        
+        print("\n===============================================================")
+        print(" CoinMarket数据获取完成，程序退出")
+        print("===============================================================\n")
+        return 0
+        
+    except Exception as e:
+        logger.error(f"CoinMarket数据获取过程中出错: {str(e)}")
+        print(f"\n错误: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        logger.debug(error_details)
+        print("错误详情已记录到日志文件")
+        return 1
+
+async def run_ai_analysis(args):
+    """运行AI分析功能"""
+    print("\n===============================================================")
+    print(" 币安Alpha项目AI投资分析")
+    print("===============================================================\n")
+    
+    try:
         # 显示运行模式信息
         print("运行模式:")
         mode_info = []
@@ -549,10 +591,16 @@ async def main():
             print("步骤1: 获取并更新Binance交易对列表...\n")
             listed_tokens = await get_binance_tokens()
         
-        # 获取币安Alpha项目列表数据
+        # 获取币安Alpha项目列表数据（不推送图片，仅获取数据用于AI分析）
         step_num = 2 if not args.skip_tokens_update else 1
         print(f"步骤{step_num}: 获取币安Alpha项目列表数据...\n")
-        alpha_data = await get_binance_alpha_list(force_update=args.force_update, listed_tokens=listed_tokens, debug_only=args.debug_only, as_image=True)
+        alpha_data = await get_binance_alpha_list(
+            force_update=args.force_update, 
+            listed_tokens=listed_tokens, 
+            debug_only=args.debug_only, 
+            as_image=False  # AI分析模式不推送图片
+        )
+        
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
@@ -562,45 +610,69 @@ async def main():
         print(f"\n步骤{step_num}: 分类项目并生成投资建议...\n")
         
         # 按区块链平台获取AI投资建议
-        try:
-            success = await get_alpha_investment_advice(
-                alpha_data, 
-                debug_only=args.debug_only, 
-                target_platform=args.platform if args.debug_only else None,
-                listed_tokens=listed_tokens
-            )
-            
-            if success == True:
-                if args.debug_only:
-                    print("\n成功：提示词生成完成")
-                else:
-                    print("\n成功：所有平台投资建议处理完成")
-            elif success == "partial_success":
-                print("\n部分成功：某些平台处理成功，某些平台处理失败")
+        success = await get_alpha_investment_advice(
+            alpha_data, 
+            debug_only=args.debug_only, 
+            target_platform=args.platform if args.debug_only else None,
+            listed_tokens=listed_tokens
+        )
+        
+        if success == True:
+            if args.debug_only:
+                print("\n成功：提示词生成完成")
             else:
-                print("\n警告：所有平台处理过程中出现错误")
-        except Exception as e:
-            logger.error(f"生成投资建议过程中出错: {str(e)}")
-            print(f"\n错误: 生成投资建议过程中出错: {str(e)}")
-            import traceback
-            error_details = traceback.format_exc()
-            logger.debug(error_details)
-            print("错误详情已记录到日志文件")
-            return 1
+                print("\n成功：所有平台投资建议处理完成")
+        elif success == "partial_success":
+            print("\n部分成功：某些平台处理成功，某些平台处理失败")
+        else:
+            print("\n警告：所有平台处理过程中出现错误")
             
         print("\n===============================================================")
-        print(" 处理完成，程序退出")
+        print(" AI投资分析完成，程序退出")
         print("===============================================================\n")
         return 0
         
     except Exception as e:
-        logger.error(f"程序执行过程中出错: {str(e)}")
-        print(f"\n错误: {str(e)}")
+        logger.error(f"AI投资分析过程中出错: {str(e)}")
+        print(f"\n错误: 生成投资建议过程中出错: {str(e)}")
         import traceback
         error_details = traceback.format_exc()
         logger.debug(error_details)
         print("错误详情已记录到日志文件")
         return 1
+
+async def main():
+    """主函数
+    
+    支持两种运行模式:
+    1. --coinmarket-only: 仅获取CoinMarket数据并推送图片到webhook
+    2. 默认模式: 获取数据并进行AI投资分析
+    """
+    
+    # 从配置中获取支持的平台列表
+    supported_platforms = list(BLOCKCHAIN_PLATFORMS.keys())
+    
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description="Crypto Monitor - 币安Alpha项目分析工具")
+    parser.add_argument("--coinmarket-only", action="store_true", 
+                       help="仅获取CoinMarket数据并推送图片，不进行AI分析")
+    parser.add_argument("--debug-only", action="store_true", 
+                       help="启用调试模式，仅生成提示词不发送API请求")
+    parser.add_argument("--platform", type=str, choices=supported_platforms, 
+                       help=f"指定要处理的平台（仅在调试模式下有效）: {', '.join(supported_platforms)}")
+    parser.add_argument("--force-update", action="store_true", 
+                       help="强制更新数据，不使用缓存")
+    parser.add_argument("--skip-tokens-update", action="store_true", 
+                       help="跳过更新Binance交易对列表")
+    args = parser.parse_args()
+    
+    # 根据参数选择运行模式
+    if args.coinmarket_only:
+        # 仅获取CoinMarket数据并推送图片
+        return await run_coinmarket_only()
+    else:
+        # 运行AI分析功能
+        return await run_ai_analysis(args)
 
 if __name__ == "__main__":
     if platform.system() == 'Windows':
