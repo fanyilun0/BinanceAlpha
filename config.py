@@ -43,7 +43,7 @@ PLATFORMS_TO_QUERY = []
 # 需要屏蔽的代币列表
 # 可以使用符号(symbol)、名称(name)或ID进行匹配
 # 例如: ["BTC", "Bitcoin", "ETH", "Ethereum"]
-BLOCK_TOKEN_LIST = []
+BLOCK_TOKEN_LIST = ["KOGE"]
 
 # 市场情绪指标配置
 MARKET_SENTIMENT = {
@@ -57,8 +57,8 @@ DEEPSEEK_AI = {
     'model': os.getenv('DEEPSEEK_MODEL', 'deepseek-reasoner'),
     'api_key': os.getenv('DEEPSEEK_API_KEY', ''),
     'temperature': 0,
-    'max_tokens': 32000,
+    'max_tokens': 64000,
     'top_p': 1.0,
     'stream': False,
-    'timeout': int(os.getenv('DEEPSEEK_API_TIMEOUT', '600'))  # API请求超时时间(秒)
+    'timeout': int(os.getenv('DEEPSEEK_API_TIMEOUT', '900'))  # API请求超时时间(秒)
 }
