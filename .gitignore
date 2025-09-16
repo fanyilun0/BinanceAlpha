@@ -48,3 +48,5 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+symbols/raw/
