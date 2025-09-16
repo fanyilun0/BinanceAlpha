@@ -70,6 +70,9 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
         
         # 计算MC/FDV比率
         mc_fdv_ratio = market_cap / fdv if fdv > 0 else 0
+
+        # 计算VOL/MC比率
+        vol_mc_ratio = volume_24h / market_cap if market_cap > 0 else 0
         
         # 数据格式化
         data.append({
@@ -82,8 +85,9 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
             "24h变化(%)": round(percent_change_24h, 2),
             "交易量(M$)": round(volume_24h / 1000000, 2),
             "市值(M$)": round(market_cap / 1000000, 2),
+            "VOL/MC": round(vol_mc_ratio, 2),
             "FDV(M$)": round(fdv / 1000000, 2),
-            "MC/FDV": round(mc_fdv_ratio, 2)
+            "MC/FDV": round(mc_fdv_ratio, 2),
         })
     
     # 创建DataFrame
