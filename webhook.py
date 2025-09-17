@@ -200,13 +200,12 @@ async def send_message_async(message_content, msg_type="text"):
     else:
         print("消息发送成功!")
 
-async def send_image_async(image_path=None, image_base64=None, title=None):
+async def send_image_async(image_path=None, image_base64=None):
     """发送图片到webhook
     
     Args:
         image_path: 图片路径
         image_base64: 图片base64编码，优先使用
-        title: 图片标题，可选
         
     Returns:
         bool: 是否发送成功
@@ -214,13 +213,6 @@ async def send_image_async(image_path=None, image_base64=None, title=None):
     headers = {'Content-Type': 'application/json'}
     proxy = PROXY_URL if USE_PROXY else None
     
-    # 先发送标题消息（如果有）
-    if title:
-        await send_message_async(title)
-        # 等待一小段时间以避免触发频率限制
-        await asyncio.sleep(0.5)
-    
-    # 发送图片
     async with aiohttp.ClientSession() as session:
         success = await _send_image(session, image_path, image_base64, headers, proxy)
         return success

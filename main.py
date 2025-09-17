@@ -18,7 +18,8 @@ from src.utils.historical_data import BinanceAlphaDataCollector
 from src.utils.binance_symbols import is_token_listed, update_tokens, check_token_listing_status
 from src.utils.crypto_formatter import format_project_summary, save_crypto_list_by_platform, save_crypto_data
 from src.ai import AlphaAdvisor
-from src.utils.image_generator import create_alpha_table_image
+from src.utils.image_generator import create_alpha_table_image, create_top_vol_mc_ratio_image
+
 
 # 配置日志
 logging.basicConfig(
@@ -159,13 +160,23 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
             
             if not debug_only:
                 from webhook import send_image_async
-                summary_message = f"📊 币安Alpha项目列表 (更新时间: {alpha_data.get('date')})\n"
-                summary_message += "🔝 Top 100 币安Alpha项目 (按市值排序):"
                 
                 await send_image_async(
                     image_path=image_path, 
                     image_base64=image_base64,
-                    title=summary_message
+                )
+                
+                # 创建和发送VOL/MC比值排序的Top10项目图片
+                top_vol_mc_image_path, top_vol_mc_image_base64 = create_top_vol_mc_ratio_image(
+                    crypto_list=crypto_list,
+                    date=alpha_data.get('date', '')
+                )
+                
+                print(f"准备发送VOL/MC比值Top10项目图片到webhook...")
+                
+                await send_image_async(
+                    image_path=top_vol_mc_image_path,
+                    image_base64=top_vol_mc_image_base64,
                 )
                 print("表格图片已成功发送到webhook")
         else:
