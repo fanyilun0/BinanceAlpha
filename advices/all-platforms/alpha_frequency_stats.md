@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-09-19)
+# Alpha项目频率统计 (2025-09-26)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -9,24 +9,24 @@
 | Alchemist AI (ALCH) | 60 |  |
 | Aerodrome Finance (AERO) | 51 |  |
 | ai16z (AI16Z) | 50 |  |
-| CARV (CARV) | 46 |  |
+| CARV (CARV) | 48 |  |
 | Plume (PLUME) | 45 | 🔔 已上币 |
-| Velo (VELO) | 40 |  |
+| Velo (VELO) | 42 |  |
 | Safe (SAFE) | 35 |  |
 | SKYAI (SKYAI) | 33 |  |
 | Popcat (POPCAT) | 33 |  |
+| siren (SIREN) | 32 |  |
 | Vine Coin (VINE) | 32 |  |
 | Roam (ROAM) | 31 |  |
 | EGL1 (EGL1) | 30 |  |
-| siren (SIREN) | 30 |  |
 | FLock.io (FLOCK) | 30 |  |
 | B3 (Base) (B3) | 28 |  |
+| APENFT (NFT) | 28 |  |
 | Aethir (ATH) | 28 |  |
 | Mog Coin (MOG) | 28 |  |
 | PAAL AI (PAAL) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
 | Venice Token (VVV) | 26 |  |
-| APENFT (NFT) | 26 |  |
 | tokenbot (CLANKER) | 24 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
@@ -63,6 +63,7 @@
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | TAC Protocol (TAC) | 4 |  |
+| Portal To Bitcoin (PTB) | 4 |  |
 | Sapien (SAPIEN) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
@@ -81,11 +82,11 @@
 | CROSS (CROSS) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | AGON Agent (AGON) | 2 |  |
-| Portal To Bitcoin (PTB) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | REX (REVOX) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
+| Toshi (TOSHI) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
 | Ski Mask Dog (SKI) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
