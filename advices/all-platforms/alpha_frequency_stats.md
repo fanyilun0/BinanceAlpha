@@ -1,14 +1,14 @@
-# Alpha项目频率统计 (2025-09-26)
+# Alpha项目频率统计 (2025-09-30)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 89 |  |
-| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 67 |  |
+| Fartcoin (FARTCOIN) | 91 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 69 |  |
 | 48 Club Token (KOGE) | 64 |  |
-| SPX6900 (SPX) | 61 |  |
+| SPX6900 (SPX) | 63 |  |
 | Alchemist AI (ALCH) | 60 |  |
-| Aerodrome Finance (AERO) | 51 |  |
-| ai16z (AI16Z) | 50 |  |
+| Aerodrome Finance (AERO) | 53 |  |
+| ai16z (AI16Z) | 52 |  |
 | CARV (CARV) | 48 |  |
 | Plume (PLUME) | 45 | 🔔 已上币 |
 | Velo (VELO) | 42 |  |
@@ -17,31 +17,32 @@
 | Popcat (POPCAT) | 33 |  |
 | siren (SIREN) | 32 |  |
 | Vine Coin (VINE) | 32 |  |
+| FLock.io (FLOCK) | 32 |  |
 | Roam (ROAM) | 31 |  |
 | EGL1 (EGL1) | 30 |  |
-| FLock.io (FLOCK) | 30 |  |
+| APENFT (NFT) | 30 |  |
 | B3 (Base) (B3) | 28 |  |
-| APENFT (NFT) | 28 |  |
 | Aethir (ATH) | 28 |  |
 | Mog Coin (MOG) | 28 |  |
 | PAAL AI (PAAL) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
+| tokenbot (CLANKER) | 26 |  |
 | Venice Token (VVV) | 26 |  |
-| tokenbot (CLANKER) | 24 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | ZORA (ZORA) | 24 |  |
 | BUILDon (B) | 21 |  |
 | Humanity Protocol (H) | 21 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
+| AB (AB) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
-| AB (AB) | 17 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Odos (ODOS) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
 | Pocket Network (POKT) | 13 |  |
-| Subsquid (SQD) | 11 |  |
+| Subsquid (SQD) | 13 |  |
+| BSquared Network (B2) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | PumpBTC (PUMP) | 9 | 🔔 已上币 |
@@ -49,7 +50,6 @@
 | Morpho (MORPHO) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
-| BSquared Network (B2) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
@@ -82,6 +82,7 @@
 | CROSS (CROSS) | 3 |  |
 | Maple Finance (SYRUP) | 2 | 🔔 已上币 |
 | AGON Agent (AGON) | 2 |  |
+| Anoma (XAN) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | REX (REVOX) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
