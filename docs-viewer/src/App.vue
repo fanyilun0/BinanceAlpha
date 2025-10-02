@@ -3,24 +3,30 @@ import { ref, computed, onMounted } from 'vue'
 import MarkdownViewer from './components/MarkdownViewer.vue'
 
 const files = ref([])
+const images = ref([])
+const currentTab = ref('docs') // 'docs' or 'images'
 const currentFile = ref('')
 const currentContent = ref('')
+const currentImage = ref('')
 const searchQuery = ref('')
 const isDarkMode = ref(false)
 const isLoading = ref(false)
 
-// 搜索过滤
-const filteredFiles = computed(() => {
-  if (!searchQuery.value) return files.value
+// 搜索过滤 - 根据当前标签页过滤
+const filteredItems = computed(() => {
+  const items = currentTab.value === 'docs' ? files.value : images.value
+  if (!searchQuery.value) return items
   const query = searchQuery.value.toLowerCase()
-  return files.value.filter(file => 
-    file.title.toLowerCase().includes(query)
+  return items.filter(item => 
+    item.title.toLowerCase().includes(query) || 
+    (item.name && item.name.toLowerCase().includes(query))
   )
 })
 
 const selectFile = async (file) => {
   if (currentFile.value === file.name) return
   currentFile.value = file.name
+  currentImage.value = '' // 清空图片选择
   isLoading.value = true
   try {
     const response = await fetch(`/advices/${file.name}`)
@@ -33,6 +39,18 @@ const selectFile = async (file) => {
   }
 }
 
+const selectImage = (image) => {
+  if (currentImage.value === image.name) return
+  currentImage.value = image.name
+  currentFile.value = '' // 清空文档选择
+  currentContent.value = '' // 清空文档内容
+}
+
+const switchTab = (tab) => {
+  currentTab.value = tab
+  searchQuery.value = '' // 切换标签时清空搜索
+}
+
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value
   document.documentElement.classList.toggle('dark-mode')
@@ -42,7 +60,9 @@ onMounted(async () => {
   try {
     const response = await fetch('/advices/list.json')
     const data = await response.json()
-    files.value = data.files.sort((a, b) => b.name.localeCompare(a.name))
+    files.value = data.files?.sort((a, b) => b.name.localeCompare(a.name)) || []
+    images.value = data.images?.sort((a, b) => b.name.localeCompare(a.name)) || []
+    
     // 默认选中第一个文件（最新的）
     if (files.value.length > 0) {
       selectFile(files.value[0])
@@ -57,21 +77,40 @@ onMounted(async () => {
   <div class="app-container" :class="{ 'dark': isDarkMode }">
     <div class="sidebar">
       <div class="sidebar-header">
-        <h2>文档目录</h2>
+        <h2>资源浏览</h2>
         <button class="theme-toggle" @click="toggleDarkMode">
           {{ isDarkMode ? '🌞' : '🌙' }}
         </button>
       </div>
+      
+      <!-- Tab 切换按钮 -->
+      <div class="tab-buttons">
+        <button 
+          :class="{ active: currentTab === 'docs' }" 
+          @click="switchTab('docs')"
+        >
+          📄 文档 ({{ files.length }})
+        </button>
+        <button 
+          :class="{ active: currentTab === 'images' }" 
+          @click="switchTab('images')"
+        >
+          🖼️ 图片 ({{ images.length }})
+        </button>
+      </div>
+      
       <div class="search-box">
         <input 
           type="text" 
           v-model="searchQuery"
-          placeholder="搜索文档..."
+          :placeholder="currentTab === 'docs' ? '搜索文档...' : '搜索图片...'"
         >
       </div>
-      <ul class="file-list">
+      
+      <!-- 文档列表 -->
+      <ul v-if="currentTab === 'docs'" class="file-list">
         <li 
-          v-for="file in filteredFiles" 
+          v-for="file in filteredItems" 
           :key="file.name"
           :class="{ active: currentFile === file.name }"
           @click="selectFile(file)"
@@ -79,17 +118,38 @@ onMounted(async () => {
           {{ file.name.replace('.md', '') }}
         </li>
       </ul>
+      
+      <!-- 图片列表 -->
+      <ul v-else class="file-list">
+        <li 
+          v-for="image in filteredItems" 
+          :key="image.name"
+          :class="{ active: currentImage === image.name }"
+          @click="selectImage(image)"
+        >
+          {{ image.name.replace('.png', '') }}
+        </li>
+      </ul>
     </div>
+    
     <div class="content">
       <div v-if="isLoading" class="loading">
         加载中...
       </div>
+      
+      <!-- 文档内容 -->
       <MarkdownViewer 
-        v-else-if="currentContent" 
+        v-else-if="currentContent && currentTab === 'docs'" 
         :content="currentContent"
       />
+      
+      <!-- 图片内容 -->
+      <div v-else-if="currentImage && currentTab === 'images'" class="image-viewer">
+        <img :src="`/images/${currentImage}`" :alt="currentImage" />
+      </div>
+      
       <div v-else class="no-content">
-        请选择要查看的文档
+        请选择要查看的{{ currentTab === 'docs' ? '文档' : '图片' }}
       </div>
     </div>
   </div>
@@ -145,6 +205,36 @@ body {
   align-items: center;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.tab-buttons button {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab-buttons button:hover {
+  background-color: var(--hover-color);
+}
+
+.tab-buttons button.active {
+  border-bottom-color: #1976d2;
+  color: #1976d2;
+  font-weight: 600;
 }
 
 .sidebar h2 {
@@ -256,6 +346,23 @@ body {
   font-size: 1.2em;
   padding: 20px;
   text-align: center;
+}
+
+.image-viewer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  height: 100%;
+  overflow: auto;
+}
+
+.image-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
