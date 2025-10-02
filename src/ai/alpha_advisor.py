@@ -297,12 +297,12 @@ class AlphaAdvisor:
                         json=payload,
                         timeout=aiohttp.ClientTimeout(total=current_timeout)
                     ) as response:
-                        end_time = time.time()
-                        request_time = end_time - start_time
-                        
-                        logger.info(f"API请求完成，耗时: {request_time:.2f}秒，状态码: {response.status}")
                         
                         if response.status == 200:
+                            end_time = time.time()
+                            request_time = end_time - start_time
+                            
+                            logger.info(f"API请求完成，耗时: {request_time:.2f}秒，状态码: {response.status}")
                             result = await response.json()
                             
                             # 处理deepseek-reasoner模型的特殊响应格式

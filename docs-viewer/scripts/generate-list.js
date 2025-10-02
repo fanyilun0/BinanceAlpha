@@ -21,24 +21,34 @@ if (!fs.existsSync(imagesTargetDir)) {
 }
 
 // 读取源目录中的所有 .md 文件
-const mdFiles = fs.readdirSync(advicesSourceDir)
-  .filter(file => file.endsWith('.md'))
-  .map(file => ({
-    name: file,
-    title: file.replace('.md', '').replace(/_/g, ' ')
-  }))
-  .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
+let mdFiles = [];
+if (fs.existsSync(advicesSourceDir)) {
+  mdFiles = fs.readdirSync(advicesSourceDir)
+    .filter(file => file.endsWith('.md'))
+    .map(file => ({
+      name: file,
+      title: file.replace('.md', '').replace(/_/g, ' ')
+    }))
+    .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
+} else {
+  console.log(`⚠️  源目录不存在: ${advicesSourceDir}`);
+}
 
 // 读取图片目录中的所有 .png 文件
-const imageFiles = fs.readdirSync(imagesSourceDir)
-  .filter(file => file.endsWith('.png'))
-  .map(file => ({
-    name: file,
-    title: file.replace('.png', '').replace(/_/g, ' '),
-    // 提取日期信息（假设文件名格式为 alpha_list_20250930083006.png）
-    date: file.match(/\d{8}/)?.[0] || ''
-  }))
-  .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
+let imageFiles = [];
+if (fs.existsSync(imagesSourceDir)) {
+  imageFiles = fs.readdirSync(imagesSourceDir)
+    .filter(file => file.endsWith('.png'))
+    .map(file => ({
+      name: file,
+      title: file.replace('.png', '').replace(/_/g, ' '),
+      // 提取日期信息（假设文件名格式为 alpha_list_20250930083006.png）
+      date: file.match(/\d{8}/)?.[0] || ''
+    }))
+    .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
+} else {
+  console.log(`⚠️  图片目录不存在: ${imagesSourceDir}`);
+}
 
 // 生成 list.json，包含文档和图片列表
 const listJson = {
@@ -56,18 +66,22 @@ fs.writeFileSync(
 );
 
 // 复制所有 .md 文件到目标目录
-mdFiles.forEach(file => {
-  const sourceFile = path.join(advicesSourceDir, file.name);
-  const targetFile = path.join(advicesTargetDir, file.name);
-  fs.copyFileSync(sourceFile, targetFile);
-});
+if (mdFiles.length > 0) {
+  mdFiles.forEach(file => {
+    const sourceFile = path.join(advicesSourceDir, file.name);
+    const targetFile = path.join(advicesTargetDir, file.name);
+    fs.copyFileSync(sourceFile, targetFile);
+  });
+}
 
 // 复制所有 .png 文件到目标目录
-imageFiles.forEach(file => {
-  const sourceFile = path.join(imagesSourceDir, file.name);
-  const targetFile = path.join(imagesTargetDir, file.name);
-  fs.copyFileSync(sourceFile, targetFile);
-});
+if (imageFiles.length > 0) {
+  imageFiles.forEach(file => {
+    const sourceFile = path.join(imagesSourceDir, file.name);
+    const targetFile = path.join(imagesTargetDir, file.name);
+    fs.copyFileSync(sourceFile, targetFile);
+  });
+}
 
 console.log('✅ list.json 生成完成');
 console.log('✅ MD 文件已复制到 public/advices 目录');
