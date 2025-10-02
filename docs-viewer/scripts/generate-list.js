@@ -74,8 +74,8 @@ if (mdFiles.length > 0) {
   });
 }
 
-// 复制所有 .png 文件到目标目录
-if (imageFiles.length > 0) {
+// 复制所有 .png 文件到目标目录（仅当源目录存在时）
+if (imageFiles.length > 0 && fs.existsSync(imagesSourceDir)) {
   imageFiles.forEach(file => {
     const sourceFile = path.join(imagesSourceDir, file.name);
     const targetFile = path.join(imagesTargetDir, file.name);
@@ -84,5 +84,11 @@ if (imageFiles.length > 0) {
 }
 
 console.log('✅ list.json 生成完成');
-console.log('✅ MD 文件已复制到 public/advices 目录');
-console.log('✅ 图片文件已复制到 public/images 目录'); 
+console.log(`✅ MD 文件已复制到 public/advices 目录 (${mdFiles.length} 个文件)`);
+if (imageFiles.length > 0 && fs.existsSync(imagesSourceDir)) {
+  console.log(`✅ 图片文件已复制到 public/images 目录 (${imageFiles.length} 个文件)`);
+} else if (!fs.existsSync(imagesSourceDir)) {
+  console.log('ℹ️  图片目录不存在，跳过图片复制（这在 Vercel 构建环境中是正常的）');
+} else {
+  console.log('ℹ️  没有图片文件需要复制');
+} 
