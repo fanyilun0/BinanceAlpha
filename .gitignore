@@ -8,7 +8,7 @@ __pycache__
 .env
 prompts/
 debug_logs/
-data/
+data/**/*.json
 
 # docs-viewer
 docs-viewer/public/advices/
