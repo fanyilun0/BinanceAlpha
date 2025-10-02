@@ -5,6 +5,7 @@ import MarkdownViewer from './components/MarkdownViewer.vue'
 const files = ref([])
 const images = ref([])
 const currentTab = ref('docs') // 'docs' or 'images'
+const currentImageTab = ref('alpha_list') // 'alpha_list' or 'vol_mc_ratio'
 const currentFile = ref('')
 const currentContent = ref('')
 const currentImage = ref('')
@@ -12,15 +13,46 @@ const searchQuery = ref('')
 const isDarkMode = ref(false)
 const isLoading = ref(false)
 
+// 按类型分组图片
+const imagesByType = computed(() => {
+  const grouped = {
+    alpha_list: [],
+    vol_mc_ratio: [],
+    other: []
+  }
+  
+  images.value.forEach(img => {
+    const type = img.type || 'other'
+    if (grouped[type]) {
+      grouped[type].push(img)
+    } else {
+      grouped.other.push(img)
+    }
+  })
+  
+  return grouped
+})
+
 // 搜索过滤 - 根据当前标签页过滤
 const filteredItems = computed(() => {
-  const items = currentTab.value === 'docs' ? files.value : images.value
-  if (!searchQuery.value) return items
-  const query = searchQuery.value.toLowerCase()
-  return items.filter(item => 
-    item.title.toLowerCase().includes(query) || 
-    (item.name && item.name.toLowerCase().includes(query))
-  )
+  if (currentTab.value === 'docs') {
+    const items = files.value
+    if (!searchQuery.value) return items
+    const query = searchQuery.value.toLowerCase()
+    return items.filter(item => 
+      item.title.toLowerCase().includes(query) || 
+      (item.name && item.name.toLowerCase().includes(query))
+    )
+  } else {
+    // 图片标签页：根据当前子标签页过滤
+    const items = imagesByType.value[currentImageTab.value] || []
+    if (!searchQuery.value) return items
+    const query = searchQuery.value.toLowerCase()
+    return items.filter(item => 
+      item.title.toLowerCase().includes(query) || 
+      (item.name && item.name.toLowerCase().includes(query))
+    )
+  }
 })
 
 const selectFile = async (file) => {
@@ -49,6 +81,12 @@ const selectImage = (image) => {
 const switchTab = (tab) => {
   currentTab.value = tab
   searchQuery.value = '' // 切换标签时清空搜索
+}
+
+const switchImageTab = (tab) => {
+  currentImageTab.value = tab
+  searchQuery.value = '' // 切换图片子标签时清空搜索
+  currentImage.value = '' // 清空当前选中的图片
 }
 
 const toggleDarkMode = () => {
@@ -96,6 +134,22 @@ onMounted(async () => {
           @click="switchTab('images')"
         >
           🖼️ 图片 ({{ images.length }})
+        </button>
+      </div>
+      
+      <!-- 图片子标签 (仅在图片标签页时显示) -->
+      <div v-if="currentTab === 'images'" class="image-sub-tabs">
+        <button 
+          :class="{ active: currentImageTab === 'alpha_list' }" 
+          @click="switchImageTab('alpha_list')"
+        >
+          Alpha项目列表 ({{ imagesByType.alpha_list.length }})
+        </button>
+        <button 
+          :class="{ active: currentImageTab === 'vol_mc_ratio' }" 
+          @click="switchImageTab('vol_mc_ratio')"
+        >
+          高流动性项目 ({{ imagesByType.vol_mc_ratio.length }})
         </button>
       </div>
       
@@ -233,6 +287,38 @@ body {
 
 .tab-buttons button.active {
   border-bottom-color: #1976d2;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.image-sub-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background-color: var(--sidebar-bg);
+}
+
+.image-sub-tabs button {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.image-sub-tabs button:hover {
+  background-color: var(--hover-color);
+}
+
+.image-sub-tabs button.active {
+  border-left-color: #1976d2;
+  background-color: var(--active-color);
   color: #1976d2;
   font-weight: 600;
 }
