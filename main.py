@@ -300,26 +300,18 @@ async def classify_crypto_projects_by_platform(crypto_list, platforms, platforms
     
     return platform_projects, unclassified_projects
 
-def determine_platforms_to_process(platforms, target_platform=None, debug_only=False):
+def determine_platforms_to_process(platforms):
     """
     确定要处理的平台列表
     
     Args:
         platforms: 可用的区块链平台字典
-        target_platform: 指定要处理的平台（仅在调试模式下有效）
-        debug_only: 是否为调试模式
         
     Returns:
         list: 要处理的平台列表
     """
-    # 确定要处理的平台列表
-    platforms_to_process = []
-    
-    # 如果命令行指定了特定平台且是调试模式，优先使用命令行指定的平台
-    if target_platform and debug_only and target_platform in platforms:
-        platforms_to_process = [target_platform]
-    # 否则使用配置文件中的PLATFORMS_TO_QUERY
-    elif PLATFORMS_TO_QUERY:
+    # 使用配置文件中的PLATFORMS_TO_QUERY
+    if PLATFORMS_TO_QUERY:
         # 确保只处理配置中存在的平台
         platforms_to_process = [p for p in PLATFORMS_TO_QUERY if p in platforms]
         if not platforms_to_process:
@@ -376,13 +368,12 @@ async def process_platform_advice(advisor, platform_data, max_retries, retry_del
         print(f"获取{platform}平台投资建议失败")
         return platform, "", False
 
-async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_platform=None, listed_tokens=None):
+async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_tokens=None):
     """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
     
     Args:
         alpha_data: 币安Alpha数据，如果为None则重新获取
         debug_only: 是否仅调试模式（只生成提示词不发送API请求）
-        target_platform: 指定要处理的平台（仅在调试模式下有效）
         listed_tokens: 已上线币安的token列表
         
     Returns:
@@ -449,7 +440,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
     platforms = BLOCKCHAIN_PLATFORMS
     
     # 确定要处理的平台列表
-    platforms_to_process = determine_platforms_to_process(platforms, target_platform, debug_only)
+    platforms_to_process = determine_platforms_to_process(platforms)
     print(f"将处理以下平台: {', '.join(platforms_to_process)}\n")
     
     # 对项目按区块链平台分类
@@ -529,87 +520,36 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, target_
         
     return len(results) > 0
 
-async def run_coinmarket_only():
-    """仅运行CoinMarket数据获取和图片推送功能"""
-    print("\n===============================================================")
-    print(" 币安Alpha项目CoinMarket数据获取")
-    print("===============================================================\n")
-    
-    try:
-        # 获取并更新Binance交易对列表
-        print("步骤1: 获取并更新Binance交易对列表...\n")
-        listed_tokens = await get_binance_tokens()
-        
-        # 获取币安Alpha项目列表数据并推送图片
-        print("步骤2: 获取币安Alpha项目列表数据并推送图片...\n")
-        alpha_data = await get_binance_alpha_list(
-            force_update=True, 
-            listed_tokens=listed_tokens, 
-            debug_only=False, 
-            as_image=True
-        )
-        
-        if not alpha_data:
-            logger.error("获取币安Alpha项目列表数据失败，程序退出")
-            print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
-            return 1
-        
-        print("\n===============================================================")
-        print(" CoinMarket数据获取完成，程序退出")
-        print("===============================================================\n")
-        return 0
-        
-    except Exception as e:
-        logger.error(f"CoinMarket数据获取过程中出错: {str(e)}")
-        print(f"\n错误: {str(e)}")
-        import traceback
-        error_details = traceback.format_exc()
-        logger.debug(error_details)
-        print("错误详情已记录到日志文件")
-        return 1
 
-async def run_ai_analysis(args):
-    """运行AI分析功能"""
+async def run_workflow(debug_only=False):
+    """运行完整工作流：图片生成 + AI投资分析"""
     print("\n===============================================================")
-    print(" 币安Alpha项目AI投资分析")
+    print(" 币安Alpha项目分析工作流")
     print("===============================================================\n")
     
     try:
         # 显示运行模式信息
         print("运行模式:")
-        mode_info = []
+        print("- 获取并更新Binance交易对列表")
+        print("- 获取币安Alpha项目列表数据并生成图片")
         
-        if not args.skip_tokens_update:
-            mode_info.append("- 获取并更新Binance交易对列表")
-        
-        mode_info.append("- 获取币安Alpha项目列表数据")
-        
-        if args.debug_only:
-            mode_info.append("- 调试模式：仅生成提示词不发送API请求")
+        if debug_only:
+            print("- 调试模式：仅生成提示词不发送API请求")
         else:
-            mode_info.append("- 常规模式：生成投资建议并发送消息")
-        
-        if args.force_update:
-            mode_info.append("- 强制更新：不使用缓存数据")
-        
-        for info in mode_info:
-            print(info)
+            print("- 常规模式：生成投资建议并发送消息")
         print()
         
-        # 获取并更新Binance交易对列表
-        listed_tokens = None
-        if not args.skip_tokens_update:
-            print("步骤1: 获取并更新Binance交易对列表...\n")
-            listed_tokens = await get_binance_tokens()
+        # 步骤1: 获取并更新Binance交易对列表
+        print("步骤1: 获取并更新Binance交易对列表...\n")
+        listed_tokens = await get_binance_tokens()
         
-        # 获取币安Alpha项目列表数据（不推送图片，仅获取数据用于AI分析）
-        step_num = 2 if not args.skip_tokens_update else 1
-        print(f"步骤{step_num}: 获取币安Alpha项目列表数据...\n")
+        # 步骤2: 获取币安Alpha项目列表数据并推送图片
+        print("步骤2: 获取币安Alpha项目列表数据并推送图片...\n")
         alpha_data = await get_binance_alpha_list(
-            force_update=args.force_update, 
+            force_update=True, 
             listed_tokens=listed_tokens, 
-            debug_only=args.debug_only, 
-            as_image=False  # AI分析模式不推送图片
+            debug_only=debug_only, 
+            as_image=True  # 默认生成图片
         )
         
         if not alpha_data:
@@ -617,19 +557,18 @@ async def run_ai_analysis(args):
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
             return 1
         
-        step_num += 1
-        print(f"\n步骤{step_num}: 分类项目并生成投资建议...\n")
+        # 步骤3: 分类项目并生成投资建议
+        print("\n步骤3: 分类项目并生成投资建议...\n")
         
         # 按区块链平台获取AI投资建议
         success = await get_alpha_investment_advice(
             alpha_data, 
-            debug_only=args.debug_only, 
-            target_platform=args.platform if args.debug_only else None,
+            debug_only=debug_only,
             listed_tokens=listed_tokens
         )
         
         if success == True:
-            if args.debug_only:
+            if debug_only:
                 print("\n成功：提示词生成完成")
             else:
                 print("\n成功：所有平台投资建议处理完成")
@@ -639,13 +578,13 @@ async def run_ai_analysis(args):
             print("\n警告：所有平台处理过程中出现错误")
             
         print("\n===============================================================")
-        print(" AI投资分析完成，程序退出")
+        print(" 工作流完成，程序退出")
         print("===============================================================\n")
         return 0
         
     except Exception as e:
-        logger.error(f"AI投资分析过程中出错: {str(e)}")
-        print(f"\n错误: 生成投资建议过程中出错: {str(e)}")
+        logger.error(f"工作流执行过程中出错: {str(e)}")
+        print(f"\n错误: {str(e)}")
         import traceback
         error_details = traceback.format_exc()
         logger.debug(error_details)
@@ -655,35 +594,17 @@ async def run_ai_analysis(args):
 async def main():
     """主函数
     
-    支持两种运行模式:
-    1. --coinmarket-only: 仅获取CoinMarket数据并推送图片到webhook
-    2. 默认模式: 获取数据并进行AI投资分析
+    运行完整工作流：获取数据、生成图片、AI投资分析
     """
-    
-    # 从配置中获取支持的平台列表
-    supported_platforms = list(BLOCKCHAIN_PLATFORMS.keys())
     
     # 解析命令行参数
     parser = argparse.ArgumentParser(description="Crypto Monitor - 币安Alpha项目分析工具")
-    parser.add_argument("--coinmarket-only", action="store_true", 
-                       help="仅获取CoinMarket数据并推送图片，不进行AI分析")
     parser.add_argument("--debug-only", action="store_true", 
                        help="启用调试模式，仅生成提示词不发送API请求")
-    parser.add_argument("--platform", type=str, choices=supported_platforms, 
-                       help=f"指定要处理的平台（仅在调试模式下有效）: {', '.join(supported_platforms)}")
-    parser.add_argument("--force-update", action="store_true", 
-                       help="强制更新数据，不使用缓存")
-    parser.add_argument("--skip-tokens-update", action="store_true", 
-                       help="跳过更新Binance交易对列表")
     args = parser.parse_args()
     
-    # 根据参数选择运行模式
-    if args.coinmarket_only:
-        # 仅获取CoinMarket数据并推送图片
-        return await run_coinmarket_only()
-    else:
-        # 运行AI分析功能
-        return await run_ai_analysis(args)
+    # 运行完整工作流
+    return await run_workflow(debug_only=args.debug_only)
 
 if __name__ == "__main__":
     if platform.system() == 'Windows':
