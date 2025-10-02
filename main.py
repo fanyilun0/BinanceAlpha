@@ -5,6 +5,7 @@ import asyncio
 import logging
 import platform
 import argparse
+import time
 from datetime import datetime
 
 from webhook import send_message_async
@@ -523,6 +524,9 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
 
 async def run_workflow(debug_only=False):
     """运行完整工作流：图片生成 + AI投资分析"""
+    # 记录开始时间
+    workflow_start_time = time.time()
+    
     print("\n===============================================================")
     print(" 币安Alpha项目分析工作流")
     print("===============================================================\n")
@@ -555,6 +559,8 @@ async def run_workflow(debug_only=False):
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
+            total_time = time.time() - workflow_start_time
+            print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
             return 1
         
         # 步骤3: 分类项目并生成投资建议
@@ -576,6 +582,10 @@ async def run_workflow(debug_only=False):
             print("\n部分成功：某些平台处理成功，某些平台处理失败")
         else:
             print("\n警告：所有平台处理过程中出现错误")
+        
+        # 计算并输出总运行时长
+        total_time = time.time() - workflow_start_time
+        print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
             
         print("\n===============================================================")
         print(" 工作流完成，程序退出")
@@ -589,6 +599,8 @@ async def run_workflow(debug_only=False):
         error_details = traceback.format_exc()
         logger.debug(error_details)
         print("错误详情已记录到日志文件")
+        total_time = time.time() - workflow_start_time
+        print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
         return 1
 
 async def main():

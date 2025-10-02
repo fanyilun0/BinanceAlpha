@@ -298,72 +298,33 @@ class AlphaAdvisor:
                         timeout=aiohttp.ClientTimeout(total=current_timeout)
                     ) as response:
                         
+                        request_time = time.time() - start_time
+                        
                         if response.status == 200:
-                            end_time = time.time()
-                            request_time = end_time - start_time
-                            
-                            logger.info(f"API请求完成，耗时: {request_time:.2f}秒，状态码: {response.status}")
+                            logger.info(f"API请求完成，耗时: {request_time:.2f}秒")
                             result = await response.json()
                             
-                            # 处理deepseek-reasoner模型的特殊响应格式
-                            choice = result.get("choices", [{}])[0]
-                            message_data = choice.get("message", {})
+                            # 简单获取响应内容
+                            content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
                             
-                            # 获取主要内容
-                            content = message_data.get("content", "")
+                            # 记录使用统计
+                            usage = result.get("usage", {})
+                            if usage:
+                                logger.info(f"Token使用 - 输入: {usage.get('prompt_tokens')}, "
+                                          f"输出: {usage.get('completion_tokens')}, "
+                                          f"总计: {usage.get('total_tokens')}")
                             
-                            # 检查是否有reasoning_content（deepseek-reasoner模型特有）
-                            reasoning_content = message_data.get("reasoning_content", "")
-                            
-                            # 记录响应详细信息
-                            usage_info = result.get("usage", {})
-                            if usage_info:
-                                logger.info(f"API使用统计 - 输入tokens: {usage_info.get('prompt_tokens', 'N/A')}, "
-                                          f"输出tokens: {usage_info.get('completion_tokens', 'N/A')}, "
-                                          f"总tokens: {usage_info.get('total_tokens', 'N/A')}")
-                            
-                            # 记录推理内容信息（如果存在）
-                            if reasoning_content:
-                                logger.info(f"检测到推理内容，长度: {len(reasoning_content)}字符")
-                                logger.debug(f"推理内容预览: {reasoning_content[:200]}...")
-                            
-                            # 决定使用哪个内容作为最终结果
-                            final_message = content
-                            
-                            # 如果content为空但有reasoning_content，考虑使用reasoning_content
-                            if not content.strip() and reasoning_content.strip():
-                                logger.warning("主要内容为空，但存在推理内容。这可能是因为max_tokens不足导致content被截断")
-                                logger.info("尝试使用推理内容作为备选方案")
-                                
-                                # 可以选择使用推理内容，或者提示用户增加max_tokens
-                                # 这里我们记录详细信息，但不直接使用推理内容，因为它通常不是最终答案
-                                final_message = f"⚠️ 检测到响应被截断\n\n推理过程长度: {len(reasoning_content)}字符\n最终内容长度: {len(content)}字符\n\n建议增加max_tokens配置以获得完整响应。\n\n推理内容摘要:\n{reasoning_content[:500]}..."
-                            
-                            # 如果返回内容有效，保存并返回
-                            if final_message and len(final_message) > 100:
-                                logger.info(f"成功获取AI建议，响应长度: {len(final_message)}字符，总耗时: {request_time:.2f}秒")
-                                
-                                # 如果使用了推理内容作为备选，记录警告
-                                if not content.strip() and reasoning_content.strip():
-                                    logger.warning("返回的是基于推理内容的摘要，建议增加max_tokens获得完整响应")
-                                
-                                return final_message
+                            # 验证内容有效性
+                            if content and len(content) > 100:
+                                logger.info(f"成功获取AI建议，长度: {len(content)}字符")
+                                return content
                             else:
-                                logger.warning(f"API返回内容过短或为空，content长度: {len(content)}字符，reasoning_content长度: {len(reasoning_content)}字符，耗时: {request_time:.2f}秒")
-                                logger.debug(f"返回的content: {content}")
-                                if reasoning_content:
-                                    logger.debug(f"推理内容预览: {reasoning_content[:200]}...")
-                                
-                                # 如果返回空内容，可能是模型处理时间过长，尝试增加超时时间
-                                if attempt < max_retries - 1:
-                                    logger.info("检测到空响应，将在下次重试时增加超时时间")
-                                # 设置一个标识，表示这是空响应而不是异常
+                                logger.warning(f"返回内容过短或为空，长度: {len(content)}字符")
                                 last_exception = "empty_response"
                         else:
-                            response_text = await response.text()
-                            logger.error(f"API请求失败，状态码: {response.status}, 耗时: {request_time:.2f}秒")
-                            logger.error(f"响应内容: {response_text}")
-                            # 设置一个标识，表示这是HTTP错误
+                            error_text = await response.text()
+                            logger.error(f"API请求失败 - 状态码: {response.status}, 耗时: {request_time:.2f}秒")
+                            logger.error(f"错误详情: {error_text}")
                             last_exception = f"http_error_{response.status}"
                     
             except asyncio.TimeoutError as e:
