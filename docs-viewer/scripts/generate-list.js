@@ -34,17 +34,28 @@ if (fs.existsSync(advicesSourceDir)) {
   console.log(`⚠️  源目录不存在: ${advicesSourceDir}`);
 }
 
-// 读取图片目录中的所有 .png 文件
+// 读取图片目录中的所有 .png 文件，并按类型分类
 let imageFiles = [];
 if (fs.existsSync(imagesSourceDir)) {
   imageFiles = fs.readdirSync(imagesSourceDir)
     .filter(file => file.endsWith('.png'))
-    .map(file => ({
-      name: file,
-      title: file.replace('.png', '').replace(/_/g, ' '),
-      // 提取日期信息（假设文件名格式为 alpha_list_20250930083006.png）
-      date: file.match(/\d{8}/)?.[0] || ''
-    }))
+    .map(file => {
+      // 根据文件名确定图片类型
+      let type = 'other';
+      if (file.includes('alpha_list_')) {
+        type = 'alpha_list';
+      } else if (file.includes('top_vol_mc_ratio_')) {
+        type = 'vol_mc_ratio';
+      }
+      
+      return {
+        name: file,
+        title: file.replace('.png', '').replace(/_/g, ' '),
+        // 提取日期信息（假设文件名格式为 alpha_list_20250930083006.png）
+        date: file.match(/\d{8}/)?.[0] || '',
+        type: type  // 新增类型字段
+      };
+    })
     .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
 } else {
   console.log(`⚠️  图片目录不存在: ${imagesSourceDir}`);

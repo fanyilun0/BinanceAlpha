@@ -33,6 +33,75 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+async def send_alpha_rank_image(crypto_list, date, debug_only=False, max_items=50):
+    """生成并发送按排名排序的Alpha项目图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        debug_only: 是否仅调试模式
+        max_items: 最大显示项目数
+        
+    Returns:
+        Tuple[str, str]: 图片路径和base64编码
+    """
+    print(f"准备生成按排名排序的Alpha项目图片...")
+    
+    # 创建图片表格
+    image_path, image_base64 = create_alpha_table_image(
+        crypto_list=crypto_list, 
+        date=date,
+        max_items=max_items
+    )
+    
+    # 发送图片消息
+    print(f"准备发送按排名排序的图片到webhook...")
+    
+    if not debug_only:
+        from webhook import send_image_async
+        await send_image_async(
+            image_path=image_path, 
+            image_base64=image_base64,
+        )
+        print("按排名排序的图片已成功发送到webhook")
+    else:
+        print("Debug模式：跳过发送按排名排序的图片")
+    
+    return image_path, image_base64
+
+async def send_alpha_liquidity_image(crypto_list, date, debug_only=False):
+    """生成并发送按流动性（VOL/MC比值）排序的Top10项目图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        debug_only: 是否仅调试模式
+        
+    Returns:
+        Tuple[str, str]: 图片路径和base64编码
+    """
+    print(f"准备生成按流动性排序的Top10项目图片...")
+    
+    # 创建和发送VOL/MC比值排序的Top10项目图片
+    image_path, image_base64 = create_top_vol_mc_ratio_image(
+        crypto_list=crypto_list,
+        date=date
+    )
+    
+    print(f"准备发送按流动性排序的图片到webhook...")
+    
+    if not debug_only:
+        from webhook import send_image_async
+        await send_image_async(
+            image_path=image_path,
+            image_base64=image_base64,
+        )
+        print("按流动性排序的图片已成功发送到webhook")
+    else:
+        print("Debug模式：跳过发送按流动性排序的图片")
+    
+    return image_path, image_base64
+
 async def get_binance_tokens():
     """获取Binance交易对列表并更新"""
     print("=== 更新Binance交易对列表 ===\n")
@@ -149,37 +218,20 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
             print(f"已有{len(already_listed_tokens)}个项目上线币安现货")
           
         if as_image:
-            # 创建图片表格
-            image_path, image_base64 = create_alpha_table_image(
-                crypto_list=crypto_list, 
+            # 发送按排名排序的图片
+            await send_alpha_rank_image(
+                crypto_list=crypto_list,
                 date=alpha_data.get('date', ''),
-                max_items=100
+                debug_only=debug_only,
+                max_items=50
             )
             
-            # 发送图片消息
-            print(f"准备发送表格图片到webhook...")
-            
-            if not debug_only:
-                from webhook import send_image_async
-                
-                await send_image_async(
-                    image_path=image_path, 
-                    image_base64=image_base64,
-                )
-                
-                # 创建和发送VOL/MC比值排序的Top10项目图片
-                top_vol_mc_image_path, top_vol_mc_image_base64 = create_top_vol_mc_ratio_image(
-                    crypto_list=crypto_list,
-                    date=alpha_data.get('date', '')
-                )
-                
-                print(f"准备发送VOL/MC比值Top10项目图片到webhook...")
-                
-                await send_image_async(
-                    image_path=top_vol_mc_image_path,
-                    image_base64=top_vol_mc_image_base64,
-                )
-                print("表格图片已成功发送到webhook")
+            # 发送按流动性排序的图片
+            await send_alpha_liquidity_image(
+                crypto_list=crypto_list,
+                date=alpha_data.get('date', ''),
+                debug_only=debug_only
+            )
         else:
             # 原始文本方式
             # 构建消息内容
