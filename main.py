@@ -142,6 +142,27 @@ async def send_alpha_gainers_losers_image(crypto_list, date, debug_only=False, m
     
     return image_path, image_base64
 
+async def send_alpha_image(crypto_list, date, debug_only=False, max_items=100):
+    await send_alpha_rank_image(
+        crypto_list=crypto_list,
+        date=date,
+        debug_only=debug_only,
+        max_items=max_items
+    )
+    await send_alpha_liquidity_image(
+        crypto_list=crypto_list,
+        date=date,
+        debug_only=debug_only,
+        max_items=max_items
+    )
+    await send_alpha_gainers_losers_image(
+        crypto_list=crypto_list,
+        date=date,
+        debug_only=debug_only,
+        max_items=max_items
+    )
+
+
 async def get_binance_tokens():
     """获取Binance交易对列表并更新"""
     print("=== 更新Binance交易对列表 ===\n")
@@ -205,13 +226,12 @@ async def get_binance_tokens():
         print(f"错误详情已记录到日志文件")
         return None
 
-async def get_binance_alpha_list(listed_tokens=None, debug_only=False, as_image=True):
+async def get_binance_alpha_list(listed_tokens=None, debug_only=False):
     """获取币安Alpha项目列表数据并推送
     
     Args:
         listed_tokens: 已上线币安的token列表
         debug_only: 是否仅调试（不推送）
-        as_image: 是否以图片形式推送
     
     Returns:
         获取的Alpha数据或失败时返回False
@@ -256,51 +276,13 @@ async def get_binance_alpha_list(listed_tokens=None, debug_only=False, as_image=
             # 打印统计信息
             print(f"已有{len(already_listed_tokens)}个项目上线币安现货")
           
-        if as_image:
-            # 发送按排名排序的图片
-            await send_alpha_rank_image(
-                crypto_list=crypto_list,
-                date=alpha_data.get('date', ''),
-                debug_only=debug_only,
-                max_items=100
-            )
-            
-            # 发送按流动性排序的图片
-            await send_alpha_liquidity_image(
-                crypto_list=crypto_list,
-                date=alpha_data.get('date', ''),
-                debug_only=debug_only,
-                max_items=100
-            )
-            
-            # 发送涨跌幅榜图片（合并涨幅和跌幅）
-            await send_alpha_gainers_losers_image(
-                crypto_list=crypto_list,
-                date=alpha_data.get('date', ''),
-                debug_only=debug_only,
-                max_items=100
-            )
-        else:
-            # 原始文本方式
-            # 构建消息内容
-            message = f"📊 币安Alpha项目列表 (更新时间: {alpha_data.get('date')})\n\n"
-            message += f"🔢 项目总数: {total_count}\n\n"
-            message += "🔝 Top 100 币安Alpha项目 (按市值排序):\n\n"
-            
-            # 添加前100个项目信息
-            for i, crypto in enumerate(crypto_list[:100], 1):
-                # 使用crypto_formatter模块处理加密货币数据
-                status = check_token_listing_status(crypto.get("symbol", ""), listed_tokens) if listed_tokens else None
-                message += format_project_summary(crypto, i, status)
-            
-            # 向webhook发送消息
-            print(f"消息长度: {len(message)} 字符")
-            
-            print("正在向webhook发送消息...")
-            
-            if not debug_only:
-                await send_message_async(message)
-        
+        await send_alpha_image(
+            crypto_list=crypto_list,
+            date=alpha_data.get('date', ''),
+            debug_only=debug_only,
+            max_items=100
+        )
+
         return alpha_data
         
     except Exception as e:
@@ -652,7 +634,6 @@ async def run_workflow(debug_only=False):
         alpha_data = await get_binance_alpha_list(
             listed_tokens=listed_tokens, 
             debug_only=debug_only, 
-            as_image=True  # 默认生成图片
         )
         
         if not alpha_data:
