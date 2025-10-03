@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 // 源目录和目标目录
 const advicesSourceDir = path.join(__dirname, '../../advices/all-platforms');
-const imagesSourceDir = path.join(__dirname, '../../data/images');
+const imagesSourceDir = path.join(__dirname, '../../images');
 const advicesTargetDir = path.join(__dirname, '../public/advices');
 const imagesTargetDir = path.join(__dirname, '../public/images');
 
