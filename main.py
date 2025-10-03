@@ -19,7 +19,12 @@ from src.utils.historical_data import BinanceAlphaDataCollector
 from src.utils.binance_symbols import is_token_listed, update_tokens, check_token_listing_status
 from src.utils.crypto_formatter import format_project_summary, save_crypto_list_by_platform, save_crypto_data
 from src.ai import AlphaAdvisor
-from src.utils.image_generator import create_alpha_table_image, create_top_vol_mc_ratio_image
+from src.utils.image_generator import (
+    create_alpha_table_image, 
+    create_top_vol_mc_ratio_image,
+    create_top_gainers_image,
+    create_top_losers_image
+)
 
 
 # 配置日志
@@ -100,6 +105,76 @@ async def send_alpha_liquidity_image(crypto_list, date, debug_only=False, max_it
         print("按流动性排序的图片已成功发送到webhook")
     else:
         print("Debug模式：跳过发送按流动性排序的图片")
+    
+    return image_path, image_base64
+
+async def send_alpha_gainers_image(crypto_list, date, debug_only=False, max_items=50):
+    """生成并发送按涨幅排序的Top项目图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        debug_only: 是否仅调试模式
+        max_items: 最大显示项目数
+        
+    Returns:
+        Tuple[str, str]: 图片路径和base64编码
+    """
+    print(f"准备生成按涨幅排序的Top{max_items}项目图片...")
+    
+    # 创建涨幅榜图片
+    image_path, image_base64 = create_top_gainers_image(
+        crypto_list=crypto_list,
+        date=date,
+        max_items=max_items
+    )
+    
+    print(f"准备发送按涨幅排序的图片到webhook...")
+    
+    if not debug_only:
+        from webhook import send_image_async
+        await send_image_async(
+            image_path=image_path,
+            image_base64=image_base64,
+        )
+        print("按涨幅排序的图片已成功发送到webhook")
+    else:
+        print("Debug模式：跳过发送按涨幅排序的图片")
+    
+    return image_path, image_base64
+
+async def send_alpha_losers_image(crypto_list, date, debug_only=False, max_items=50):
+    """生成并发送按跌幅排序的Top项目图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        debug_only: 是否仅调试模式
+        max_items: 最大显示项目数
+        
+    Returns:
+        Tuple[str, str]: 图片路径和base64编码
+    """
+    print(f"准备生成按跌幅排序的Top{max_items}项目图片...")
+    
+    # 创建跌幅榜图片
+    image_path, image_base64 = create_top_losers_image(
+        crypto_list=crypto_list,
+        date=date,
+        max_items=max_items
+    )
+    
+    print(f"准备发送按跌幅排序的图片到webhook...")
+    
+    if not debug_only:
+        from webhook import send_image_async
+        await send_image_async(
+            image_path=image_path,
+            image_base64=image_base64,
+        )
+        print("按跌幅排序的图片已成功发送到webhook")
+    else:
+        print("Debug模式：跳过发送按跌幅排序的图片")
     
     return image_path, image_base64
 
@@ -233,6 +308,22 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
                 date=alpha_data.get('date', ''),
                 debug_only=debug_only,
                 max_items=100
+            )
+            
+            # 发送按涨幅排序的图片
+            await send_alpha_gainers_image(
+                crypto_list=crypto_list,
+                date=alpha_data.get('date', ''),
+                debug_only=debug_only,
+                max_items=50
+            )
+            
+            # 发送按跌幅排序的图片
+            await send_alpha_losers_image(
+                crypto_list=crypto_list,
+                date=alpha_data.get('date', ''),
+                debug_only=debug_only,
+                max_items=50
             )
         else:
             # 原始文本方式

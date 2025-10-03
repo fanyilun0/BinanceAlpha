@@ -14,7 +14,7 @@ matplotlib.use('Agg')  # 使用非交互式后端
 import pandas as pd
 import numpy as np
 from config import DATA_DIRS
-from src.utils.binance_symbols import check_futures_listing
+from src.utils.binance_symbols import is_token_listed, check_futures_listing
 
 
 def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Dict[str, Any]:
@@ -33,6 +33,9 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
     symbol = crypto.get("symbol", "未知")
     rank = crypto.get("cmcRank", "未知")
     chain = crypto.get("platform", {}).get("name", "未知")
+    
+    # 检查是否上线现货
+    is_listed = is_token_listed(symbol)
     
     # 检查合约交易对
     futures_info = check_futures_listing(symbol)
@@ -65,6 +68,7 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
         "名称": name,
         "代码": symbol,
         "chain": chain,
+        "现货": "是" if is_listed else "否",
         "合约": "是" if has_futures else "否",
         "价格($)": round(price, 4),
         "24h变化(%)": round(percent_change_24h, 2),
@@ -116,6 +120,14 @@ def _apply_cell_colors(df: pd.DataFrame, highlight_top_vol_mc: bool = False) -> 
                 row_colors[change_index] = '#ff6b6b'  # 大跌：中红色
             elif change_value < 0:
                 row_colors[change_index] = '#ffccd5'  # 小跌：浅红色
+        
+        # 设置"现货"列的颜色
+        if "现货" in df.columns:
+            spot_index = df.columns.get_loc("现货")
+            is_spot_listed = df.iloc[i, spot_index]
+            
+            if is_spot_listed == "是":
+                row_colors[spot_index] = '#d8f3dc'  # 浅绿色
         
         # 设置"合约"列的颜色
         if "合约" in df.columns:
@@ -296,4 +308,130 @@ def create_top_vol_mc_ratio_image(crypto_list: List[Dict[str, Any]], date: str, 
         filename_prefix='top_vol_mc_ratio',
         header_color='#e76f51',
         highlight_top_vol_mc=True
+    )
+
+
+def create_top_gainers_image(crypto_list: List[Dict[str, Any]], date: str, max_items: int = 50) -> Tuple[str, str]:
+    """
+    基于24h涨跌幅排序，创建涨幅最大的项目表格图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        max_items: 最大显示项目数
+        
+    Returns:
+        Tuple[str, str]: (图片路径, 图片base64编码)
+    """
+    # 准备数据（不包含 FDV 数据）
+    data_with_change = []
+    
+    for crypto in crypto_list:
+        crypto_data = _extract_crypto_data(crypto, include_fdv=False)
+        # 保留所有数据，包括负增长的
+        crypto_data["change_raw"] = crypto_data["24h变化(%)"]  # 用于排序的原始值
+        data_with_change.append(crypto_data)
+    
+    # 按24h变化递减排序，取前N个
+    data_with_change.sort(key=lambda x: x["change_raw"], reverse=True)
+    top_data = data_with_change[:max_items]
+    
+    # 移除排序用的原始值字段
+    for item in top_data:
+        del item["change_raw"]
+    
+    # 生成图片标题
+    title = f'Top {max_items} 涨幅榜 (24h涨跌幅排序) - {date}'
+    
+    # 调用基础函数生成图片
+    return create_base_image_options(
+        data=top_data,
+        title=title,
+        filename_prefix='top_gainers',
+        header_color='#2ecc71',  # 绿色主题
+        highlight_top_vol_mc=False
+    )
+
+
+def create_top_losers_image(crypto_list: List[Dict[str, Any]], date: str, max_items: int = 50) -> Tuple[str, str]:
+    """
+    基于24h涨跌幅排序，创建跌幅最大的项目表格图片
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        max_items: 最大显示项目数
+        
+    Returns:
+        Tuple[str, str]: (图片路径, 图片base64编码)
+    """
+    # 准备数据（不包含 FDV 数据）
+    data_with_change = []
+    
+    for crypto in crypto_list:
+        crypto_data = _extract_crypto_data(crypto, include_fdv=False)
+        # 保留所有数据
+        crypto_data["change_raw"] = crypto_data["24h变化(%)"]  # 用于排序的原始值
+        data_with_change.append(crypto_data)
+    
+    # 按24h变化递增排序（从最负到最正），取前N个
+    data_with_change.sort(key=lambda x: x["change_raw"])
+    top_data = data_with_change[:max_items]
+    
+    # 移除排序用的原始值字段
+    for item in top_data:
+        del item["change_raw"]
+    
+    # 生成图片标题
+    title = f'Top {max_items} 跌幅榜 (24h涨跌幅排序) - {date}'
+    
+    # 调用基础函数生成图片
+    return create_base_image_options(
+        data=top_data,
+        title=title,
+        filename_prefix='top_losers',
+        header_color='#e74c3c',  # 红色主题
+        highlight_top_vol_mc=False
+    )
+
+
+def create_gainers_losers_image(crypto_list: List[Dict[str, Any]], date: str, max_items: int = 100) -> Tuple[str, str]:
+    """
+    基于24h涨跌幅排序，创建涨跌幅榜图片（从高到低排序）
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        max_items: 最大显示项目数
+        
+    Returns:
+        Tuple[str, str]: (图片路径, 图片base64编码)
+    """
+    # 准备数据（不包含 FDV 数据）
+    data_with_change = []
+    
+    for crypto in crypto_list:
+        crypto_data = _extract_crypto_data(crypto, include_fdv=False)
+        # 保留所有数据，包括正负增长
+        crypto_data["change_raw"] = crypto_data["24h变化(%)"]  # 用于排序的原始值
+        data_with_change.append(crypto_data)
+    
+    # 按24h变化递减排序（从最高涨幅到最大跌幅），取前N个
+    data_with_change.sort(key=lambda x: x["change_raw"], reverse=True)
+    top_data = data_with_change[:max_items]
+    
+    # 移除排序用的原始值字段
+    for item in top_data:
+        del item["change_raw"]
+    
+    # 生成图片标题
+    title = f'Top {max_items} 涨跌幅榜 (24h涨跌幅排序) - {date}'
+    
+    # 调用基础函数生成图片
+    return create_base_image_options(
+        data=top_data,
+        title=title,
+        filename_prefix='gainers_losers',
+        header_color='#3498db',  # 蓝色主题（中性色）
+        highlight_top_vol_mc=False
     ) 
