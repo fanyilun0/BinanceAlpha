@@ -14,7 +14,7 @@ matplotlib.use('Agg')  # 使用非交互式后端
 import pandas as pd
 import numpy as np
 from config import DATA_DIRS
-from src.utils.binance_symbols import is_token_listed
+from src.utils.binance_symbols import check_futures_listing
 
 
 def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Dict[str, Any]:
@@ -33,7 +33,10 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
     symbol = crypto.get("symbol", "未知")
     rank = crypto.get("cmcRank", "未知")
     chain = crypto.get("platform", {}).get("name", "未知")
-    is_listed = is_token_listed(symbol)
+    
+    # 检查合约交易对
+    futures_info = check_futures_listing(symbol)
+    has_futures = futures_info.get("has_futures", False)
     
     # 提取价格和价格变化数据（USD）
     quotes = crypto.get("quotes", [])
@@ -62,7 +65,7 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
         "名称": name,
         "代码": symbol,
         "chain": chain,
-        "是否上线": "是" if is_listed else "否",
+        "合约": "是" if has_futures else "否",
         "价格($)": round(price, 4),
         "24h变化(%)": round(percent_change_24h, 2),
         "交易量(M$)": round(volume_24h / 1000000, 2),
@@ -95,23 +98,32 @@ def _apply_cell_colors(df: pd.DataFrame, highlight_top_vol_mc: bool = False) -> 
     for i in range(len(df)):
         row_colors = ['white'] * len(df.columns)
         
-        # 设置24h变化的颜色
+        # 设置24h变化的颜色 - 使用阈值区间
         if "24h变化(%)" in df.columns:
             change_index = df.columns.get_loc("24h变化(%)")
             change_value = df.iloc[i, change_index]
             
-            if change_value > 0:
-                row_colors[change_index] = '#d8f3dc'  # 浅绿色
+            # 根据涨跌幅度使用不同颜色
+            if change_value >= 50:
+                row_colors[change_index] = '#00b050'  # 暴涨：深绿色
+            elif change_value >= 20:
+                row_colors[change_index] = '#92d050'  # 大涨：中绿色
+            elif change_value > 0:
+                row_colors[change_index] = '#d8f3dc'  # 小涨：浅绿色
+            elif change_value <= -50:
+                row_colors[change_index] = '#c00000'  # 暴跌：深红色
+            elif change_value <= -20:
+                row_colors[change_index] = '#ff6b6b'  # 大跌：中红色
             elif change_value < 0:
-                row_colors[change_index] = '#ffccd5'  # 浅红色
+                row_colors[change_index] = '#ffccd5'  # 小跌：浅红色
         
-        # 设置"是否上线"列的颜色
-        if "是否上线" in df.columns:
-            listing_index = df.columns.get_loc("是否上线")
-            is_listed_value = df.iloc[i, listing_index]
+        # 设置"合约"列的颜色
+        if "合约" in df.columns:
+            futures_index = df.columns.get_loc("合约")
+            has_futures_value = df.iloc[i, futures_index]
             
-            if is_listed_value == "是":
-                row_colors[listing_index] = '#d8f3dc'  # 浅绿色
+            if has_futures_value == "是":
+                row_colors[futures_index] = '#e0f7fa'  # 浅蓝色
         
         # 设置VOL/MC比值的颜色渐变（前3名高亮）
         if highlight_top_vol_mc and i < 3 and "VOL/MC" in df.columns:
@@ -150,7 +162,7 @@ def create_base_image_options(
         Tuple[str, str]: (图片路径, 图片base64编码)
     """
     # 确保目录存在
-    image_dir = os.path.join(DATA_DIRS.get('data', 'data'), 'images')
+    image_dir = DATA_DIRS.get('images', 'images')
     os.makedirs(image_dir, exist_ok=True)
     
     # 创建DataFrame
@@ -216,7 +228,7 @@ def create_base_image_options(
     return image_path, img_base64
 
 def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str, 
-                            max_items: int = 50) -> Tuple[str, str]:
+                            max_items: int = 100) -> Tuple[str, str]:
     """
     将币安Alpha项目列表转换为表格图片
     
@@ -245,7 +257,7 @@ def create_alpha_table_image(crypto_list: List[Dict[str, Any]], date: str,
     )
 
 
-def create_top_vol_mc_ratio_image(crypto_list: List[Dict[str, Any]], date: str) -> Tuple[str, str]:
+def create_top_vol_mc_ratio_image(crypto_list: List[Dict[str, Any]], date: str, max_items: int = 100) -> Tuple[str, str]:
     """
     基于交易量/市值比值排序，创建前25个项目的表格图片
     
@@ -268,14 +280,14 @@ def create_top_vol_mc_ratio_image(crypto_list: List[Dict[str, Any]], date: str) 
     
     # 按 VOL/MC 比值递减排序，取前25个
     data_with_ratio.sort(key=lambda x: x["vol_mc_ratio_raw"], reverse=True)
-    top_data = data_with_ratio[:25]
+    top_data = data_with_ratio[:max_items]
     
     # 移除排序用的原始值字段
     for item in top_data:
         del item["vol_mc_ratio_raw"]
     
     # 生成图片标题
-    title = f'Top 25 高流动性项目 (VOL/MC排序) - {date}'
+    title = f'Top {max_items} 高流动性项目 (VOL/MC排序) - {date}'
     
     # 调用基础函数生成图片
     return create_base_image_options(

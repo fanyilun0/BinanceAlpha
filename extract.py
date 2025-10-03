@@ -15,8 +15,8 @@ except Exception as e:
 listed_symbols_set = {s.upper() for s in listed_symbols}
 
 folder = 'advices/all-platforms'
-# 匹配带序号和不带序号的格式
-pattern = re.compile(r'(?:\d+\.\s+)?\*\*([^\*]+?)\s*\(([A-Z0-9\-]+)\)\*\*')
+# 匹配带序号和不带序号的格式，支持$符号开头的数字代币（如$4）
+pattern = re.compile(r'(?:\d+\.\s+)?\*\*([^\*]+?)\s*\((\$?[A-Z0-9\-]+)\)\*\*')
 
 result = {}
 symbol_map = {}  # 用于记录符号到标准化名称的映射

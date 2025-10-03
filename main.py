@@ -33,7 +33,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-async def send_alpha_rank_image(crypto_list, date, debug_only=False, max_items=50):
+async def send_alpha_rank_image(crypto_list, date, debug_only=False, max_items=100):
     """生成并发送按排名排序的Alpha项目图片
     
     Args:
@@ -69,7 +69,7 @@ async def send_alpha_rank_image(crypto_list, date, debug_only=False, max_items=5
     
     return image_path, image_base64
 
-async def send_alpha_liquidity_image(crypto_list, date, debug_only=False):
+async def send_alpha_liquidity_image(crypto_list, date, debug_only=False, max_items=100):
     """生成并发送按流动性（VOL/MC比值）排序的Top10项目图片
     
     Args:
@@ -85,7 +85,8 @@ async def send_alpha_liquidity_image(crypto_list, date, debug_only=False):
     # 创建和发送VOL/MC比值排序的Top10项目图片
     image_path, image_base64 = create_top_vol_mc_ratio_image(
         crypto_list=crypto_list,
-        date=date
+        date=date,
+        max_items=max_items
     )
     
     print(f"准备发送按流动性排序的图片到webhook...")
@@ -223,14 +224,15 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
                 crypto_list=crypto_list,
                 date=alpha_data.get('date', ''),
                 debug_only=debug_only,
-                max_items=50
+                max_items=100
             )
             
             # 发送按流动性排序的图片
             await send_alpha_liquidity_image(
                 crypto_list=crypto_list,
                 date=alpha_data.get('date', ''),
-                debug_only=debug_only
+                debug_only=debug_only,
+                max_items=100
             )
         else:
             # 原始文本方式
