@@ -84,11 +84,3 @@ class BaseDataCollector:
             logger.error(f"加载数据出错: {str(e)}")
             return None
     
-    def is_data_expired(self, data, timestamp_key="last_updated", hours=24):
-        """检查数据是否过期"""
-        if not data or timestamp_key not in data:
-            return True
-            
-        last_updated = data[timestamp_key]
-        current_time = int(time.time())
-        return (current_time - last_updated) >= hours * 60 * 60 

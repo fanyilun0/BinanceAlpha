@@ -205,11 +205,10 @@ async def get_binance_tokens():
         print(f"错误详情已记录到日志文件")
         return None
 
-async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_only=False, as_image=True):
+async def get_binance_alpha_list(listed_tokens=None, debug_only=False, as_image=True):
     """获取币安Alpha项目列表数据并推送
     
     Args:
-        force_update: 是否强制更新数据
         listed_tokens: 已上线币安的token列表
         debug_only: 是否仅调试（不推送）
         as_image: 是否以图片形式推送
@@ -228,7 +227,7 @@ async def get_binance_alpha_list(force_update=False, listed_tokens=None, debug_o
     try:
         # 获取币安Alpha项目列表数据
         print("正在获取币安Alpha项目列表数据...")
-        alpha_data = await collector.get_latest_data(force_update=force_update)
+        alpha_data = await collector.get_latest_data()
         
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败")
@@ -651,7 +650,6 @@ async def run_workflow(debug_only=False):
         # 步骤2: 获取币安Alpha项目列表数据并推送图片
         print("步骤2: 获取币安Alpha项目列表数据并推送图片...\n")
         alpha_data = await get_binance_alpha_list(
-            force_update=True, 
             listed_tokens=listed_tokens, 
             debug_only=debug_only, 
             as_image=True  # 默认生成图片
