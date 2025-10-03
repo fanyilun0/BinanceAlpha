@@ -8,12 +8,6 @@ import logging
 # 设置日志
 logger = logging.getLogger(__name__)
 
-# 模块级别的缓存变量，避免重复请求
-_futures_symbols_cache = None
-_futures_cache_loaded = False
-_spot_symbols_cache = None
-_spot_cache_loaded = False
-
 def get_spot_cache_path():
     """获取现货交易对缓存文件路径"""
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -21,19 +15,6 @@ def get_spot_cache_path():
     if not os.path.exists(symbols_dir):
         os.makedirs(symbols_dir)
     return os.path.join(symbols_dir, 'spot_symbols.json')
-
-def load_spot_from_cache():
-    """从缓存加载现货交易对数据"""
-    cache_path = get_spot_cache_path()
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, 'r') as f:
-                data = json.load(f)
-                logger.info(f"从缓存加载了 {len(data)} 个现货交易对")
-                return data
-        except Exception as e:
-            logger.warning(f"加载现货缓存失败: {str(e)}")
-    return []
 
 def save_spot_to_cache(symbols):
     """保存现货交易对数据到缓存"""
@@ -45,24 +26,13 @@ def save_spot_to_cache(symbols):
     except Exception as e:
         logger.error(f"保存现货缓存失败: {str(e)}")
 
-def fetch_symbols(use_cache=False, force_reload=True):
+def fetch_symbols():
     """从Binance获取所有现货交易对
     
-    Args:
-        use_cache: 是否使用缓存，如果获取失败则自动使用缓存
-        force_reload: 是否强制重新加载，忽略模块级缓存（默认为True，不使用缓存）
-        
     Returns:
         list: 现货交易对列表
     """
-    global _spot_symbols_cache, _spot_cache_loaded
-    
-    # 如果已经加载过且不强制重新加载，直接返回缓存
-    if _spot_cache_loaded and not force_reload and _spot_symbols_cache is not None:
-        return _spot_symbols_cache
-    
     try:
-        # 尝试从API获取
         from config import PROXY_URL, USE_PROXY
         
         proxies = None
@@ -80,35 +50,14 @@ def fetch_symbols(use_cache=False, force_reload=True):
         data = response.json()
         symbols = [s['symbol'] for s in data['symbols'] if s.get('status') == 'TRADING']
         
-        # 保存到缓存文件
+        # 保存到缓存文件（仅用于历史记录）
         save_spot_to_cache(symbols)
-        
-        # 保存到模块级缓存
-        _spot_symbols_cache = symbols
-        _spot_cache_loaded = True
         
         logger.info(f"成功获取 {len(symbols)} 个现货交易对")
         
         return symbols
     except Exception as e:
         logger.error(f"获取现货交易对时出错: {str(e)}")
-        
-        # 如果允许使用缓存，则从缓存加载
-        if use_cache:
-            # 先检查模块级缓存
-            if _spot_symbols_cache is not None:
-                logger.info("使用模块级缓存的现货数据")
-                return _spot_symbols_cache
-            
-            # 再尝试从文件缓存加载
-            logger.info("尝试从文件缓存加载现货数据...")
-            cached_symbols = load_spot_from_cache()
-            if cached_symbols:
-                # 加载成功后也保存到模块级缓存
-                _spot_symbols_cache = cached_symbols
-                _spot_cache_loaded = True
-                return cached_symbols
-        
         return []
 
 def get_futures_cache_path():
@@ -118,19 +67,6 @@ def get_futures_cache_path():
     if not os.path.exists(symbols_dir):
         os.makedirs(symbols_dir)
     return os.path.join(symbols_dir, 'futures_symbols.json')
-
-def load_futures_from_cache():
-    """从缓存加载合约交易对数据"""
-    cache_path = get_futures_cache_path()
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, 'r') as f:
-                data = json.load(f)
-                logger.info(f"从缓存加载了 {len(data)} 个合约交易对")
-                return data
-        except Exception as e:
-            logger.warning(f"加载合约缓存失败: {str(e)}")
-    return []
 
 def save_futures_to_cache(symbols):
     """保存合约交易对数据到缓存"""
@@ -142,24 +78,13 @@ def save_futures_to_cache(symbols):
     except Exception as e:
         logger.error(f"保存合约缓存失败: {str(e)}")
 
-def fetch_futures_symbols(use_cache=True, force_reload=False):
+def fetch_futures_symbols():
     """从Binance获取所有USDT永续合约交易对
     
-    Args:
-        use_cache: 是否使用缓存，如果获取失败则自动使用缓存
-        force_reload: 是否强制重新加载，忽略模块级缓存
-        
     Returns:
         list: 合约交易对列表
     """
-    global _futures_symbols_cache, _futures_cache_loaded
-    
-    # 如果已经加载过且不强制重新加载，直接返回缓存
-    if _futures_cache_loaded and not force_reload and _futures_symbols_cache is not None:
-        return _futures_symbols_cache
-    
     try:
-        # 尝试从API获取
         from config import PROXY_URL, USE_PROXY
         
         proxies = None
@@ -177,35 +102,14 @@ def fetch_futures_symbols(use_cache=True, force_reload=False):
         data = response.json()
         symbols = [s['symbol'] for s in data['symbols'] if s.get('contractType') == 'PERPETUAL']
         
-        # 保存到缓存文件
+        # 保存到缓存文件（仅用于历史记录）
         save_futures_to_cache(symbols)
-        
-        # 保存到模块级缓存
-        _futures_symbols_cache = symbols
-        _futures_cache_loaded = True
         
         logger.info(f"成功获取 {len(symbols)} 个合约交易对")
         
         return symbols
     except Exception as e:
         logger.error(f"获取合约交易对时出错: {str(e)}")
-        
-        # 如果允许使用缓存，则从缓存加载
-        if use_cache:
-            # 先检查模块级缓存
-            if _futures_symbols_cache is not None:
-                logger.info("使用模块级缓存的合约数据")
-                return _futures_symbols_cache
-            
-            # 再尝试从文件缓存加载
-            logger.info("尝试从文件缓存加载合约数据...")
-            cached_symbols = load_futures_from_cache()
-            if cached_symbols:
-                # 加载成功后也保存到模块级缓存
-                _futures_symbols_cache = cached_symbols
-                _futures_cache_loaded = True
-                return cached_symbols
-        
         return []
 
 def check_futures_listing(token: str) -> dict:
@@ -365,8 +269,8 @@ def get_raw_symbols_file():
 def get_cex_tokens():
     """获取币安CEX上已上线的token"""
     try:
-        # 获取所有交易对（不使用缓存，强制重新加载）
-        symbols = fetch_symbols(use_cache=False, force_reload=True)
+        # 获取所有交易对
+        symbols = fetch_symbols()
         
         # 提取token名称
         cex_tokens = extract_token_names(symbols)
@@ -529,8 +433,8 @@ def update_tokens():
         except Exception as e:
             logger.warning(f"读取现有spot_symbols.json失败: {str(e)}")
     
-    # 获取所有交易对（不使用缓存，强制重新加载）
-    all_symbols = fetch_symbols(use_cache=False, force_reload=True)
+    # 获取所有交易对
+    all_symbols = fetch_symbols()
     
     # 检查交易对列表是否有变化
     symbols_changed = True

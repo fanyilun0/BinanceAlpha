@@ -69,34 +69,11 @@ class BinanceAlphaDataCollector:
             logger.error(f"加载币安Alpha数据出错: {str(e)}")
             return None
     
-    async def get_latest_data(self, force_update=False) -> Dict[str, Any]:
-        """获取最新的币安Alpha数据
+    async def get_latest_data(self) -> Dict[str, Any]:
+        """获取最新的币安Alpha数据（每次都从API获取最新数据）
         
-        Args:
-            force_update: 是否强制更新数据
-            
         Returns:
             最新的币安Alpha数据
         """
-        # 如果强制更新或者本地数据不存在，则获取最新数据
-        if force_update:
-            logger.info("强制更新币安Alpha数据")
-            return await self.collect_current_data()
-        
-        # 尝试加载本地数据
-        local_data = self.load_data()
-        
-        # 如果本地数据不存在，或者数据已过期（超过1小时），则获取最新数据
-        if not local_data:
-            logger.info("本地币安Alpha数据不存在，获取最新数据")
-            return await self.collect_current_data()
-        
-        # 检查数据是否过期（超过1小时）
-        timestamp = local_data.get("timestamp", 0)
-        current_time = int(time.time())
-        if (current_time - timestamp) >= 60 * 60:  # 1小时 = 60分钟 * 60秒
-            logger.info(f"币安Alpha数据已过期，上次更新时间: {datetime.fromtimestamp(timestamp)}")
-            return await self.collect_current_data()
-        else:
-            logger.info(f"使用本地币安Alpha数据，上次更新时间: {datetime.fromtimestamp(timestamp)}")
-            return local_data
+        logger.info("获取最新的币安Alpha数据")
+        return await self.collect_current_data()

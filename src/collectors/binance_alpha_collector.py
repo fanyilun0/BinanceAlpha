@@ -20,7 +20,7 @@ class BinanceAlphaCollector(BaseDataCollector):
         """初始化币安Alpha项目列表数据收集器"""
         super().__init__(data_dir, proxy_url, use_proxy)
         self.data_file = os.path.join(data_dir, "binance_alpha_data.json")
-        self.api_url = MARKET_SENTIMENT.get('binance_alpha_url', 'https://api.coinmarketcap.com/data-api/v3/cryptocurrency/listing')
+        self.api_url = MARKET_SENTIMENT.get('binance_alpha_url')
     
     async def get_binance_alpha_data(self) -> Optional[Dict[str, Any]]:
         """获取币安Alpha项目列表数据"""
