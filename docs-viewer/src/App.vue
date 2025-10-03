@@ -5,7 +5,7 @@ import MarkdownViewer from './components/MarkdownViewer.vue'
 const files = ref([])
 const images = ref([])
 const currentTab = ref('docs') // 'docs' or 'images'
-const currentImageTab = ref('alpha_list') // 'alpha_list' or 'vol_mc_ratio'
+const currentImageTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', or 'gainers_losers'
 const currentFile = ref('')
 const currentContent = ref('')
 const currentImage = ref('')
@@ -18,6 +18,7 @@ const imagesByType = computed(() => {
   const grouped = {
     alpha_list: [],
     vol_mc_ratio: [],
+    gainers_losers: [],
     other: []
   }
   
@@ -143,13 +144,19 @@ onMounted(async () => {
           :class="{ active: currentImageTab === 'alpha_list' }" 
           @click="switchImageTab('alpha_list')"
         >
-          Alpha项目列表 ({{ imagesByType.alpha_list.length }})
+          📊 Alpha项目列表 ({{ imagesByType.alpha_list.length }})
         </button>
         <button 
           :class="{ active: currentImageTab === 'vol_mc_ratio' }" 
           @click="switchImageTab('vol_mc_ratio')"
         >
-          高流动性项目 ({{ imagesByType.vol_mc_ratio.length }})
+          💧 高流动性项目 ({{ imagesByType.vol_mc_ratio.length }})
+        </button>
+        <button 
+          :class="{ active: currentImageTab === 'gainers_losers' }" 
+          @click="switchImageTab('gainers_losers')"
+        >
+          📈 涨跌幅榜 ({{ imagesByType.gainers_losers.length }})
         </button>
       </div>
       

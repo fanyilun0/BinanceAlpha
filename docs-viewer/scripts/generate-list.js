@@ -46,6 +46,8 @@ if (fs.existsSync(imagesSourceDir)) {
         type = 'alpha_list';
       } else if (file.includes('top_vol_mc_ratio_')) {
         type = 'vol_mc_ratio';
+      } else if (file.includes('gainers_losers_')) {
+        type = 'gainers_losers';
       }
       
       return {
