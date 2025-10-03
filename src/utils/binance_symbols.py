@@ -8,6 +8,10 @@ import logging
 # 设置日志
 logger = logging.getLogger(__name__)
 
+# 进程内缓存（仅在单次程序运行期间有效）
+_current_run_futures_cache = None
+_current_run_spot_cache = None
+
 def get_spot_cache_path():
     """获取现货交易对缓存文件路径"""
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -27,11 +31,18 @@ def save_spot_to_cache(symbols):
         logger.error(f"保存现货缓存失败: {str(e)}")
 
 def fetch_symbols():
-    """从Binance获取所有现货交易对
+    """从Binance获取所有现货交易对（使用进程内缓存避免重复请求）
     
     Returns:
         list: 现货交易对列表
     """
+    global _current_run_spot_cache
+    
+    # 如果进程内缓存存在，直接返回
+    if _current_run_spot_cache is not None:
+        logger.debug(f"使用进程内缓存的现货数据 ({len(_current_run_spot_cache)} 个)")
+        return _current_run_spot_cache
+    
     try:
         from config import PROXY_URL, USE_PROXY
         
@@ -49,6 +60,9 @@ def fetch_symbols():
         )
         data = response.json()
         symbols = [s['symbol'] for s in data['symbols'] if s.get('status') == 'TRADING']
+        
+        # 保存到进程内缓存
+        _current_run_spot_cache = symbols
         
         # 保存到缓存文件（仅用于历史记录）
         save_spot_to_cache(symbols)
@@ -79,11 +93,18 @@ def save_futures_to_cache(symbols):
         logger.error(f"保存合约缓存失败: {str(e)}")
 
 def fetch_futures_symbols():
-    """从Binance获取所有USDT永续合约交易对
+    """从Binance获取所有USDT永续合约交易对（使用进程内缓存避免重复请求）
     
     Returns:
         list: 合约交易对列表
     """
+    global _current_run_futures_cache
+    
+    # 如果进程内缓存存在，直接返回
+    if _current_run_futures_cache is not None:
+        logger.debug(f"使用进程内缓存的合约数据 ({len(_current_run_futures_cache)} 个)")
+        return _current_run_futures_cache
+    
     try:
         from config import PROXY_URL, USE_PROXY
         
@@ -101,6 +122,9 @@ def fetch_futures_symbols():
         )
         data = response.json()
         symbols = [s['symbol'] for s in data['symbols'] if s.get('contractType') == 'PERPETUAL']
+        
+        # 保存到进程内缓存
+        _current_run_futures_cache = symbols
         
         # 保存到缓存文件（仅用于历史记录）
         save_futures_to_cache(symbols)
