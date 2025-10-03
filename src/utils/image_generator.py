@@ -397,7 +397,7 @@ def create_top_losers_image(crypto_list: List[Dict[str, Any]], date: str, max_it
 
 def create_gainers_losers_image(crypto_list: List[Dict[str, Any]], date: str, max_items: int = 100) -> Tuple[str, str]:
     """
-    基于24h涨跌幅排序，创建涨跌幅榜图片（从高到低排序）
+    基于24h涨跌幅排序，创建涨跌幅榜图片（包含涨幅和跌幅）
     
     Args:
         crypto_list: 加密货币项目列表
@@ -416,16 +416,46 @@ def create_gainers_losers_image(crypto_list: List[Dict[str, Any]], date: str, ma
         crypto_data["change_raw"] = crypto_data["24h变化(%)"]  # 用于排序的原始值
         data_with_change.append(crypto_data)
     
-    # 按24h变化递减排序（从最高涨幅到最大跌幅），取前N个
-    data_with_change.sort(key=lambda x: x["change_raw"], reverse=True)
-    top_data = data_with_change[:max_items]
+    # 分离涨幅和跌幅数据
+    gainers = [item for item in data_with_change if item["change_raw"] > 0]
+    losers = [item for item in data_with_change if item["change_raw"] < 0]
+    neutral = [item for item in data_with_change if item["change_raw"] == 0]
+    
+    # 按涨幅递减排序
+    gainers.sort(key=lambda x: x["change_raw"], reverse=True)
+    # 按跌幅递增排序（从最大跌幅到最小跌幅）
+    losers.sort(key=lambda x: x["change_raw"])
+    
+    # 计算涨幅和跌幅各取多少项
+    half_items = max_items // 2
+    
+    # 合并数据：前半部分是涨幅榜，后半部分是跌幅榜
+    top_gainers = gainers[:half_items]
+    top_losers = losers[:half_items]
+    
+    # 如果涨幅或跌幅数据不足，用对方补充
+    if len(top_gainers) < half_items and len(losers) > half_items:
+        # 涨幅数据不足，多取一些跌幅数据
+        top_losers = losers[:max_items - len(top_gainers)]
+    elif len(top_losers) < half_items and len(gainers) > half_items:
+        # 跌幅数据不足，多取一些涨幅数据
+        top_gainers = gainers[:max_items - len(top_losers)]
+    
+    # 合并涨幅和跌幅数据（涨幅在前，跌幅在后）
+    top_data = top_gainers + top_losers
+    
+    # 如果总数据不足，添加零增长的数据
+    if len(top_data) < max_items and neutral:
+        top_data.extend(neutral[:max_items - len(top_data)])
     
     # 移除排序用的原始值字段
     for item in top_data:
         del item["change_raw"]
     
     # 生成图片标题
-    title = f'Top {max_items} 涨跌幅榜 (24h涨跌幅排序) - {date}'
+    gainers_count = len(top_gainers)
+    losers_count = len(top_losers)
+    title = f'涨跌幅榜 (涨{gainers_count}跌{losers_count}) - {date}'
     
     # 调用基础函数生成图片
     return create_base_image_options(

@@ -242,12 +242,20 @@ def check_futures_listing(token: str) -> dict:
         logger.error(f"检查合约交易对时出错: {str(e)}")
         return {"has_futures": False, "futures_symbol": ""}
 
-def extract_token_names(symbols):
-    """从交易对中提取通证(token)名称"""
+def extract_token_names(symbols, log_unmatched=False):
+    """从交易对中提取通证(token)名称
+    
+    Args:
+        symbols: 交易对列表
+        log_unmatched: 是否记录未匹配的交易对（默认False，减少日志输出）
+    
+    Returns:
+        list: 排序后的token列表
+    """
     # 定义常见的计价货币
     quote_currencies = ['BTC', 'ETH', 'USDT', 'BUSD', 'BNB', 'USDC', 'EUR', 'TRY', 'FDUSD', 'TUSD', 'JPY', 'ARS', 'MXN', 'BRL', 'AEUR', 'PLN', 'RUB', 'RON', 'VAI', 'EURI', 'CZK', 'COP']
     
-    # 添加一些已知的特殊情况
+    # 添加一些已知的特殊情况和需要忽略的交易对
     special_cases = {
         'BTCDOMUSDT': 'BTCDOM',  # 比特币主导地位指数
         'BTCDOMBUSD': 'BTCDOM',
@@ -256,11 +264,22 @@ def extract_token_names(symbols):
         # 可以根据实际情况添加更多特殊情况
     }
     
+    # 需要忽略的特殊交易对（跨币对、法币对等）
+    ignored_patterns = [
+        'TRXXRP', 'WINTRX', 'BTCZAR', 'ETHZAR', 'USDTZAR', 
+        'BTCUAH', 'USDTUAH', 'BTCDAI', 'ETHDAI', 'USDTDAI',
+        'BNSOLSOL'  # 跨币对
+    ]
+    
     tokens = set()
     unmatched_symbols = []
     
     # 首先处理特殊情况
     for symbol in symbols:
+        # 跳过需要忽略的交易对
+        if symbol in ignored_patterns:
+            continue
+            
         if symbol in special_cases:
             tokens.add(special_cases[symbol])
             continue
@@ -276,31 +295,28 @@ def extract_token_names(symbols):
                     break
         
         # 如果没有匹配到，记录下来供后续处理
-        if not matched:
+        if not matched and symbol not in ignored_patterns:
             unmatched_symbols.append(symbol)
     
-    # 处理未匹配的交易对
-    if unmatched_symbols:
+    # 处理未匹配的交易对（只在显式要求时记录日志）
+    if unmatched_symbols and log_unmatched:
         logger.info(f"发现{len(unmatched_symbols)}个未匹配的交易对：{', '.join(unmatched_symbols[:10])}" + 
                    (f"...等共{len(unmatched_symbols)}个" if len(unmatched_symbols) > 10 else ""))
-        
-        # 尝试更复杂的提取方法
-        for symbol in unmatched_symbols:
-            # 检查是否符合基本格式要求
-            if re.match(r'^[A-Z0-9]+$', symbol):
-                # 尝试将symbol本身作为token添加（如果它不是计价货币）
-                if symbol not in quote_currencies:
-                    tokens.add(symbol)
-                
-                # 处理类似1000TOKEN形式的token
-                number_token_match = re.match(r'^(\d+)([A-Z]+)$', symbol)
-                if number_token_match:
-                    token_name = number_token_match.group(2)
-                    if token_name not in quote_currencies:
-                        tokens.add(token_name)
+    
+    # 尝试更复杂的提取方法（静默处理）
+    for symbol in unmatched_symbols:
+        # 检查是否符合基本格式要求
+        if re.match(r'^[A-Z0-9]+$', symbol):
+            # 尝试将symbol本身作为token添加（如果它不是计价货币）
+            if symbol not in quote_currencies:
+                tokens.add(symbol)
             
-            # 这里可以添加更多复杂的提取规则
-            # 例如针对TOKEN1TOKEN2这种情况的处理
+            # 处理类似1000TOKEN形式的token
+            number_token_match = re.match(r'^(\d+)([A-Z]+)$', symbol)
+            if number_token_match:
+                token_name = number_token_match.group(2)
+                if token_name not in quote_currencies:
+                    tokens.add(token_name)
     
     return sorted(list(tokens))
 
@@ -502,8 +518,16 @@ def update_tokens():
     # 获取当前日期和时间
     current_datetime = datetime.now().strftime('%Y%m%d-%H%M%S')
     
-    # 获取现有的tokens
-    existing_tokens = get_existing_tokens()
+    # 获取现有的tokens（从spot_symbols.json提取）
+    spot_cache_path = get_spot_cache_path()
+    existing_tokens = []
+    if os.path.exists(spot_cache_path):
+        try:
+            with open(spot_cache_path, 'r') as f:
+                existing_spot_symbols = json.load(f)
+            existing_tokens = extract_token_names(existing_spot_symbols, log_unmatched=False)
+        except Exception as e:
+            logger.warning(f"读取现有spot_symbols.json失败: {str(e)}")
     
     # 获取所有交易对（不使用缓存，强制重新加载）
     all_symbols = fetch_symbols(use_cache=False, force_reload=True)
@@ -524,22 +548,18 @@ def update_tokens():
         except Exception as e:
             logger.warning(f"读取上一次的交易对列表时出错: {str(e)}，将重新保存")
     
-    # 如果交易对列表有变化，保存原始数据和提取的token
+    # 提取当前token名称（启用日志记录）
+    token_names = extract_token_names(all_symbols, log_unmatched=True)
+    
+    # 如果交易对列表有变化，保存原始数据
     if symbols_changed:
-        # 保存原始交易对列表
+        # 保存原始交易对列表（用于历史追踪）
         raw_filename = f"raw-symbols-{current_datetime}.json"
         raw_filepath = os.path.join(raw_symbols_dir, raw_filename)
         with open(raw_filepath, 'w') as f:
             json.dump(all_symbols, f, indent=2)
         
-        # 提取token名称
-        token_names = extract_token_names(all_symbols)
-        
-        # 保存提取的token列表
-        filename = f"symbol.json"
-        filepath = os.path.join(symbols_dir, filename)
-        with open(filepath, 'w') as f:
-            json.dump(token_names, f, indent=2)
+        logger.info(f"已保存原始交易对列表到: {raw_filepath}")
         
         # 找出新增的token（不在已存在列表中的）
         new_tokens = [t for t in token_names if t not in existing_tokens]
@@ -558,7 +578,7 @@ def update_tokens():
             "standard_tokens": token_data["standard_tokens"],
             "thousand_tokens": token_data["thousand_tokens"],
             "cex_info_message": token_data["cex_info_message"],
-            "file_path": filepath,
+            "file_path": spot_cache_path,
             "symbols_changed": True
         }
     else:
@@ -570,24 +590,24 @@ def update_tokens():
         token_data = prepare_token_listing_data({"cex_tokens": cex_tokens})
         
         return {
-            "all_tokens": existing_tokens,
+            "all_tokens": token_names,
             "new_tokens": [],
             "existing_tokens": existing_tokens,
             "cex_tokens": cex_tokens,
             "standard_tokens": token_data["standard_tokens"],
             "thousand_tokens": token_data["thousand_tokens"],
             "cex_info_message": token_data["cex_info_message"],
-            "file_path": latest_raw_file,
+            "file_path": spot_cache_path,
             "symbols_changed": False
         }
 
-def is_token_listed(symbol: str, symbol_list_path: str = None) -> bool:
+def is_token_listed(symbol: str, spot_symbols_path: str = None) -> bool:
     """
-    检查token是否已在币安上线，通过直接读取symbol.json文件
+    检查token是否已在币安上线，通过直接读取spot_symbols.json文件并提取token
     
     Args:
         symbol: 要检查的token符号
-        symbol_list_path: symbol.json文件路径，如果为None则使用默认路径
+        spot_symbols_path: spot_symbols.json文件路径，如果为None则使用默认路径
         
     Returns:
         bool: 是否已上线
@@ -599,15 +619,18 @@ def is_token_listed(symbol: str, symbol_list_path: str = None) -> bool:
         return False
         
     # 如果没有指定路径，使用默认路径
-    if not symbol_list_path:
+    if not spot_symbols_path:
         # 获取项目根目录的symbols目录
         root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        symbol_list_path = os.path.join(root_dir, 'symbols', 'symbol.json')
+        spot_symbols_path = os.path.join(root_dir, 'symbols', 'spot_symbols.json')
     
     try:
-        # 读取symbol.json文件
-        with open(symbol_list_path, 'r') as f:
-            listed_tokens = json.load(f)
+        # 读取spot_symbols.json文件
+        with open(spot_symbols_path, 'r') as f:
+            spot_symbols = json.load(f)
+        
+        # 从现货交易对中提取token（不记录日志）
+        listed_tokens = extract_token_names(spot_symbols, log_unmatched=False)
             
         # 检查标准形式token
         if symbol in listed_tokens:
@@ -621,7 +644,7 @@ def is_token_listed(symbol: str, symbol_list_path: str = None) -> bool:
         return False
         
     except Exception as e:
-        print(f"检查token上线状态时出错: {str(e)}")
+        logger.error(f"检查token上线状态时出错: {str(e)}")
         return False
 
 if __name__ == "__main__":
