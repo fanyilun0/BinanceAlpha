@@ -15,6 +15,51 @@ def fetch_symbols():
     symbols = [s['symbol'] for s in data['symbols']]
     return symbols
 
+def fetch_futures_symbols():
+    """从Binance获取所有USDT永续合约交易对"""
+    try:
+        response = requests.get('https://fapi.binance.com/fapi/v1/exchangeInfo')
+        data = response.json()
+        symbols = [s['symbol'] for s in data['symbols'] if s.get('contractType') == 'PERPETUAL']
+        return symbols
+    except Exception as e:
+        logger.error(f"获取合约交易对时出错: {str(e)}")
+        return []
+
+def check_futures_listing(token: str) -> dict:
+    """检查token是否有合约交易对
+    
+    Args:
+        token: token符号
+        
+    Returns:
+        dict: 包含合约信息的字典
+            - has_futures (bool): 是否有合约
+            - futures_symbol (str): 合约交易对符号
+    """
+    token = token.upper() if token else ""
+    
+    if not token:
+        return {"has_futures": False, "futures_symbol": ""}
+    
+    try:
+        futures_symbols = fetch_futures_symbols()
+        
+        # 检查USDT永续合约
+        usdt_symbol = f"{token}USDT"
+        if usdt_symbol in futures_symbols:
+            return {"has_futures": True, "futures_symbol": usdt_symbol}
+        
+        # 检查1000x格式
+        thousand_symbol = f"1000{token}USDT"
+        if thousand_symbol in futures_symbols:
+            return {"has_futures": True, "futures_symbol": thousand_symbol}
+        
+        return {"has_futures": False, "futures_symbol": ""}
+    except Exception as e:
+        logger.error(f"检查合约交易对时出错: {str(e)}")
+        return {"has_futures": False, "futures_symbol": ""}
+
 def extract_token_names(symbols):
     """从交易对中提取通证(token)名称"""
     # 定义常见的计价货币
