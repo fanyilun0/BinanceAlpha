@@ -2,13 +2,18 @@ import re
 import os
 import json
 
-# 从symbol.json文件读取已上币的symbol列表
+# 从spot_symbols.json文件读取已上币的交易对并提取symbol
 try:
-    with open('symbols/symbol.json', 'r', encoding='utf-8') as f:
-        listed_symbols = json.load(f)
-    print(f"已加载 {len(listed_symbols)} 个已上币的symbol")
+    with open('symbols/spot_symbols.json', 'r', encoding='utf-8') as f:
+        spot_symbols = json.load(f)
+    
+    # 从现货交易对中提取token名称（不记录日志）
+    from src.utils.binance_symbols import extract_token_names
+    listed_symbols = extract_token_names(spot_symbols, log_unmatched=False)
+    
+    print(f"已从 {len(spot_symbols)} 个现货交易对中提取 {len(listed_symbols)} 个token")
 except Exception as e:
-    print(f"加载symbol.json失败: {e}，将使用默认空列表")
+    print(f"加载spot_symbols.json失败: {e}，将使用默认空列表")
     listed_symbols = []
 
 # 转换为大写集合，提高查询效率
