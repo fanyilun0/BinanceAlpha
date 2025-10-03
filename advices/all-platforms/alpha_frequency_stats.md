@@ -1,29 +1,29 @@
-# Alpha项目频率统计 (2025-10-02)
+# Alpha项目频率统计 (2025-10-03)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
 | Fartcoin (FARTCOIN) | 95 |  |
-| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 69 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 71 |  |
+| SPX6900 (SPX) | 65 |  |
 | 48 Club Token (KOGE) | 64 |  |
-| SPX6900 (SPX) | 63 |  |
 | Alchemist AI (ALCH) | 60 |  |
+| ai16z (AI16Z) | 58 |  |
 | Aerodrome Finance (AERO) | 57 |  |
-| ai16z (AI16Z) | 56 |  |
 | CARV (CARV) | 48 |  |
 | Plume (PLUME) | 45 | 🔔 已上币 |
 | Velo (VELO) | 42 |  |
 | Vine Coin (VINE) | 36 |  |
+| FLock.io (FLOCK) | 36 |  |
 | Safe (SAFE) | 35 |  |
 | APENFT (NFT) | 34 |  |
-| FLock.io (FLOCK) | 34 |  |
 | SKYAI (SKYAI) | 33 |  |
 | Popcat (POPCAT) | 33 |  |
 | siren (SIREN) | 32 |  |
 | Roam (ROAM) | 31 |  |
 | EGL1 (EGL1) | 30 |  |
+| tokenbot (CLANKER) | 30 |  |
 | B3 (Base) (B3) | 30 |  |
 | Mog Coin (MOG) | 30 |  |
-| tokenbot (CLANKER) | 28 |  |
 | Aethir (ATH) | 28 |  |
 | PAAL AI (PAAL) | 27 |  |
 | Lagrange (LA) | 27 | 🔔 已上币 |
@@ -32,26 +32,27 @@
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | BUILDon (B) | 21 |  |
 | Humanity Protocol (H) | 21 |  |
+| cat in a dogs world (MEW) | 20 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
 | AB (AB) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
-| cat in a dogs world (MEW) | 18 |  |
+| Subsquid (SQD) | 17 |  |
 | Lorenzo Protocol (BANK) | 16 |  |
 | Odos (ODOS) | 15 |  |
-| Subsquid (SQD) | 15 |  |
 | Solidus Ai Tech (AITECH) | 13 |  |
 | Pocket Network (POKT) | 13 |  |
+| Morpho (MORPHO) | 11 |  |
 | BSquared Network (B2) | 10 |  |
 | Merlin Chain (MERL) | 9 |  |
 | Ondo (ONDO) | 9 | 🔔 已上币 |
 | PumpBTC (PUMP) | 9 | 🔔 已上币 |
 | Metaplex (MPLX) | 9 |  |
-| Morpho (MORPHO) | 9 |  |
 | Goatseus Maximus (GOAT) | 9 |  |
 | Bulla (BULLA) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
+| Toshi (TOSHI) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
@@ -63,7 +64,6 @@
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | TAC Protocol (TAC) | 4 |  |
-| Toshi (TOSHI) | 4 |  |
 | Anoma (XAN) | 4 |  |
 | Portal To Bitcoin (PTB) | 4 |  |
 | Sapien (SAPIEN) | 4 |  |
@@ -87,6 +87,7 @@
 | AGON Agent (AGON) | 2 |  |
 | Mind Network (FHE) | 2 |  |
 | REX (REVOX) | 2 |  |
+| Fluid (FLUID) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
 | Orderly (ORDER) | 2 |  |
