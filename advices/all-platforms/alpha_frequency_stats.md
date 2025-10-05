@@ -1,19 +1,19 @@
-# Alpha项目频率统计 (2025-10-04)
+# Alpha项目频率统计 (2025-10-05)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
-| Fartcoin (FARTCOIN) | 97 |  |
-| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 71 |  |
+| Fartcoin (FARTCOIN) | 99 |  |
+| TOP3项目：ai16z (AI16Z)、Solidus Ai Tech (AITECH)、Moo Deng (MOODENG) | 73 |  |
 | 48 Club Token (KOGE) | 64 |  |
 | SPX6900 (SPX) | 63 |  |
+| ai16z (AI16Z) | 60 |  |
 | Alchemist AI (ALCH) | 60 |  |
 | Aerodrome Finance (AERO) | 59 |  |
-| ai16z (AI16Z) | 58 |  |
 | CARV (CARV) | 48 |  |
 | Plume (PLUME) | 45 | 🔔 已上币 |
 | Velo (VELO) | 42 |  |
+| APENFT (NFT) | 38 |  |
 | Vine Coin (VINE) | 36 |  |
-| APENFT (NFT) | 36 |  |
 | Safe (SAFE) | 35 |  |
 | FLock.io (FLOCK) | 34 |  |
 | SKYAI (SKYAI) | 33 |  |
@@ -31,9 +31,9 @@
 | Venice Token (VVV) | 26 |  |
 | Fartcoin (FARTCOIN)、Roam (ROAM)、Jelly-My-Jelly (JELLYJELLY) | 24 |  |
 | BUILDon (B) | 21 |  |
+| AB (AB) | 21 |  |
 | Humanity Protocol (H) | 21 |  |
 | HarryPotterObamaSonic10Inu (BITCOIN) | 19 |  |
-| AB (AB) | 19 |  |
 | Grass (GRASS) | 19 |  |
 | Polyhedra Network (ZKJ) | 18 |  |
 | cat in a dogs world (MEW) | 18 |  |
@@ -52,6 +52,7 @@
 | Bulla (BULLA) | 8 |  |
 | Drift (DRIFT) | 7 |  |
 | Magpie (MGP) | 6 |  |
+| Anoma (XAN) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
@@ -64,12 +65,14 @@
 | Vita Inu (VINU) | 5 |  |
 | TAC Protocol (TAC) | 4 |  |
 | Toshi (TOSHI) | 4 |  |
-| Anoma (XAN) | 4 |  |
 | Portal To Bitcoin (PTB) | 4 |  |
 | Sapien (SAPIEN) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
+| 4 (4) | 4 |  |
+| STBL (STBL) | 4 |  |
 | Orderly (ORDER) | 4 |  |
+| Fluid (FLUID) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
 | APX (APX) | 3 |  |
 | Zircuit (ZRC) | 3 |  |
@@ -90,10 +93,7 @@
 | REX (REVOX) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
-| 4 (4) | 2 |  |
-| STBL (STBL) | 2 |  |
 | Giggle Fund (GIGGLE) | 2 |  |
-| Fluid (FLUID) | 2 |  |
 | Wilder World (WILD) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
 | Ski Mask Dog (SKI) | 1 |  |
