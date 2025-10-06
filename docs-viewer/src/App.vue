@@ -1,14 +1,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import MarkdownViewer from './components/MarkdownViewer.vue'
+import TableViewer from './components/TableViewer.vue'
 
 const files = ref([])
 const images = ref([])
-const currentTab = ref('docs') // 'docs' or 'images'
+const tables = ref([])
+const currentTab = ref('docs') // 'docs', 'images', or 'tables'
 const currentImageTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', or 'gainers_losers'
+const currentTableTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', 'gainers_losers', 'top_gainers', 'top_losers'
 const currentFile = ref('')
 const currentContent = ref('')
 const currentImage = ref('')
+const currentTable = ref('')
+const currentTableData = ref(null)
 const searchQuery = ref('')
 const isDarkMode = ref(false)
 const isLoading = ref(false)
@@ -34,6 +39,29 @@ const imagesByType = computed(() => {
   return grouped
 })
 
+// 按类型分组表格
+const tablesByType = computed(() => {
+  const grouped = {
+    alpha_list: [],
+    vol_mc_ratio: [],
+    gainers_losers: [],
+    top_gainers: [],
+    top_losers: [],
+    other: []
+  }
+  
+  tables.value.forEach(table => {
+    const type = table.type || 'other'
+    if (grouped[type]) {
+      grouped[type].push(table)
+    } else {
+      grouped.other.push(table)
+    }
+  })
+  
+  return grouped
+})
+
 // 搜索过滤 - 根据当前标签页过滤
 const filteredItems = computed(() => {
   if (currentTab.value === 'docs') {
@@ -44,9 +72,18 @@ const filteredItems = computed(() => {
       item.title.toLowerCase().includes(query) || 
       (item.name && item.name.toLowerCase().includes(query))
     )
-  } else {
+  } else if (currentTab.value === 'images') {
     // 图片标签页：根据当前子标签页过滤
     const items = imagesByType.value[currentImageTab.value] || []
+    if (!searchQuery.value) return items
+    const query = searchQuery.value.toLowerCase()
+    return items.filter(item => 
+      item.title.toLowerCase().includes(query) || 
+      (item.name && item.name.toLowerCase().includes(query))
+    )
+  } else {
+    // 表格标签页：根据当前子标签页过滤
+    const items = tablesByType.value[currentTableTab.value] || []
     if (!searchQuery.value) return items
     const query = searchQuery.value.toLowerCase()
     return items.filter(item => 
@@ -60,6 +97,8 @@ const selectFile = async (file) => {
   if (currentFile.value === file.name) return
   currentFile.value = file.name
   currentImage.value = '' // 清空图片选择
+  currentTable.value = '' // 清空表格选择
+  currentTableData.value = null
   isLoading.value = true
   try {
     const response = await fetch(`/advices/${file.name}`)
@@ -77,6 +116,26 @@ const selectImage = (image) => {
   currentImage.value = image.name
   currentFile.value = '' // 清空文档选择
   currentContent.value = '' // 清空文档内容
+  currentTable.value = '' // 清空表格选择
+  currentTableData.value = null
+}
+
+const selectTable = async (table) => {
+  if (currentTable.value === table.name) return
+  currentTable.value = table.name
+  currentFile.value = '' // 清空文档选择
+  currentContent.value = '' // 清空文档内容
+  currentImage.value = '' // 清空图片选择
+  isLoading.value = true
+  try {
+    const response = await fetch(`/tables/${table.name}`)
+    currentTableData.value = await response.json()
+  } catch (error) {
+    console.error('Error loading table:', error)
+    currentTableData.value = null
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const switchTab = (tab) => {
@@ -90,6 +149,13 @@ const switchImageTab = (tab) => {
   currentImage.value = '' // 清空当前选中的图片
 }
 
+const switchTableTab = (tab) => {
+  currentTableTab.value = tab
+  searchQuery.value = '' // 切换表格子标签时清空搜索
+  currentTable.value = '' // 清空当前选中的表格
+  currentTableData.value = null
+}
+
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value
   document.documentElement.classList.toggle('dark-mode')
@@ -101,6 +167,7 @@ onMounted(async () => {
     const data = await response.json()
     files.value = data.files?.sort((a, b) => b.name.localeCompare(a.name)) || []
     images.value = data.images?.sort((a, b) => b.name.localeCompare(a.name)) || []
+    tables.value = data.tables?.sort((a, b) => b.name.localeCompare(a.name)) || []
     
     // 默认选中第一个文件（最新的）
     if (files.value.length > 0) {
@@ -131,6 +198,12 @@ onMounted(async () => {
           📄 文档 ({{ files.length }})
         </button>
         <button 
+          :class="{ active: currentTab === 'tables' }" 
+          @click="switchTab('tables')"
+        >
+          📊 表格 ({{ tables.length }})
+        </button>
+        <button 
           :class="{ active: currentTab === 'images' }" 
           @click="switchTab('images')"
         >
@@ -139,7 +212,7 @@ onMounted(async () => {
       </div>
       
       <!-- 图片子标签 (仅在图片标签页时显示) -->
-      <div v-if="currentTab === 'images'" class="image-sub-tabs">
+      <div v-if="currentTab === 'images'" class="sub-tabs">
         <button 
           :class="{ active: currentImageTab === 'alpha_list' }" 
           @click="switchImageTab('alpha_list')"
@@ -160,7 +233,8 @@ onMounted(async () => {
         </button>
       </div>
       
-      <div class="search-box">
+      <!-- 搜索框：仅在文档和图片标签页显示 -->
+      <div v-if="currentTab !== 'tables'" class="search-box">
         <input 
           type="text" 
           v-model="searchQuery"
@@ -177,6 +251,18 @@ onMounted(async () => {
           @click="selectFile(file)"
         >
           {{ file.name.replace('.md', '') }}
+        </li>
+      </ul>
+      
+      <!-- 表格列表 -->
+      <ul v-else-if="currentTab === 'tables'" class="file-list">
+        <li 
+          v-for="table in filteredItems" 
+          :key="table.name"
+          :class="{ active: currentTable === table.name }"
+          @click="selectTable(table)"
+        >
+          {{ table.name.replace('.json', '') }}
         </li>
       </ul>
       
@@ -204,13 +290,19 @@ onMounted(async () => {
         :content="currentContent"
       />
       
+      <!-- 表格内容 -->
+      <TableViewer 
+        v-else-if="currentTableData && currentTab === 'tables'" 
+        :tableData="currentTableData"
+      />
+      
       <!-- 图片内容 -->
       <div v-else-if="currentImage && currentTab === 'images'" class="image-viewer">
         <img :src="`/images/${currentImage}`" :alt="currentImage" />
       </div>
       
       <div v-else class="no-content">
-        请选择要查看的{{ currentTab === 'docs' ? '文档' : '图片' }}
+        请选择要查看的{{ currentTab === 'docs' ? '文档' : currentTab === 'tables' ? '数据表格' : '图片' }}
       </div>
     </div>
   </div>
@@ -249,8 +341,8 @@ body {
 }
 
 .sidebar {
-  width: 300px;
-  min-width: 300px;
+  width: 400px;
+  min-width: 400px;
   background-color: var(--sidebar-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -298,7 +390,7 @@ body {
   font-weight: 600;
 }
 
-.image-sub-tabs {
+.sub-tabs {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -307,7 +399,7 @@ body {
   background-color: var(--sidebar-bg);
 }
 
-.image-sub-tabs button {
+.sub-tabs button {
   padding: 10px 16px;
   background: none;
   border: none;
@@ -319,11 +411,11 @@ body {
   text-align: left;
 }
 
-.image-sub-tabs button:hover {
+.sub-tabs button:hover {
   background-color: var(--hover-color);
 }
 
-.image-sub-tabs button.active {
+.sub-tabs button.active {
   border-left-color: #1976d2;
   background-color: var(--active-color);
   color: #1976d2;
@@ -460,8 +552,8 @@ body {
 
 @media (max-width: 768px) {
   .sidebar {
-    width: 250px;
-    min-width: 250px;
+    width: 300px;
+    min-width: 300px;
   }
 }
 
