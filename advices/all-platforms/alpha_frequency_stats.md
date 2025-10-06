@@ -1,4 +1,4 @@
-# Alpha项目频率统计 (2025-10-05)
+# Alpha项目频率统计 (2025-10-06)
 
 | 项目名称 | 出现次数 | 状态 |
 | --- | --- | --- |
@@ -12,7 +12,7 @@
 | CARV (CARV) | 48 |  |
 | Plume (PLUME) | 45 | 🔔 已上币 |
 | Velo (VELO) | 42 |  |
-| APENFT (NFT) | 38 |  |
+| APENFT (NFT) | 40 |  |
 | Vine Coin (VINE) | 36 |  |
 | Safe (SAFE) | 35 |  |
 | FLock.io (FLOCK) | 34 |  |
@@ -49,10 +49,12 @@
 | Metaplex (MPLX) | 9 |  |
 | Morpho (MORPHO) | 9 | 🔔 已上币 |
 | Goatseus Maximus (GOAT) | 9 |  |
+| Anoma (XAN) | 8 |  |
 | Bulla (BULLA) | 8 |  |
 | Drift (DRIFT) | 7 |  |
+| Toshi (TOSHI) | 6 |  |
+| STBL (STBL) | 6 |  |
 | Magpie (MGP) | 6 |  |
-| Anoma (XAN) | 6 |  |
 | Housecoin (HOUSE) | 6 |  |
 | Clearpool (CPOOL) | 6 |  |
 | Haedal Protocol (HAEDAL) | 6 | 🔔 已上币 |
@@ -64,13 +66,13 @@
 | CreatorBid (BID) | 5 |  |
 | Vita Inu (VINU) | 5 |  |
 | TAC Protocol (TAC) | 4 |  |
-| Toshi (TOSHI) | 4 |  |
+| Giggle Fund (GIGGLE) | 4 |  |
+| Wilder World (WILD) | 4 |  |
 | Portal To Bitcoin (PTB) | 4 |  |
 | Sapien (SAPIEN) | 4 |  |
 | Zerebro (ZEREBRO) | 4 |  |
 | Koma Inu (KOMA) | 4 |  |
 | 4 (4) | 4 |  |
-| STBL (STBL) | 4 |  |
 | Orderly (ORDER) | 4 |  |
 | Fluid (FLUID) | 4 |  |
 | ZetaChain (ZETA) | 3 |  |
@@ -93,8 +95,6 @@
 | REX (REVOX) | 2 |  |
 | Newton Protocol (NEWT) | 2 | 🔔 已上币 |
 | SPX (SPX6900) | 2 |  |
-| Giggle Fund (GIGGLE) | 2 |  |
-| Wilder World (WILD) | 2 |  |
 | Broccoli (BROCCOLI) | 1 |  |
 | Ski Mask Dog (SKI) | 1 |  |
 | Swarms (SWARMS) | 1 |  |
