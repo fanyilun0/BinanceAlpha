@@ -14,7 +14,7 @@ matplotlib.use('Agg')  # 使用非交互式后端
 import pandas as pd
 import numpy as np
 from config import DATA_DIRS
-from src.utils.binance_symbols import is_token_listed, check_futures_listing
+from src.utils.binance_symbols import check_futures_listing
 
 
 def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Dict[str, Any]:
@@ -33,9 +33,6 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
     symbol = crypto.get("symbol", "未知")
     rank = crypto.get("cmcRank", "未知")
     chain = crypto.get("platform", {}).get("name", "未知")
-    
-    # 检查是否上线现货
-    is_listed = is_token_listed(symbol)
     
     # 检查合约交易对
     futures_info = check_futures_listing(symbol)
@@ -68,7 +65,6 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
         "名称": name,
         "代码": symbol,
         "chain": chain,
-        "现货": "是" if is_listed else "否",
         "合约": "是" if has_futures else "否",
         "价格($)": round(price, 4),
         "24h变化(%)": round(percent_change_24h, 2),
@@ -120,14 +116,6 @@ def _apply_cell_colors(df: pd.DataFrame, highlight_top_vol_mc: bool = False) -> 
                 row_colors[change_index] = '#ff6b6b'  # 大跌：中红色
             elif change_value < 0:
                 row_colors[change_index] = '#ffccd5'  # 小跌：浅红色
-        
-        # 设置"现货"列的颜色
-        if "现货" in df.columns:
-            spot_index = df.columns.get_loc("现货")
-            is_spot_listed = df.iloc[i, spot_index]
-            
-            if is_spot_listed == "是":
-                row_colors[spot_index] = '#d8f3dc'  # 浅绿色
         
         # 设置"合约"列的颜色
         if "合约" in df.columns:
