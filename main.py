@@ -24,6 +24,7 @@ from src.utils.image_generator import (
     create_top_vol_mc_ratio_image,
     create_gainers_losers_image
 )
+from src.utils.table_data_generator import export_all_table_types
 
 
 # 配置日志
@@ -163,6 +164,33 @@ async def send_alpha_image(crypto_list, date, debug_only=False, max_items=100):
     )
 
 
+async def export_alpha_table_data(crypto_list, date):
+    """导出所有类型的表格数据供前端使用
+    
+    Args:
+        crypto_list: 加密货币项目列表
+        date: 数据日期
+        
+    Returns:
+        Dict[str, str]: 表格类型到文件路径的映射
+    """
+    print("准备导出表格数据供前端使用...")
+    
+    # 导出所有类型的表格数据
+    results = export_all_table_types(
+        crypto_list=crypto_list,
+        date=date
+    )
+    
+    # 统计导出结果
+    success_count = sum(1 for path in results.values() if path is not None)
+    total_count = len(results)
+    
+    print(f"表格数据导出完成: {success_count}/{total_count} 个类型成功导出")
+    
+    return results
+
+
 async def get_binance_tokens():
     """获取Binance交易对列表并更新"""
     print("=== 更新Binance交易对列表 ===\n")
@@ -281,6 +309,12 @@ async def get_binance_alpha_list(listed_tokens=None, debug_only=False):
             date=alpha_data.get('date', ''),
             debug_only=debug_only,
             max_items=100
+        )
+        
+        # 导出表格数据供前端使用
+        await export_alpha_table_data(
+            crypto_list=crypto_list,
+            date=alpha_data.get('date', '')
         )
 
         return alpha_data
