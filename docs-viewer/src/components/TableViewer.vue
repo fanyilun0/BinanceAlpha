@@ -59,10 +59,10 @@ const formattedTableData = computed(() => {
       const fdv = totalSupply > 0 && price > 0 ? price * totalSupply : 0
       
       // 计算Vol/MC比率
-      const volMcRatio = marketCap > 0 && volume24h > 0 ? (volume24h / marketCap * 100) : 0
+      const volMcRatio = marketCap > 0 && volume24h > 0 ? (volume24h / marketCap) : 0
       
       // 计算MC/FDV比率
-      const mcFdvRatio = fdv > 0 && marketCap > 0 ? (marketCap / fdv * 100) : 0
+      const mcFdvRatio = fdv > 0 && marketCap > 0 ? (marketCap / fdv) : 0
       
       // 检查是否有合约
       const hasFutures = checkFuturesListing(symbol)
@@ -77,9 +77,9 @@ const formattedTableData = computed(() => {
         '7d变化(%)': usdQuote?.percentChange7d ? usdQuote.percentChange7d.toFixed(2) : '-',
         '市值(MC)': marketCap > 0 ? `$${(marketCap / 1000000).toFixed(2)}M` : '-',
         '24h交易量': volume24h > 0 ? `$${(volume24h / 1000000).toFixed(2)}M` : '-',
-        'Vol/MC(%)': volMcRatio > 0 ? volMcRatio.toFixed(2) : '-',
+        'Vol/MC': volMcRatio > 0 ? volMcRatio.toFixed(2) : '-',
         'FDV': fdv > 0 ? `$${(fdv / 1000000).toFixed(2)}M` : '-',
-        'MC/FDV(%)': mcFdvRatio > 0 ? mcFdvRatio.toFixed(2) : '-',
+        'MC/FDV': mcFdvRatio > 0 ? mcFdvRatio.toFixed(2) : '-',
         '流通量': circulatingSupply > 0 ? circulatingSupply.toLocaleString() : '-',
         '总供应量': totalSupply > 0 ? totalSupply.toLocaleString() : '-',
       }
@@ -89,7 +89,7 @@ const formattedTableData = computed(() => {
       title: '加密货币列表',
       date: new Date().toLocaleDateString('zh-CN'),
       total_count: data.length,
-      columns: ['排名', '名称', '代号', '合约', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC(%)', 'FDV', 'MC/FDV(%)', '流通量', '总供应量'],
+      columns: ['排名', '名称', '代号', '合约', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC', 'FDV', 'MC/FDV'],
       data: data
     }
   } else {
