@@ -63,10 +63,10 @@ const formatCellValue = (value, column) => {
   return value
 }
 
-// 获取单元格颜色
+// 获取单元格颜色（与图片样式保持一致）
 const getCellColor = (row, column) => {
-  // 24h变化(%) 列
-  if (column === '24h变化(%)' || column === '7d变化(%)') {
+  // 24h变化(%) 列 - 减少梯度，与图片保持一致
+  if (column === '24h变化(%)') {
     const value = parseFloat(row[column])
     if (isNaN(value)) return 'transparent'
     if (value >= 50) return '#00b050'  // 暴涨：深绿色
@@ -77,17 +77,12 @@ const getCellColor = (row, column) => {
     if (value < 0) return '#ffccd5'    // 小跌：浅红色
   }
   
-  // 合约列
-  if (column === '合约' && row[column] === '是') {
-    return '#e0f7fa' // 浅蓝色
-  }
-  
   return 'transparent'
 }
 
 // 获取单元格文本颜色
 const getCellTextColor = (row, column) => {
-  if (column === '24h变化(%)' || column === '7d变化(%)') {
+  if (column === '24h变化(%)') {
     const value = parseFloat(row[column])
     if (isNaN(value)) return 'inherit'
     // 对于深色背景使用白色文字
@@ -266,23 +261,24 @@ const getSortIcon = (column) => {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #2a9d8f;
+  background-color: var(--bg-color);
 }
 
 .data-table th {
   padding: 12px 8px;
   text-align: center;
   font-weight: bold;
-  color: white;
-  border: 1px solid #1a7a6f;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
   position: relative;
+  background-color: var(--bg-color);
 }
 
 .data-table th.sortable:hover {
-  background-color: #248277;
+  background-color: var(--hover-color);
 }
 
 .sort-icon {
@@ -302,13 +298,9 @@ const getSortIcon = (column) => {
   white-space: nowrap;
 }
 
-.data-table tbody tr:nth-child(even) {
-  background-color: var(--hover-color);
-}
-
 .data-table tbody tr:hover {
-  background-color: var(--active-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--hover-color);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* 滚动条样式 */
