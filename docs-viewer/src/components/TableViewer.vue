@@ -134,25 +134,6 @@ const getCellColor = (row, column) => {
     }
   }
   
-  // Vol/MC(%) 列 - 高流动性用绿色标记
-  if (column === 'Vol/MC(%)') {
-    const value = parseFloat(row[column])
-    if (isNaN(value)) return 'transparent'
-    if (value >= 100) return '#00b050'  // 超高流动性：深绿色
-    if (value >= 50) return '#92d050'   // 高流动性：中绿色
-    if (value >= 20) return '#d8f3dc'   // 中等流动性：浅绿色
-  }
-  
-  // MC/FDV(%) 列 - 显示流通比例
-  if (column === 'MC/FDV(%)') {
-    const value = parseFloat(row[column])
-    if (isNaN(value)) return 'transparent'
-    if (value >= 90) return '#00b050'   // 高流通：深绿色
-    if (value >= 70) return '#92d050'   // 中高流通：中绿色
-    if (value >= 50) return '#d8f3dc'   // 中等流通：浅绿色
-    if (value < 30) return '#ffccd5'    // 低流通：浅红色
-  }
-  
   return 'transparent'
 }
 
@@ -163,24 +144,6 @@ const getCellTextColor = (row, column) => {
     if (isNaN(value)) return 'inherit'
     // 对于深色背景使用白色文字
     if (value >= 50 || value <= -50 || (value >= 20 && value < 50) || (value <= -20 && value > -50)) {
-      return 'white'
-    }
-  }
-  
-  if (column === 'Vol/MC(%)') {
-    const value = parseFloat(row[column])
-    if (isNaN(value)) return 'inherit'
-    // 对于深色背景使用白色文字
-    if (value >= 50) {
-      return 'white'
-    }
-  }
-  
-  if (column === 'MC/FDV(%)') {
-    const value = parseFloat(row[column])
-    if (isNaN(value)) return 'inherit'
-    // 对于深色背景使用白色文字
-    if (value >= 70) {
       return 'white'
     }
   }
