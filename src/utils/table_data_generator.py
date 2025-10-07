@@ -227,3 +227,4 @@ def get_latest_table_data(table_type: str, data_dir: Optional[str] = None) -> Op
     
     return data
 
+
