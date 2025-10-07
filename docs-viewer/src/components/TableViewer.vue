@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
   tableData: {
@@ -10,6 +10,32 @@ const props = defineProps({
 
 const sortColumn = ref('')
 const sortDirection = ref('asc') // 'asc' or 'desc'
+const futuresSymbols = ref([])
+
+// 加载合约交易对列表
+onMounted(async () => {
+  try {
+    const response = await fetch('/futures_symbols.json')
+    futuresSymbols.value = await response.json()
+  } catch (error) {
+    console.error('Error loading futures symbols:', error)
+    futuresSymbols.value = []
+  }
+})
+
+// 检查是否有合约交易对
+const checkFuturesListing = (symbol) => {
+  if (!symbol || !futuresSymbols.value.length) return false
+  
+  // 标准化symbol格式（去除特殊字符，转大写）
+  const normalizedSymbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  
+  // 检查是否存在对应的USDT或USDC合约
+  const usdtPair = `${normalizedSymbol}USDT`
+  const usdcPair = `${normalizedSymbol}USDC`
+  
+  return futuresSymbols.value.includes(usdtPair) || futuresSymbols.value.includes(usdcPair)
+}
 
 // 判断是否为原始数组数据（filtered_crypto_list 格式）
 const isRawData = computed(() => {
@@ -27,6 +53,7 @@ const formattedTableData = computed(() => {
       const totalSupply = item.totalSupply || 0
       const circulatingSupply = item.circulatingSupply || 0
       const price = usdQuote?.price || 0
+      const symbol = item.symbol || ''
       
       // 计算FDV (Fully Diluted Valuation) = 价格 × 总供应量
       const fdv = totalSupply > 0 && price > 0 ? price * totalSupply : 0
@@ -37,10 +64,14 @@ const formattedTableData = computed(() => {
       // 计算MC/FDV比率
       const mcFdvRatio = fdv > 0 && marketCap > 0 ? (marketCap / fdv * 100) : 0
       
+      // 检查是否有合约
+      const hasFutures = checkFuturesListing(symbol)
+      
       return {
         '排名': item.cmcRank || '-',
         '名称': item.name || '-',
-        '代号': item.symbol || '-',
+        '代号': symbol || '-',
+        '合约': hasFutures ? '是' : '否',
         '价格(USD)': price > 0 ? `$${price.toFixed(6)}` : '-',
         '24h变化(%)': usdQuote?.percentChange24h ? usdQuote.percentChange24h.toFixed(2) : '-',
         '7d变化(%)': usdQuote?.percentChange7d ? usdQuote.percentChange7d.toFixed(2) : '-',
@@ -58,7 +89,7 @@ const formattedTableData = computed(() => {
       title: '加密货币列表',
       date: new Date().toLocaleDateString('zh-CN'),
       total_count: data.length,
-      columns: ['排名', '名称', '代号', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC(%)', 'FDV', 'MC/FDV(%)', '流通量', '总供应量'],
+      columns: ['排名', '名称', '代号', '合约', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC(%)', 'FDV', 'MC/FDV(%)', '流通量', '总供应量'],
       data: data
     }
   } else {
@@ -83,7 +114,7 @@ const formatCellValue = (value, column) => {
 
 // 获取单元格颜色（与图片样式保持一致）
 const getCellColor = (row, column) => {
-  // 24h变化(%) 列 - 减少梯度，与图片保持一致
+  // 24h变化(%) 和 7d变化(%) 列 - 减少梯度，与图片保持一致
   if (column === '24h变化(%)' || column === '7d变化(%)') {
     const value = parseFloat(row[column])
     if (isNaN(value)) return 'transparent'
@@ -95,16 +126,61 @@ const getCellColor = (row, column) => {
     if (value < 0) return '#ffccd5'    // 小跌：浅红色
   }
   
+  // 合约列 - 有合约的显示浅蓝色
+  if (column === '合约') {
+    const value = row[column]
+    if (value === '是') {
+      return '#e0f7fa'  // 浅蓝色
+    }
+  }
+  
+  // Vol/MC(%) 列 - 高流动性用绿色标记
+  if (column === 'Vol/MC(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'transparent'
+    if (value >= 100) return '#00b050'  // 超高流动性：深绿色
+    if (value >= 50) return '#92d050'   // 高流动性：中绿色
+    if (value >= 20) return '#d8f3dc'   // 中等流动性：浅绿色
+  }
+  
+  // MC/FDV(%) 列 - 显示流通比例
+  if (column === 'MC/FDV(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'transparent'
+    if (value >= 90) return '#00b050'   // 高流通：深绿色
+    if (value >= 70) return '#92d050'   // 中高流通：中绿色
+    if (value >= 50) return '#d8f3dc'   // 中等流通：浅绿色
+    if (value < 30) return '#ffccd5'    // 低流通：浅红色
+  }
+  
   return 'transparent'
 }
 
 // 获取单元格文本颜色
 const getCellTextColor = (row, column) => {
-  if (column === '24h变化(%)') {
+  if (column === '24h变化(%)' || column === '7d变化(%)') {
     const value = parseFloat(row[column])
     if (isNaN(value)) return 'inherit'
     // 对于深色背景使用白色文字
     if (value >= 50 || value <= -50 || (value >= 20 && value < 50) || (value <= -20 && value > -50)) {
+      return 'white'
+    }
+  }
+  
+  if (column === 'Vol/MC(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'inherit'
+    // 对于深色背景使用白色文字
+    if (value >= 50) {
+      return 'white'
+    }
+  }
+  
+  if (column === 'MC/FDV(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'inherit'
+    // 对于深色背景使用白色文字
+    if (value >= 70) {
       return 'white'
     }
   }
@@ -316,6 +392,7 @@ const getSortIcon = (column) => {
 .data-table td {
   padding: 10px 8px;
   text-align: center;
+  font-size: 14px;
   border: 1px solid var(--border-color);
   white-space: nowrap;
 }
