@@ -36,7 +36,7 @@ if (fs.existsSync(advicesSourceDir)) {
     }))
     .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
 } else {
-  console.log(`⚠️  源目录不存在: ${advicesSourceDir}`);
+  console.log(`⚠️  文档目录不存在: ${advicesSourceDir}`);
 }
 
 // 读取图片目录中的所有 .png 文件，并按类型分类
@@ -65,64 +65,26 @@ if (fs.existsSync(imagesSourceDir)) {
     })
     .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
 } else {
-  console.log(`⚠️  图片目录不存在: ${imagesSourceDir}`);
+  console.log(`⚠️  图片资源目录不存在: ${imagesSourceDir}`);
 }
 
 // 读取表格数据目录中的所有 .json 文件，并按类型分类
 let tableFiles = [];
 if (fs.existsSync(tablesSourceDir)) {
   tableFiles = fs.readdirSync(tablesSourceDir)
-    .filter(file => file.endsWith('.json'))
+    .filter(file => file.startsWith('filtered_crypto_list_') && file.endsWith('.json'))
     .map(file => {
-      // 根据文件名确定表格类型
-      let type = 'other';
-      if (file.startsWith('alpha_list_')) {
-        type = 'alpha_list';
-      } else if (file.startsWith('vol_mc_ratio_')) {
-        type = 'vol_mc_ratio';
-      } else if (file.startsWith('gainers_losers_')) {
-        type = 'gainers_losers';
-      } else if (file.startsWith('top_gainers_')) {
-        type = 'top_gainers';
-      } else if (file.startsWith('top_losers_')) {
-        type = 'top_losers';
-      } else if (file.startsWith('filtered_crypto_list_')) {
-        type = 'alpha_list';  // filtered_crypto_list 归类为 alpha_list
-      }
       
       return {
         name: file,
         title: file.replace('.json', '').replace(/_/g, ' '),
-        // 提取日期信息（假设文件名格式为 alpha_list_20250930083006.json）
+        // 提取日期信息（假设文件名格式为 filtered_crypto_list_20250426.json 或 alpha_list_20250930083006.json）
         date: file.match(/\d{8}/)?.[0] || '',
-        type: type  // 表格类型
       };
     })
     .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
 } else {
   console.log(`⚠️  表格数据目录不存在: ${tablesSourceDir}`);
-}
-
-// 同时扫描 public 目录下已存在的 filtered_crypto_list_ 文件
-const publicDir = path.join(__dirname, '../public');
-if (fs.existsSync(publicDir)) {
-  const publicFiles = fs.readdirSync(publicDir)
-    .filter(file => file.startsWith('filtered_crypto_list_') && file.endsWith('.json'))
-    .map(file => ({
-      name: file,
-      title: file.replace('.json', '').replace(/_/g, ' '),
-      date: file.match(/\d{8}/)?.[0] || '',
-      type: 'alpha_list'
-    }));
-  
-  // 合并到 tableFiles，去重
-  publicFiles.forEach(pubFile => {
-    if (!tableFiles.find(f => f.name === pubFile.name)) {
-      tableFiles.push(pubFile);
-    }
-  });
-  
-  tableFiles.sort((a, b) => b.name.localeCompare(a.name));
 }
 
 // 生成 list.json，包含文档、图片和表格列表
