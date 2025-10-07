@@ -10,9 +10,11 @@ const __dirname = path.dirname(__filename);
 const advicesSourceDir = path.join(__dirname, '../../advices/all-platforms');
 const imagesSourceDir = path.join(__dirname, '../../images');
 const tablesSourceDir = path.join(__dirname, '../../data');
+const futuresSymbolsSource = path.join(__dirname, '../../symbols/futures_symbols.json');
 const advicesTargetDir = path.join(__dirname, '../public/advices');
 const imagesTargetDir = path.join(__dirname, '../public/images');
 const tablesTargetDir = path.join(__dirname, '../public/tables');
+const futuresSymbolsTarget = path.join(__dirname, '../public/futures_symbols.json');
 
 // 确保目标目录存在
 if (!fs.existsSync(advicesTargetDir)) {
@@ -129,6 +131,14 @@ if (tableFiles.length > 0 && fs.existsSync(tablesSourceDir)) {
     const targetFile = path.join(tablesTargetDir, file.name);
     fs.copyFileSync(sourceFile, targetFile);
   });
+}
+
+// 复制 futures_symbols.json 文件到 public 目录
+if (fs.existsSync(futuresSymbolsSource)) {
+  fs.copyFileSync(futuresSymbolsSource, futuresSymbolsTarget);
+  console.log('✅ futures_symbols.json 已复制到 public 目录');
+} else {
+  console.log('⚠️  futures_symbols.json 文件不存在，跳过复制');
 }
 
 console.log('✅ list.json 生成完成');
