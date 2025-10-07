@@ -22,17 +22,35 @@ const formattedTableData = computed(() => {
     // 原始数据格式，需要转换
     const data = props.tableData.map(item => {
       const usdQuote = item.quotes?.find(q => q.name === 'USD')
+      const marketCap = usdQuote?.marketCap || 0
+      const volume24h = usdQuote?.volume24h || 0
+      const totalSupply = item.totalSupply || 0
+      const circulatingSupply = item.circulatingSupply || 0
+      const price = usdQuote?.price || 0
+      
+      // 计算FDV (Fully Diluted Valuation) = 价格 × 总供应量
+      const fdv = totalSupply > 0 && price > 0 ? price * totalSupply : 0
+      
+      // 计算Vol/MC比率
+      const volMcRatio = marketCap > 0 && volume24h > 0 ? (volume24h / marketCap * 100) : 0
+      
+      // 计算MC/FDV比率
+      const mcFdvRatio = fdv > 0 && marketCap > 0 ? (marketCap / fdv * 100) : 0
+      
       return {
         '排名': item.cmcRank || '-',
         '名称': item.name || '-',
         '代号': item.symbol || '-',
-        '价格(USD)': usdQuote?.price ? `$${usdQuote.price.toFixed(6)}` : '-',
+        '价格(USD)': price > 0 ? `$${price.toFixed(6)}` : '-',
         '24h变化(%)': usdQuote?.percentChange24h ? usdQuote.percentChange24h.toFixed(2) : '-',
         '7d变化(%)': usdQuote?.percentChange7d ? usdQuote.percentChange7d.toFixed(2) : '-',
-        '市值': usdQuote?.marketCap ? `$${(usdQuote.marketCap / 1000000).toFixed(2)}M` : '-',
-        '24h交易量': usdQuote?.volume24h ? `$${(usdQuote.volume24h / 1000000).toFixed(2)}M` : '-',
-        '流通量': item.circulatingSupply ? item.circulatingSupply.toLocaleString() : '-',
-        '平台': item.platform?.name || '-',
+        '市值(MC)': marketCap > 0 ? `$${(marketCap / 1000000).toFixed(2)}M` : '-',
+        '24h交易量': volume24h > 0 ? `$${(volume24h / 1000000).toFixed(2)}M` : '-',
+        'Vol/MC(%)': volMcRatio > 0 ? volMcRatio.toFixed(2) : '-',
+        'FDV': fdv > 0 ? `$${(fdv / 1000000).toFixed(2)}M` : '-',
+        'MC/FDV(%)': mcFdvRatio > 0 ? mcFdvRatio.toFixed(2) : '-',
+        '流通量': circulatingSupply > 0 ? circulatingSupply.toLocaleString() : '-',
+        '总供应量': totalSupply > 0 ? totalSupply.toLocaleString() : '-',
       }
     })
     
@@ -40,7 +58,7 @@ const formattedTableData = computed(() => {
       title: '加密货币列表',
       date: new Date().toLocaleDateString('zh-CN'),
       total_count: data.length,
-      columns: ['排名', '名称', '代号', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值', '24h交易量', '流通量', '平台'],
+      columns: ['排名', '名称', '代号', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC(%)', 'FDV', 'MC/FDV(%)', '流通量', '总供应量'],
       data: data
     }
   } else {
@@ -66,7 +84,7 @@ const formatCellValue = (value, column) => {
 // 获取单元格颜色（与图片样式保持一致）
 const getCellColor = (row, column) => {
   // 24h变化(%) 列 - 减少梯度，与图片保持一致
-  if (column === '24h变化(%)') {
+  if (column === '24h变化(%)' || column === '7d变化(%)') {
     const value = parseFloat(row[column])
     if (isNaN(value)) return 'transparent'
     if (value >= 50) return '#00b050'  // 暴涨：深绿色
@@ -90,6 +108,7 @@ const getCellTextColor = (row, column) => {
       return 'white'
     }
   }
+  
   return 'inherit'
 }
 
@@ -219,15 +238,16 @@ const getSortIcon = (column) => {
 
 <style scoped>
 .table-viewer {
-  padding: 20px;
   height: 100%;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .table-header {
-  margin-bottom: 20px;
-  padding-bottom: 15px;
+  padding: 20px 20px 15px 20px;
   border-bottom: 2px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .table-header h2 {
@@ -244,13 +264,15 @@ const getSortIcon = (column) => {
 }
 
 .table-wrapper {
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  flex: 1;
+  overflow: auto;
+  padding: 0 20px 20px 20px;
+  min-height: 0;
 }
 
 .data-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 13px;
   background-color: var(--bg-color);
