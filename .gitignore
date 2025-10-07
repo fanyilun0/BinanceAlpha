@@ -14,11 +14,15 @@ data/alpha*.json
 
 # docs-viewer
 docs-viewer/public/advices/
+docs-viewer/public/tables/
+docs-viewer/public/images/
+docs-viewer/public/futures_symbols.json
 docs-viewer/dist/
 docs-viewer/node_modules/
 docs-viewer/.env
 docs-viewer/.env.*
 docs-viewer/.env.example
+
 
 # Logs
 logs
