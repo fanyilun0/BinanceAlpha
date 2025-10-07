@@ -119,19 +119,40 @@ const selectTable = async (table) => {
 const switchTab = (tab) => {
   currentTab.value = tab
   searchQuery.value = '' // 切换标签时清空搜索
+  
+  // 切换tab时默认选中第一个数据来预览
+  if (tab === 'docs' && files.value.length > 0) {
+    selectFile(files.value[0])
+  } else if (tab === 'tables' && tables.value.length > 0) {
+    selectTable(tables.value[0])
+  } else if (tab === 'images' && imagesByType.value[currentImageTab.value]?.length > 0) {
+    selectImage(imagesByType.value[currentImageTab.value][0])
+  }
 }
 
 const switchImageTab = (tab) => {
   currentImageTab.value = tab
   searchQuery.value = '' // 切换图片子标签时清空搜索
-  currentImage.value = '' // 清空当前选中的图片
+  
+  // 切换图片子标签时默认选中第一个图片
+  if (imagesByType.value[tab]?.length > 0) {
+    selectImage(imagesByType.value[tab][0])
+  } else {
+    currentImage.value = '' // 如果没有图片，清空当前选中
+  }
 }
 
 const switchTableTab = (tab) => {
   currentTableTab.value = tab
   searchQuery.value = '' // 切换表格子标签时清空搜索
-  currentTable.value = '' // 清空当前选中的表格
-  currentTableData.value = null
+  
+  // 切换表格子标签时默认选中第一个表格
+  if (tables.value.length > 0) {
+    selectTable(tables.value[0])
+  } else {
+    currentTable.value = '' // 如果没有表格，清空当前选中
+    currentTableData.value = null
+  }
 }
 
 const toggleDarkMode = () => {
@@ -323,8 +344,10 @@ onMounted(async () => {
 
 body {
   margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
+
 
 .app-container {
   display: flex;
@@ -332,11 +355,12 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .sidebar {
-  width: 400px;
-  min-width: 400px;
+  width: 440px;
   background-color: var(--sidebar-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -524,14 +548,13 @@ body {
 
 .content {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 0;
   position: relative;
   background-color: var(--bg-color);
-  width: 1800px;
-  min-width: 1800px;
-  max-width: 1800px;
-  margin: 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .loading {

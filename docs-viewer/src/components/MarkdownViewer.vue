@@ -54,9 +54,9 @@ onMounted(() => {
 
 <style>
 .markdown-viewer {
-  padding: 20px;
-  max-width: 100%;
-  overflow-x: auto;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .typora-style {

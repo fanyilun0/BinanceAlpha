@@ -40,7 +40,7 @@ const isTallImage = computed(() => aspectRatio.value < 0.5)
 // 图片样式
 const imageStyle = computed(() => ({
   transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
-  cursor: isDragging.value ? 'grabbing' : (scale.value > 1 ? 'grab' : 'default'),
+  cursor: isDragging.value ? 'grabbing' : 'grab',
   transition: isDragging.value ? 'none' : 'transform 0.2s ease-out'
 }))
 
@@ -114,7 +114,7 @@ const handleWheel = (e) => {
 
 // 鼠标拖拽开始
 const handleMouseDown = (e) => {
-  if (scale.value <= 1) return
+  // 允许在任何缩放级别下拖动图片
   isDragging.value = true
   dragStartX.value = e.clientX - translateX.value
   dragStartY.value = e.clientY - translateY.value
@@ -147,7 +147,8 @@ const handleTouchStart = (e) => {
     e.preventDefault()
     touchStartDistance = getTouchDistance(e.touches)
     touchStartScale = scale.value
-  } else if (e.touches.length === 1 && scale.value > 1) {
+  } else if (e.touches.length === 1) {
+    // 允许在任何缩放级别下拖动
     isDragging.value = true
     dragStartX.value = e.touches[0].clientX - translateX.value
     dragStartY.value = e.touches[0].clientY - translateY.value
