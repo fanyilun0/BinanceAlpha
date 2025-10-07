@@ -82,6 +82,7 @@ const formattedTableData = computed(() => {
         'MC/FDV': mcFdvRatio > 0 ? mcFdvRatio.toFixed(2) : '-',
         '流通量': circulatingSupply > 0 ? circulatingSupply.toLocaleString() : '-',
         '总供应量': totalSupply > 0 ? totalSupply.toLocaleString() : '-',
+        '平台': item.platform?.symbol || '-',
       }
     })
     
@@ -89,7 +90,7 @@ const formattedTableData = computed(() => {
       title: '加密货币列表',
       date: new Date().toLocaleDateString('zh-CN'),
       total_count: data.length,
-      columns: ['排名', '名称', '代号', '合约', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC', 'FDV', 'MC/FDV'],
+      columns: ['排名', '名称', '代号', '平台', '价格(USD)',  '合约','24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC', 'FDV', 'MC/FDV'],
       data: data
     }
   } else {
