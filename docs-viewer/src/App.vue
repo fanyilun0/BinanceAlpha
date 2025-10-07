@@ -2,13 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import MarkdownViewer from './components/MarkdownViewer.vue'
 import TableViewer from './components/TableViewer.vue'
+import ImageViewer from './components/ImageViewer.vue'
 
 const files = ref([])
 const images = ref([])
 const tables = ref([])
 const currentTab = ref('docs') // 'docs', 'images', or 'tables'
 const currentImageTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', or 'gainers_losers'
-const currentTableTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', 'gainers_losers', 'top_gainers', 'top_losers'
+const currentTableTab = ref('filtered_list') // 'filtered_list', 'alpha_list', 'vol_mc_ratio', 'gainers_losers', 'top_gainers', 'top_losers'
 const currentFile = ref('')
 const currentContent = ref('')
 const currentImage = ref('')
@@ -39,28 +40,6 @@ const imagesByType = computed(() => {
   return grouped
 })
 
-// 按类型分组表格
-const tablesByType = computed(() => {
-  const grouped = {
-    alpha_list: [],
-    vol_mc_ratio: [],
-    gainers_losers: [],
-    top_gainers: [],
-    top_losers: [],
-    other: []
-  }
-  
-  tables.value.forEach(table => {
-    const type = table.type || 'other'
-    if (grouped[type]) {
-      grouped[type].push(table)
-    } else {
-      grouped.other.push(table)
-    }
-  })
-  
-  return grouped
-})
 
 // 搜索过滤 - 根据当前标签页过滤
 const filteredItems = computed(() => {
@@ -82,8 +61,7 @@ const filteredItems = computed(() => {
       (item.name && item.name.toLowerCase().includes(query))
     )
   } else {
-    // 表格标签页：根据当前子标签页过滤
-    const items = tablesByType.value[currentTableTab.value] || []
+    const items = tables.value
     if (!searchQuery.value) return items
     const query = searchQuery.value.toLowerCase()
     return items.filter(item => 
@@ -232,6 +210,7 @@ onMounted(async () => {
           📈 涨跌幅榜 ({{ imagesByType.gainers_losers.length }})
         </button>
       </div>
+
       
       <!-- 搜索框：仅在文档和图片标签页显示 -->
       <div v-if="currentTab !== 'tables'" class="search-box">
@@ -297,9 +276,11 @@ onMounted(async () => {
       />
       
       <!-- 图片内容 -->
-      <div v-else-if="currentImage && currentTab === 'images'" class="image-viewer">
-        <img :src="`/images/${currentImage}`" :alt="currentImage" />
-      </div>
+      <ImageViewer 
+        v-else-if="currentImage && currentTab === 'images'" 
+        :imageSrc="`/images/${currentImage}`"
+        :imageAlt="currentImage"
+      />
       
       <div v-else class="no-content">
         请选择要查看的{{ currentTab === 'docs' ? '文档' : currentTab === 'tables' ? '数据表格' : '图片' }}
@@ -531,23 +512,6 @@ body {
   font-size: 1.2em;
   padding: 20px;
   text-align: center;
-}
-
-.image-viewer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  height: 100%;
-  overflow: auto;
-}
-
-.image-viewer img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {

@@ -33,7 +33,6 @@ const formattedTableData = computed(() => {
         '24h交易量': usdQuote?.volume24h ? `$${(usdQuote.volume24h / 1000000).toFixed(2)}M` : '-',
         '流通量': item.circulatingSupply ? item.circulatingSupply.toLocaleString() : '-',
         '平台': item.platform?.name || '-',
-        '标签': item.tags?.join(', ') || '-'
       }
     })
     
@@ -41,7 +40,7 @@ const formattedTableData = computed(() => {
       title: '加密货币列表',
       date: new Date().toLocaleDateString('zh-CN'),
       total_count: data.length,
-      columns: ['排名', '名称', '代号', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值', '24h交易量', '流通量', '平台', '标签'],
+      columns: ['排名', '名称', '代号', '价格(USD)', '24h变化(%)', '7d变化(%)', '市值', '24h交易量', '流通量', '平台'],
       data: data
     }
   } else {
