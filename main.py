@@ -74,7 +74,7 @@ async def send_alpha_rank_image(crypto_list, date, debug_only=False, max_items=1
     return image_path, image_base64
 
 async def send_alpha_liquidity_image(crypto_list, date, debug_only=False, max_items=100):
-    """生成并发送按流动性（VOL/MC比值）排序的Top10项目图片
+    """生成并发送按流动性（VOL/MC比值）排序的Top{max_items}项目图片
     
     Args:
         crypto_list: 加密货币项目列表
@@ -84,9 +84,8 @@ async def send_alpha_liquidity_image(crypto_list, date, debug_only=False, max_it
     Returns:
         Tuple[str, str]: 图片路径和base64编码
     """
-    print(f"准备生成按流动性排序的Top10项目图片...")
+    print(f"准备生成按流动性排序的Top{max_items}项目图片...")
     
-    # 创建和发送VOL/MC比值排序的Top10项目图片
     image_path, image_base64 = create_top_vol_mc_ratio_image(
         crypto_list=crypto_list,
         date=date,
@@ -604,7 +603,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
     return len(results) > 0
 
 
-async def run_workflow(debug_only=False):
+async def run_workflow(debug_only=False, AI_NEEDED=True):
     """运行完整工作流：图片生成 + AI投资分析"""
     # 记录开始时间
     workflow_start_time = time.time()
@@ -646,22 +645,16 @@ async def run_workflow(debug_only=False):
         # 步骤3: 分类项目并生成投资建议
         print("\n步骤3: 分类项目并生成投资建议...\n")
         
+        if not AI_NEEDED:
+            print("AI投资分析已禁用，程序退出")
+            return 0
+
         # 按区块链平台获取AI投资建议
-        success = await get_alpha_investment_advice(
+        await get_alpha_investment_advice(
             alpha_data, 
             debug_only=debug_only,
             listed_tokens=listed_tokens
         )
-        
-        if success == True:
-            if debug_only:
-                print("\n成功：提示词生成完成")
-            else:
-                print("\n成功：所有平台投资建议处理完成")
-        elif success == "partial_success":
-            print("\n部分成功：某些平台处理成功，某些平台处理失败")
-        else:
-            print("\n警告：所有平台处理过程中出现错误")
         
         # 计算并输出总运行时长
         total_time = time.time() - workflow_start_time
@@ -692,11 +685,13 @@ async def main():
     # 解析命令行参数
     parser = argparse.ArgumentParser(description="Crypto Monitor - 币安Alpha项目分析工具")
     parser.add_argument("--debug-only", action="store_true", 
-                       help="启用调试模式，仅生成提示词不发送API请求")
+                       help="启用调试模式，仅获取数据推送图片，不进行AI分析")
+    parser.add_argument("--AI_NEEDED", action="store_true", 
+                       help="启用AI投资分析")
     args = parser.parse_args()
     
     # 运行完整工作流
-    return await run_workflow(debug_only=args.debug_only)
+    return await run_workflow(debug_only=args.debug_only, AI_NEEDED=args.AI_NEEDED)
 
 if __name__ == "__main__":
     if platform.system() == 'Windows':
