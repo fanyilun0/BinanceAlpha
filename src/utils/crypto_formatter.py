@@ -178,6 +178,8 @@ def save_crypto_data(data: List[Dict[str, Any]], filename: Optional[str] = None,
     
     file_path = os.path.join(data_dir, filename)
     
+    print(f"保存加密货币数据到: {file_path}")
+
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     

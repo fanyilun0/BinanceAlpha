@@ -450,31 +450,29 @@ async def process_platform_advice(advisor, platform_data, max_retries, retry_del
         print(f"获取{platform}平台投资建议失败")
         return platform, "", False
 
-async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_tokens=None):
-    """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
+async def prepare_platform_data(alpha_data=None, listed_tokens=None):
+    """准备和处理平台数据（数据处理层）
     
     Args:
-        alpha_data: 币安Alpha数据，如果为None则重新获取
-        debug_only: 是否仅调试模式（只生成提示词不发送API请求）
+        alpha_data: 币安Alpha数据，如果为None则返回False
         listed_tokens: 已上线币安的token列表
         
     Returns:
-        bool: 操作是否成功
+        Dict 包含处理后的平台数据，失败时返回None
+        {
+            'date': str,
+            'platform_data_list': List[Tuple[str, Dict]],
+            'filtered_crypto_list': List[Dict],
+            'platforms_to_process': List[str]
+        }
     """
-    print("=== 币安Alpha投资建议 ===\n")
-    
-    # 初始化AI顾问
-    advisor = AlphaAdvisor()
-    
-    # 设置重试参数
-    max_retries = 1
-    retry_delay = 2.0
+    print("=== 准备平台数据 ===\n")
     
     # 确认有Alpha数据
     if not alpha_data:
-        logger.error("未提供币安Alpha数据，无法生成投资建议")
+        logger.error("未提供币安Alpha数据，无法准备平台数据")
         print("错误: 未提供币安Alpha数据")
-        return False
+        return None
     
     # 提取项目列表
     crypto_list = alpha_data.get("data", {}).get("cryptoCurrencyList", [])
@@ -483,7 +481,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
     if not crypto_list:
         logger.error("币安Alpha数据中未包含项目列表")
         print("错误: 币安Alpha数据中未包含项目列表")
-        return False
+        return None
     
     # 初始化filtered_crypto_list，默认使用原始crypto_list
     filtered_crypto_list = crypto_list
@@ -510,9 +508,6 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
         # 打印详细过滤信息
         print(f"已从Alpha项目列表中移除{removed_count}个已上线的Token，剩余{len(filtered_crypto_list)}个项目")
         
-        # 更新alpha_data中的项目列表
-        alpha_data["data"]["cryptoCurrencyList"] = filtered_crypto_list
-        
         # 保存过滤后的数据
         save_crypto_data(filtered_crypto_list, f"filtered_crypto_list_{datetime.now().strftime('%Y%m%d%H%M%S')}.json", "filtered")
     else:
@@ -529,16 +524,6 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
     platform_projects, unclassified_projects = await classify_crypto_projects_by_platform(
         filtered_crypto_list, platforms, platforms_to_process
     )
-    
-    # 创建建议目录
-    advice_dir = DATA_DIRS['advices']
-    os.makedirs(advice_dir, exist_ok=True)
-    os.makedirs(DATA_DIRS['all-platforms'], exist_ok=True)
-    
-    # 按平台获取投资建议
-    results = {}
-    failed_platforms = []
-    all_advice = f"# 币安Alpha项目投资建议 (按区块链平台分类，{date})\n\n"
     
     # 准备平台数据
     platform_data_list = []
@@ -558,6 +543,57 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
             "total_count": len(projects)
         }
         platform_data_list.append((platform, platform_data))
+    
+    return {
+        'date': date,
+        'platform_data_list': platform_data_list,
+        'filtered_crypto_list': filtered_crypto_list,
+        'platforms_to_process': platforms_to_process
+    }
+
+
+async def generate_investment_advice(prepared_data, debug_only=False):
+    """生成AI投资建议（AI调用层）
+    
+    Args:
+        prepared_data: 由prepare_platform_data返回的准备好的数据
+        debug_only: 是否仅调试模式（只生成提示词不发送API请求）
+        
+    Returns:
+        bool: 操作是否成功
+    """
+    print("=== 生成AI投资建议 ===\n")
+    
+    if not prepared_data:
+        logger.error("未提供准备好的平台数据")
+        print("错误: 未提供准备好的平台数据")
+        return False
+    
+    # 提取准备好的数据
+    date = prepared_data['date']
+    platform_data_list = prepared_data['platform_data_list']
+    platforms_to_process = prepared_data['platforms_to_process']
+    
+    if not platform_data_list:
+        print("没有需要处理的平台数据")
+        return False
+    
+    # 初始化AI顾问
+    advisor = AlphaAdvisor()
+    
+    # 设置重试参数
+    max_retries = 1
+    retry_delay = 2.0
+    
+    # 创建建议目录
+    advice_dir = DATA_DIRS['advices']
+    os.makedirs(advice_dir, exist_ok=True)
+    os.makedirs(DATA_DIRS['all-platforms'], exist_ok=True)
+    
+    # 按平台获取投资建议
+    results = {}
+    failed_platforms = []
+    all_advice = f"# 币安Alpha项目投资建议 (按区块链平台分类，{date})\n\n"
     
     # 并行处理所有平台
     tasks = []
@@ -603,33 +639,30 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
     return len(results) > 0
 
 
-async def run_workflow(debug_only=False, AI_NEEDED=True):
+async def get_alpha_investment_advice(prepared_data=None, debug_only=False):
+    """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
+    
+    Args:
+        prepared_data: 准备好的数据，如果为None则重新获取
+        debug_only: 是否仅调试模式（只生成提示词不发送API请求）
+        
+    Returns:
+        bool: 操作是否成功
+    """
+    print("=== 币安Alpha投资建议 ===\n")
+    
+    return await generate_investment_advice(prepared_data, debug_only)
+
+
+async def run_workflow(debug_only=False, AI_needed=True):
     """运行完整工作流：图片生成 + AI投资分析"""
-    # 记录开始时间
-    workflow_start_time = time.time()
-    
-    print("\n===============================================================")
-    print(" 币安Alpha项目分析工作流")
-    print("===============================================================\n")
-    
     try:
-        # 显示运行模式信息
-        print("运行模式:")
-        print("- 获取并更新Binance交易对列表")
-        print("- 获取币安Alpha项目列表数据并生成图片")
-        
-        if debug_only:
-            print("- 调试模式：仅生成提示词不发送API请求")
-        else:
-            print("- 常规模式：生成投资建议并发送消息")
-        print()
-        
         # 步骤1: 获取并更新Binance交易对列表
         print("步骤1: 获取并更新Binance交易对列表...\n")
         listed_tokens = await get_binance_tokens()
         
         # 步骤2: 获取币安Alpha项目列表数据并推送图片
-        print("步骤2: 获取币安Alpha项目列表数据并推送图片...\n")
+        print("步骤2.1: 获取币安Alpha项目列表数据并推送图片...\n")
         alpha_data = await get_binance_alpha_list(
             listed_tokens=listed_tokens, 
             debug_only=debug_only, 
@@ -638,32 +671,24 @@ async def run_workflow(debug_only=False, AI_NEEDED=True):
         if not alpha_data:
             logger.error("获取币安Alpha项目列表数据失败，程序退出")
             print("\n错误: 获取币安Alpha项目列表数据失败，程序退出")
-            total_time = time.time() - workflow_start_time
-            print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
             return 1
         
+        # 数据处理
+        print("\n步骤2.2: 数据处理...\n")
+        prepared_data = await prepare_platform_data(alpha_data, listed_tokens)
+
         # 步骤3: 分类项目并生成投资建议
         print("\n步骤3: 分类项目并生成投资建议...\n")
         
-        if not AI_NEEDED:
+        if not AI_needed:
             print("AI投资分析已禁用，程序退出")
             return 0
-
+        
         # 按区块链平台获取AI投资建议
         await get_alpha_investment_advice(
-            alpha_data, 
+            prepared_data, 
             debug_only=debug_only,
-            listed_tokens=listed_tokens
         )
-        
-        # 计算并输出总运行时长
-        total_time = time.time() - workflow_start_time
-        print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
-            
-        print("\n===============================================================")
-        print(" 工作流完成，程序退出")
-        print("===============================================================\n")
-        return 0
         
     except Exception as e:
         logger.error(f"工作流执行过程中出错: {str(e)}")
@@ -672,8 +697,6 @@ async def run_workflow(debug_only=False, AI_NEEDED=True):
         error_details = traceback.format_exc()
         logger.debug(error_details)
         print("错误详情已记录到日志文件")
-        total_time = time.time() - workflow_start_time
-        print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
         return 1
 
 async def main():
@@ -686,12 +709,17 @@ async def main():
     parser = argparse.ArgumentParser(description="Crypto Monitor - 币安Alpha项目分析工具")
     parser.add_argument("--debug-only", action="store_true", 
                        help="启用调试模式，仅获取数据推送图片，不进行AI分析")
-    parser.add_argument("--AI_NEEDED", action="store_true", 
+    parser.add_argument("--AI-needed", action="store_true", 
                        help="启用AI投资分析")
     args = parser.parse_args()
     
+    workflow_start_time = time.time()
+
     # 运行完整工作流
-    return await run_workflow(debug_only=args.debug_only, AI_NEEDED=args.AI_NEEDED)
+    await run_workflow(debug_only=args.debug_only, AI_needed=args.AI_needed)
+
+    total_time = time.time() - workflow_start_time
+    print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")
 
 if __name__ == "__main__":
     if platform.system() == 'Windows':
