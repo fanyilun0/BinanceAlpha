@@ -515,7 +515,7 @@ async def get_alpha_investment_advice(alpha_data=None, debug_only=False, listed_
         alpha_data["data"]["cryptoCurrencyList"] = filtered_crypto_list
         
         # 保存过滤后的数据
-        save_crypto_data(filtered_crypto_list, f"filtered_crypto_list_{datetime.now().strftime('%Y%m%d')}.json", "filtered")
+        save_crypto_data(filtered_crypto_list, f"filtered_crypto_list_{datetime.now().strftime('%Y%m%d%H%M%S')}.json", "filtered")
     else:
         print(f"未提供已上线Token列表或列表为空，将处理所有{len(filtered_crypto_list)}个Alpha项目")
     
