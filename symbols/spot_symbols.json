@@ -109,6 +109,7 @@
   "FETUSDT",
   "BATUSDT",
   "ZECUSDT",
+  "ZECUSDC",
   "IOSTUSDT",
   "CELRUSDT",
   "ADAUSDC",
@@ -1602,5 +1603,6 @@
   "MMTUSDT",
   "MMTUSDC",
   "MMTBNB",
-  "MMTTRY"
+  "MMTTRY",
+  "DASHUSDC"
 ]
