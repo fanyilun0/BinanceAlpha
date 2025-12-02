@@ -3,11 +3,14 @@ import { ref, computed, onMounted } from 'vue'
 import MarkdownViewer from './components/MarkdownViewer.vue'
 import TableViewer from './components/TableViewer.vue'
 import ImageViewer from './components/ImageViewer.vue'
+import VolumeChartViewer from './components/VolumeChartViewer.vue'
+import VolumeHeatmapViewer from './components/VolumeHeatmapViewer.vue'
 
 const files = ref([])
 const images = ref([])
 const tables = ref([])
-const currentTab = ref('docs') // 'docs', 'images', or 'tables'
+const charts = ref([])
+const currentTab = ref('docs') // 'docs', 'images', 'tables', or 'charts'
 const currentImageTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', or 'gainers_losers'
 const currentTableTab = ref('filtered_list') // 'filtered_list', 'alpha_list', 'vol_mc_ratio', 'gainers_losers', 'top_gainers', 'top_losers'
 const currentFile = ref('')
@@ -15,6 +18,9 @@ const currentContent = ref('')
 const currentImage = ref('')
 const currentTable = ref('')
 const currentTableData = ref(null)
+const currentChart = ref('')
+const currentChartData = ref(null)
+const chartViewMode = ref('line') // 'line' or 'heatmap'
 const searchQuery = ref('')
 const isDarkMode = ref(false)
 const isLoading = ref(false)
@@ -77,6 +83,8 @@ const selectFile = async (file) => {
   currentImage.value = '' // 清空图片选择
   currentTable.value = '' // 清空表格选择
   currentTableData.value = null
+  currentChart.value = '' // 清空图表选择
+  currentChartData.value = null
   isLoading.value = true
   try {
     const response = await fetch(`/advices/${file.name}`)
@@ -96,6 +104,8 @@ const selectImage = (image) => {
   currentContent.value = '' // 清空文档内容
   currentTable.value = '' // 清空表格选择
   currentTableData.value = null
+  currentChart.value = '' // 清空图表选择
+  currentChartData.value = null
 }
 
 const selectTable = async (table) => {
@@ -104,6 +114,8 @@ const selectTable = async (table) => {
   currentFile.value = '' // 清空文档选择
   currentContent.value = '' // 清空文档内容
   currentImage.value = '' // 清空图片选择
+  currentChart.value = '' // 清空图表选择
+  currentChartData.value = null
   isLoading.value = true
   try {
     const response = await fetch(`/tables/${table.name}`)
@@ -111,6 +123,26 @@ const selectTable = async (table) => {
   } catch (error) {
     console.error('Error loading table:', error)
     currentTableData.value = null
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const selectChart = async (chart) => {
+  if (currentChart.value === chart.name) return
+  currentChart.value = chart.name
+  currentFile.value = '' // 清空文档选择
+  currentContent.value = '' // 清空文档内容
+  currentImage.value = '' // 清空图片选择
+  currentTable.value = '' // 清空表格选择
+  currentTableData.value = null
+  isLoading.value = true
+  try {
+    const response = await fetch(`/charts/${chart.name}`)
+    currentChartData.value = await response.json()
+  } catch (error) {
+    console.error('Error loading chart:', error)
+    currentChartData.value = null
   } finally {
     isLoading.value = false
   }
@@ -127,6 +159,8 @@ const switchTab = (tab) => {
     selectTable(tables.value[0])
   } else if (tab === 'images' && imagesByType.value[currentImageTab.value]?.length > 0) {
     selectImage(imagesByType.value[currentImageTab.value][0])
+  } else if (tab === 'charts' && charts.value.length > 0) {
+    selectChart(charts.value[0])
   }
 }
 
@@ -167,6 +201,7 @@ onMounted(async () => {
     files.value = data.files?.sort((a, b) => b.name.localeCompare(a.name)) || []
     images.value = data.images?.sort((a, b) => b.name.localeCompare(a.name)) || []
     tables.value = data.tables?.sort((a, b) => b.name.localeCompare(a.name)) || []
+    charts.value = data.charts?.sort((a, b) => b.name.localeCompare(a.name)) || []
     
     // 默认选中第一个文件（最新的）
     if (files.value.length > 0) {
@@ -216,6 +251,12 @@ onMounted(async () => {
           📊 表格 ({{ tables.length }})
         </button>
         <button 
+          :class="{ active: currentTab === 'charts' }" 
+          @click="switchTab('charts')"
+        >
+          📈 图表 ({{ charts.length }})
+        </button>
+        <button 
           :class="{ active: currentTab === 'images' }" 
           @click="switchTab('images')"
         >
@@ -247,7 +288,7 @@ onMounted(async () => {
 
       
       <!-- 搜索框：仅在文档和图片标签页显示 -->
-      <div v-if="currentTab !== 'tables'" class="search-box">
+      <div v-if="currentTab !== 'tables' && currentTab !== 'charts'" class="search-box">
         <input 
           type="text" 
           v-model="searchQuery"
@@ -276,6 +317,18 @@ onMounted(async () => {
           @click="selectTable(table)"
         >
           {{ table.name.replace('.json', '') }}
+        </li>
+      </ul>
+      
+      <!-- 图表列表 -->
+      <ul v-else-if="currentTab === 'charts'" class="file-list">
+        <li 
+          v-for="chart in charts" 
+          :key="chart.name"
+          :class="{ active: currentChart === chart.name }"
+          @click="selectChart(chart)"
+        >
+          {{ chart.name.replace('.json', '') }}
         </li>
       </ul>
       
@@ -309,6 +362,35 @@ onMounted(async () => {
         :tableData="currentTableData"
       />
       
+      <!-- 图表内容 -->
+      <div v-else-if="currentChartData && currentTab === 'charts'" class="chart-container">
+        <div class="chart-view-toggle">
+          <button 
+            :class="{ active: chartViewMode === 'line' }" 
+            @click="chartViewMode = 'line'"
+            class="view-toggle-btn"
+          >
+            📈 折线图
+          </button>
+          <button 
+            :class="{ active: chartViewMode === 'heatmap' }" 
+            @click="chartViewMode = 'heatmap'"
+            class="view-toggle-btn"
+          >
+            🔥 热力图
+          </button>
+        </div>
+        
+        <VolumeChartViewer 
+          v-if="chartViewMode === 'line'"
+          :chartData="currentChartData"
+        />
+        <VolumeHeatmapViewer 
+          v-else
+          :chartData="currentChartData"
+        />
+      </div>
+      
       <!-- 图片内容 -->
       <ImageViewer 
         v-else-if="currentImage && currentTab === 'images'" 
@@ -317,7 +399,7 @@ onMounted(async () => {
       />
       
       <div v-else class="no-content">
-        请选择要查看的{{ currentTab === 'docs' ? '文档' : currentTab === 'tables' ? '数据表格' : '图片' }}
+        请选择要查看的{{ currentTab === 'docs' ? '文档' : currentTab === 'tables' ? '数据表格' : currentTab === 'charts' ? '图表' : '图片' }}
       </div>
     </div>
   </div>
@@ -583,6 +665,44 @@ body {
     width: 300px;
     min-width: 300px;
   }
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chart-view-toggle {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-color);
+  padding: 0 20px;
+  background-color: var(--bg-color);
+  flex-shrink: 0;
+}
+
+.view-toggle-btn {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-toggle-btn:hover {
+  background-color: var(--hover-color);
+}
+
+.view-toggle-btn.active {
+  border-bottom-color: #1976d2;
+  color: #1976d2;
+  font-weight: 600;
 }
 
 @media (max-width: 480px) {
