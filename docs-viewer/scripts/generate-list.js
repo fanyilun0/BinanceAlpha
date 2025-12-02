@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 // 获取当前文件的目录路径
 const __filename = fileURLToPath(import.meta.url);
@@ -10,10 +11,12 @@ const __dirname = path.dirname(__filename);
 const advicesSourceDir = path.join(__dirname, '../../advices/all-platforms');
 const imagesSourceDir = path.join(__dirname, '../../images');
 const tablesSourceDir = path.join(__dirname, '../../data');
+const chartsSourceDir = path.join(__dirname, '../public/charts');
 const futuresSymbolsSource = path.join(__dirname, '../../symbols/futures_symbols.json');
 const advicesTargetDir = path.join(__dirname, '../public/advices');
 const imagesTargetDir = path.join(__dirname, '../public/images');
 const tablesTargetDir = path.join(__dirname, '../public/tables');
+const chartsTargetDir = path.join(__dirname, '../public/charts');
 const futuresSymbolsTarget = path.join(__dirname, '../public/futures_symbols.json');
 
 // 确保目标目录存在
@@ -25,6 +28,21 @@ if (!fs.existsSync(imagesTargetDir)) {
 }
 if (!fs.existsSync(tablesTargetDir)) {
   fs.mkdirSync(tablesTargetDir, { recursive: true });
+}
+if (!fs.existsSync(chartsTargetDir)) {
+  fs.mkdirSync(chartsTargetDir, { recursive: true });
+}
+
+// 生成图表数据
+console.log('🔄 开始生成图表数据...');
+try {
+  execSync('node scripts/generate-volume-chart-data.js', { 
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit' 
+  });
+  console.log('✅ 图表数据生成完成');
+} catch (error) {
+  console.error('❌ 图表数据生成失败:', error.message);
 }
 
 // 读取源目录中的所有 .md 文件
@@ -89,16 +107,34 @@ if (fs.existsSync(tablesSourceDir)) {
   console.log(`⚠️  表格数据目录不存在: ${tablesSourceDir}`);
 }
 
-// 生成 list.json，包含文档、图片和表格列表
+// 读取图表数据目录中的所有 .json 文件
+let chartFiles = [];
+if (fs.existsSync(chartsSourceDir)) {
+  chartFiles = fs.readdirSync(chartsSourceDir)
+    .filter(file => file.endsWith('.json'))
+    .map(file => {
+      return {
+        name: file,
+        title: file.replace('.json', '').replace(/_/g, ' '),
+      };
+    })
+    .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
+} else {
+  console.log(`⚠️  图表数据目录不存在: ${chartsSourceDir}`);
+}
+
+// 生成 list.json，包含文档、图片、表格和图表列表
 const listJson = {
   files: mdFiles,
   images: imageFiles,
-  tables: tableFiles
+  tables: tableFiles,
+  charts: chartFiles
 };
 
 console.log('文档数量:', mdFiles.length);
 console.log('图片数量:', imageFiles.length);
 console.log('表格数量:', tableFiles.length);
+console.log('图表数量:', chartFiles.length);
 
 // 写入 list.json
 fs.writeFileSync(
