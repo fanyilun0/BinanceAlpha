@@ -150,7 +150,8 @@
     "2025-11-29",
     "2025-11-30",
     "2025-12-01",
-    "2025-12-02"
+    "2025-12-02",
+    "2025-12-03"
   ],
   "tokens": {
     "4": {
@@ -280,6 +281,7 @@
         47.30104187586297,
         null,
         59.4269254952993,
+        null,
         null,
         null,
         null,
@@ -464,6 +466,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Semantic Layer",
@@ -566,6 +569,7 @@
         null,
         null,
         52.096867188902394,
+        null,
         null,
         null,
         null,
@@ -782,6 +786,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "AB",
@@ -941,7 +946,8 @@
         null,
         null,
         null,
-        36.92541166821384
+        36.92541166821384,
+        38.72858023557156
       ],
       "name": "Aerodrome Finance",
       "platforms": [
@@ -991,6 +997,7 @@
         68.26627421734656,
         135.79218966018524,
         100.10967199104569,
+        null,
         null,
         null,
         null,
@@ -1260,6 +1267,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "ai16z",
@@ -1419,6 +1427,7 @@
         null,
         78.8702866828703,
         null,
+        null,
         null
       ],
       "name": "DeAgentAI",
@@ -1488,6 +1497,7 @@
         247.55099697581636,
         568.1350231043134,
         779.397436054733,
+        null,
         null,
         null,
         null,
@@ -1738,6 +1748,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Infinity Ground",
@@ -1897,6 +1908,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "OLAXBT",
@@ -1934,6 +1946,7 @@
         108.81223233464071,
         55.433994734692675,
         28.1173753490497,
+        null,
         null,
         null,
         null,
@@ -2215,6 +2228,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Solidus Ai Tech",
@@ -2319,6 +2333,7 @@
         null,
         400.0426932834067,
         120.08776616320657,
+        null,
         null,
         null,
         null,
@@ -2533,7 +2548,8 @@
         null,
         47.98270215204333,
         52.062400073083616,
-        43.16747414576548
+        43.16747414576548,
+        47.091200626196915
       ],
       "name": "Alchemist AI",
       "platforms": [
@@ -2692,6 +2708,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Aleo",
@@ -2728,6 +2745,7 @@
         null,
         null,
         70.7803324739117,
+        null,
         null,
         null,
         null,
@@ -3010,6 +3028,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Ark of Panda",
@@ -3169,6 +3188,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "aPriori",
@@ -3264,6 +3284,7 @@
         null,
         null,
         178.69981986657254,
+        null,
         null,
         null,
         null,
@@ -3487,6 +3508,7 @@
         37.37828738443113,
         24.00311031145867,
         null,
+        null,
         null
       ],
       "name": "AI Rig Complex",
@@ -3646,6 +3668,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "AriaAI",
@@ -3789,6 +3812,7 @@
         null,
         null,
         52.47043883495907,
+        null,
         null,
         null,
         null,
@@ -3964,7 +3988,8 @@
         null,
         null,
         null,
-        550.7260782159698
+        550.7260782159698,
+        544.6023371266648
       ],
       "name": "ULTILAND",
       "platforms": [
@@ -4123,6 +4148,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Aspecta",
@@ -4178,6 +4204,7 @@
         null,
         null,
         41.899575504938426,
+        null,
         null,
         null,
         null,
@@ -4441,6 +4468,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Aster",
@@ -4596,6 +4624,7 @@
         331.2362940769565,
         389.21882316649265,
         55.10218632032606,
+        null,
         null,
         null,
         null,
@@ -4760,6 +4789,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Aethir",
@@ -4854,6 +4884,7 @@
         null,
         null,
         80.0628536107209,
+        null,
         null,
         null,
         null,
@@ -5078,7 +5109,8 @@
         80.45758710231307,
         69.75663394715376,
         79.31079907919286,
-        90.48432475061288
+        90.48432475061288,
+        87.27765359111578
       ],
       "name": "Avalon Labs (AVL)",
       "platforms": [
@@ -5191,6 +5223,7 @@
         135.37746684977824,
         119.28406324596985,
         102.74432658437566,
+        null,
         null,
         null,
         null,
@@ -5396,6 +5429,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "BSquared Network",
@@ -5438,6 +5472,7 @@
         58.78950540965549,
         99.73684805504898,
         60.53051824330572,
+        null,
         null,
         null,
         null,
@@ -5714,6 +5749,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Lorenzo Protocol",
@@ -5834,6 +5870,7 @@
         83.57507290932489,
         70.54174071331018,
         53.77557210739886,
+        null,
         null,
         null,
         null,
@@ -6032,7 +6069,8 @@
         577.0260447906018,
         971.6328571644381,
         616.8273776668557,
-        45.52745460111192
+        45.52745460111192,
+        null
       ],
       "name": "Marina Protocol",
       "platforms": [
@@ -6175,6 +6213,7 @@
         null,
         42.07255836146637,
         67.03889959209147,
+        null,
         null,
         null,
         null,
@@ -6350,6 +6389,7 @@
         37.138170926438605,
         41.02454423475396,
         28.19969149482695,
+        null,
         null
       ],
       "name": "Audiera",
@@ -6475,6 +6515,7 @@
         null,
         null,
         47.907893472308295,
+        null,
         null,
         null,
         null,
@@ -6668,6 +6709,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Bless",
@@ -6827,6 +6869,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Bluwhale",
@@ -6870,6 +6913,7 @@
         73.42156445822225,
         140.7453131261026,
         208.2142632218848,
+        null,
         null,
         null,
         null,
@@ -7145,6 +7189,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "币安Holder",
@@ -7304,7 +7349,8 @@
         null,
         null,
         null,
-        43.69354124348129
+        43.69354124348129,
+        38.87915224530876
       ],
       "name": "Build On BNB",
       "platforms": [
@@ -7464,6 +7510,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Bombie",
@@ -7487,6 +7534,7 @@
         29.958235040785713,
         37.94735422304915,
         39.706915472237846,
+        null,
         null,
         null,
         null,
@@ -7782,6 +7830,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Boost",
@@ -7937,6 +7986,7 @@
         484.2906074156414,
         337.25151995264974,
         62.208094180642824,
+        null,
         null,
         null,
         null,
@@ -8100,6 +8150,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Hyperbot",
@@ -8193,6 +8244,7 @@
         1177.156481497936,
         1128.3947635183076,
         1161.3623529916176,
+        null,
         null,
         null,
         null,
@@ -8418,7 +8470,8 @@
         117.38320822350722,
         101.11470520345908,
         78.50072768947757,
-        117.20646181378238
+        117.20646181378238,
+        271.0513300719195
       ],
       "name": "Baby Shark Universe",
       "platforms": [
@@ -8559,6 +8612,7 @@
         48.09575224358653,
         null,
         79.54715005560203,
+        null,
         null,
         null,
         null,
@@ -8736,6 +8790,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Bitlayer",
@@ -8817,6 +8872,7 @@
         63.46099623529659,
         56.161176480823045,
         42.23506742383198,
+        null,
         null,
         null,
         null,
@@ -9054,6 +9110,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Chainbase",
@@ -9127,6 +9184,7 @@
         130.06185403437897,
         116.42531485352151,
         59.55751752967297,
+        null,
         null,
         null,
         null,
@@ -9372,6 +9430,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "CARV",
@@ -9510,6 +9569,7 @@
         2829.152018544126,
         2996.556584494252,
         1695.7900690331082,
+        null,
         null,
         null,
         null,
@@ -9690,6 +9750,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "tokenbot",
@@ -9803,6 +9864,7 @@
         null,
         null,
         91.6118257590414,
+        null,
         null,
         null,
         null,
@@ -10008,6 +10070,7 @@
         null,
         40.42211178574808,
         null,
+        null,
         null
       ],
       "name": "ChainOpera AI",
@@ -10167,6 +10230,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "COMMON",
@@ -10277,6 +10341,7 @@
         null,
         null,
         71.68342292965393,
+        null,
         null,
         null,
         null,
@@ -10485,6 +10550,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Clearpool",
@@ -10644,6 +10710,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "CROSS",
@@ -10789,6 +10856,7 @@
         null,
         null,
         35.345858031739446,
+        null,
         null,
         null,
         null,
@@ -10962,6 +11030,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Cypher",
@@ -11013,6 +11082,7 @@
         40.78298115729765,
         31.14100375777327,
         28.80849994804513,
+        null,
         null,
         null,
         null,
@@ -11280,6 +11350,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "DarkStar",
@@ -11439,7 +11510,8 @@
         91.96141607764297,
         274.937399141276,
         118.51588221726799,
-        98.06804910759604
+        98.06804910759604,
+        103.51847678522834
       ],
       "name": "Datagram Network",
       "platforms": [
@@ -11598,6 +11670,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "DeLorean",
@@ -11613,6 +11686,7 @@
         null,
         null,
         22.08297071403044,
+        null,
         null,
         null,
         null,
@@ -11916,6 +11990,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Donkey (DONKEY_BSC_MEME)",
@@ -12072,6 +12147,7 @@
         null,
         null,
         56.130304332352345,
+        null,
         null,
         null,
         null,
@@ -12234,6 +12310,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Drift",
@@ -12393,6 +12470,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Echo Protocol",
@@ -12446,6 +12524,7 @@
         27.493870357851492,
         24.18209284787095,
         38.04795359633428,
+        null,
         null,
         null,
         null,
@@ -12712,6 +12791,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "EGL1",
@@ -12789,6 +12869,7 @@
         null,
         null,
         29.052167567948562,
+        null,
         null,
         null,
         null,
@@ -13030,6 +13111,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "elizaOS",
@@ -13134,6 +13216,7 @@
         null,
         null,
         120.60156155313909,
+        null,
         null,
         null,
         null,
@@ -13348,7 +13431,8 @@
         246.51330859151196,
         231.96743286972514,
         199.78374045065877,
-        236.4552479044646
+        236.4552479044646,
+        197.8082897945625
       ],
       "name": "Yooldo",
       "platforms": [
@@ -13507,6 +13591,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "EVAA Protocol",
@@ -13629,6 +13714,7 @@
         107.01031370429837,
         188.22098417425855,
         641.5104237561911,
+        null,
         null,
         null,
         null,
@@ -13825,7 +13911,8 @@
         175.43472095449766,
         99.90750445481572,
         109.8690125444518,
-        279.4472004559622
+        279.4472004559622,
+        229.26930213888778
       ],
       "name": "Fartcoin",
       "platforms": [
@@ -13876,6 +13963,7 @@
         165.00294185510407,
         28.86445223842471,
         26.87479323488101,
+        null,
         null,
         null,
         null,
@@ -14143,6 +14231,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "FLock.io",
@@ -14295,6 +14384,7 @@
         null,
         54.197313758373795,
         163.63238172459288,
+        null,
         null,
         null,
         null,
@@ -14462,7 +14552,8 @@
         92.25443525400385,
         null,
         null,
-        null
+        null,
+        90.66007157410006
       ],
       "name": "Folks Finance",
       "platforms": [
@@ -14621,6 +14712,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "FreeStyle Classic",
@@ -14647,6 +14739,7 @@
         29.729890922098967,
         32.47044624666686,
         60.14165447522327,
+        null,
         null,
         null,
         null,
@@ -14939,6 +15032,7 @@
         null,
         24.94908602421497,
         null,
+        null,
         null
       ],
       "name": "GAIA",
@@ -15098,7 +15192,8 @@
         null,
         null,
         36.31613424804552,
-        113.11897659771134
+        113.11897659771134,
+        78.23499416253719
       ],
       "name": "GAIB",
       "platforms": [
@@ -15257,6 +15352,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Giggle Fund",
@@ -15348,6 +15444,7 @@
         68.50861705925895,
         50.77862288438131,
         42.32404802806382,
+        null,
         null,
         null,
         null,
@@ -15575,7 +15672,8 @@
         30.74736696950616,
         null,
         null,
-        45.946102573769764
+        45.946102573769764,
+        39.83249855262104
       ],
       "name": "Grass",
       "platforms": [
@@ -15734,6 +15832,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "GRIFFAIN",
@@ -15744,6 +15843,7 @@
     "Ghibli": {
       "volumes": [
         18.29480356695249,
+        null,
         null,
         null,
         null,
@@ -16052,7 +16152,8 @@
         89.13982882493659,
         67.88158779569855,
         65.0684314677785,
-        53.09273721326391
+        53.09273721326391,
+        71.59087808760843
       ],
       "name": "Humanity Protocol",
       "platforms": [
@@ -16085,6 +16186,7 @@
         57.608025374486104,
         63.24486348232409,
         85.16168292159165,
+        null,
         null,
         null,
         null,
@@ -16371,6 +16473,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Hana Network",
@@ -16466,6 +16569,7 @@
         null,
         351.48743071790005,
         527.721092381264,
+        null,
         null,
         null,
         null,
@@ -16689,6 +16793,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "sudeng",
@@ -16848,6 +16953,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Defi App",
@@ -16899,6 +17005,7 @@
         44.58341005530386,
         31.95136176208586,
         30.65043700909963,
+        null,
         null,
         null,
         null,
@@ -17166,6 +17273,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Impossible Cloud Network",
@@ -17258,6 +17366,7 @@
         431.6952590336093,
         null,
         31.60882595956829,
+        null,
         null,
         null,
         null,
@@ -17484,6 +17593,7 @@
         null,
         25.71321241201875,
         null,
+        null,
         null
       ],
       "name": "INFINIT",
@@ -17643,6 +17753,7 @@
         38.75032899674565,
         43.35191572156321,
         37.4271483239087,
+        null,
         null
       ],
       "name": "Irys",
@@ -17722,6 +17833,7 @@
         41.863411539118054,
         49.076010750653346,
         46.98461640465389,
+        null,
         null,
         null,
         null,
@@ -17961,7 +18073,8 @@
         null,
         270.2571808316727,
         209.04159307235795,
-        467.97822445356456
+        467.97822445356456,
+        602.6431517336899
       ],
       "name": "Janction",
       "platforms": [
@@ -18120,7 +18233,8 @@
         null,
         null,
         null,
-        49.100296527494834
+        49.100296527494834,
+        54.347870452690174
       ],
       "name": "Jelly-My-Jelly",
       "platforms": [
@@ -18279,6 +18393,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "KGeN",
@@ -18296,6 +18411,7 @@
         null,
         null,
         17.05242871415055,
+        null,
         null,
         null,
         null,
@@ -18597,6 +18713,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Klink Finance",
@@ -18616,6 +18733,7 @@
         67.50033729656718,
         81.42565314956562,
         149.50794744146452,
+        null,
         null,
         null,
         null,
@@ -18915,7 +19033,8 @@
         408.0945418590307,
         416.1354007706933,
         417.24030196735305,
-        329.67527929707535
+        329.67527929707535,
+        314.89182127170193
       ],
       "name": "48 Club Token",
       "platforms": [
@@ -18987,6 +19106,7 @@
         null,
         23.84816914215516,
         32.0210126663915,
+        null,
         null,
         null,
         null,
@@ -19233,6 +19353,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "LAB",
@@ -19392,6 +19513,7 @@
         null,
         null,
         36.64066264525333,
+        null,
         null
       ],
       "name": "Bitlight",
@@ -19551,6 +19673,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Lit Protocol",
@@ -19656,6 +19779,7 @@
         null,
         81.206261529004,
         59.34079295235223,
+        null,
         null,
         null,
         null,
@@ -19869,7 +19993,8 @@
         32.6543220297521,
         27.020378486346058,
         25.764991735691712,
-        39.21617835773858
+        39.21617835773858,
+        null
       ],
       "name": "MemeCore",
       "platforms": [
@@ -20028,7 +20153,8 @@
         127.8910617015946,
         58.81189304573786,
         53.23306639479246,
-        131.75931887963358
+        131.75931887963358,
+        110.8488183563041
       ],
       "name": "Merlin Chain",
       "platforms": [
@@ -20169,6 +20295,7 @@
         70.67830427313493,
         124.7889627225922,
         244.37618895489442,
+        null,
         null,
         null,
         null,
@@ -20346,6 +20473,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "cat in a dogs world",
@@ -20505,6 +20633,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "MilkyWay",
@@ -20535,6 +20664,7 @@
         null,
         null,
         23.7227425532827,
+        null,
         null,
         null,
         null,
@@ -20823,6 +20953,7 @@
         null,
         null,
         25.34540647841408,
+        null,
         null
       ],
       "name": "Mog Coin",
@@ -20982,7 +21113,8 @@
         61.83506499788169,
         null,
         null,
-        null
+        null,
+        42.87564062154162
       ],
       "name": "Moo Deng (moodengsol.com)",
       "platforms": [
@@ -21141,6 +21273,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Morpho",
@@ -21228,6 +21361,7 @@
         1247.017916277368,
         1256.0953141872778,
         1104.6818276622807,
+        null,
         null,
         null,
         null,
@@ -21459,6 +21593,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Mubarakah",
@@ -21618,7 +21753,8 @@
         null,
         29.57878280654506,
         34.006819799462654,
-        75.66637906269858
+        75.66637906269858,
+        53.736785529146566
       ],
       "name": "MYX Finance",
       "platforms": [
@@ -21662,6 +21798,7 @@
         66.09162961132557,
         null,
         34.5294944442675,
+        null,
         null,
         null,
         null,
@@ -21936,6 +22073,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Nubila Network",
@@ -22095,7 +22233,8 @@
         43.59806729355871,
         36.906024962526935,
         32.54759916677054,
-        84.70524270528259
+        84.70524270528259,
+        73.70044854956116
       ],
       "name": "APENFT",
       "platforms": [
@@ -22175,6 +22314,7 @@
         41.52947319200344,
         59.0217461025045,
         85.61834924915483,
+        null,
         null,
         null,
         null,
@@ -22413,6 +22553,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "NUMINE",
@@ -22506,6 +22647,7 @@
         null,
         null,
         71.61212603775496,
+        null,
         null,
         null,
         null,
@@ -22731,6 +22873,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Orbiter Finance",
@@ -22776,6 +22919,7 @@
         null,
         null,
         48.24153009193743,
+        null,
         null,
         null,
         null,
@@ -23049,6 +23193,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Space Nation Oikos",
@@ -23208,6 +23353,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Open Loot",
@@ -23330,6 +23476,7 @@
         null,
         null,
         98.309709227536,
+        null,
         null,
         null,
         null,
@@ -23526,6 +23673,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Orderly",
@@ -23685,6 +23833,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "PoP Planet",
@@ -23792,6 +23941,7 @@
         304.29578743095385,
         185.79413085416357,
         130.7904174783773,
+        null,
         null,
         null,
         null,
@@ -24003,6 +24153,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "peaq",
@@ -24096,6 +24247,7 @@
         null,
         137.8776691262561,
         136.68256491560206,
+        null,
         null,
         null,
         null,
@@ -24321,7 +24473,8 @@
         57.51230859172952,
         37.20760094110709,
         91.1556799216855,
-        58.22117194552634
+        58.22117194552634,
+        97.89193574371141
       ],
       "name": "Pieverse",
       "platforms": [
@@ -24481,6 +24634,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Piggycell",
@@ -24597,6 +24751,7 @@
         59.039850320305455,
         69.17528372161279,
         106.4140665535242,
+        null,
         null,
         null,
         null,
@@ -24799,7 +24954,8 @@
         137.0707310496434,
         91.56584147039783,
         122.05914861930017,
-        183.51748530070688
+        183.51748530070688,
+        110.00839002714854
       ],
       "name": "pippin",
       "platforms": [
@@ -24958,6 +25114,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Planck",
@@ -25034,6 +25191,7 @@
         35.065005443145004,
         null,
         28.345095566051462,
+        null,
         null,
         null,
         null,
@@ -25276,6 +25434,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Pocket Network",
@@ -25382,6 +25541,7 @@
         579.351563869909,
         305.0360954179025,
         384.58632151979504,
+        null,
         null,
         null,
         null,
@@ -25594,6 +25754,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Popcat (SOL)",
@@ -25753,6 +25914,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Port3 Network",
@@ -25786,6 +25948,7 @@
         39.42880470629904,
         37.206272208481344,
         30.073608456893602,
+        null,
         null,
         null,
         null,
@@ -26071,6 +26234,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Wayfinder",
@@ -26166,6 +26330,7 @@
         null,
         138.7077056627922,
         301.12841728796934,
+        null,
         null,
         null,
         null,
@@ -26389,6 +26554,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Puffer",
@@ -26548,6 +26714,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Pump.fun",
@@ -26615,6 +26782,7 @@
         null,
         51.23642438455511,
         27.946413981631967,
+        null,
         null,
         null,
         null,
@@ -26866,6 +27034,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Quack AI",
@@ -27025,6 +27194,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Quq",
@@ -27055,6 +27225,7 @@
         46.72428842756055,
         40.7124974898122,
         29.07039034140921,
+        null,
         null,
         null,
         null,
@@ -27343,6 +27514,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Reddio",
@@ -27502,6 +27674,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Recall",
@@ -27555,6 +27728,7 @@
         null,
         null,
         220.02632280078936,
+        null,
         null,
         null,
         null,
@@ -27820,6 +27994,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "REVOX",
@@ -27838,6 +28013,7 @@
         19.17185731152385,
         34.17359015378799,
         18.62100252841571,
+        null,
         null,
         null,
         null,
@@ -28138,6 +28314,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "RICE AI",
@@ -28231,6 +28408,7 @@
         null,
         35.450302088737125,
         36.556808373331805,
+        null,
         null,
         null,
         null,
@@ -28456,6 +28634,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "River",
@@ -28615,7 +28794,8 @@
         null,
         null,
         null,
-        52.639890625800206
+        52.639890625800206,
+        85.94915393787053
       ],
       "name": "Rayls",
       "platforms": [
@@ -28710,6 +28890,7 @@
         null,
         null,
         52.68617707113543,
+        null,
         null,
         null,
         null,
@@ -28933,6 +29114,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Astra Nova",
@@ -29090,6 +29272,7 @@
         null,
         null,
         64.27726318841594,
+        null,
         null,
         null,
         null
@@ -29251,6 +29434,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Sapien",
@@ -29323,6 +29507,7 @@
         null,
         null,
         43.704395507663314,
+        null,
         null,
         null,
         null,
@@ -29569,6 +29754,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Stader",
@@ -29673,6 +29859,7 @@
         null,
         null,
         88.22836794329018,
+        null,
         null,
         null,
         null,
@@ -29887,6 +30074,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Shadow Exchange",
@@ -29951,6 +30139,7 @@
         113.12681222788292,
         48.96114508293686,
         70.73345214416312,
+        null,
         null,
         null,
         null,
@@ -30205,6 +30394,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "SKYAI",
@@ -30337,6 +30527,7 @@
         278.84543985258387,
         261.0766561138834,
         265.6728983474254,
+        null,
         null,
         null,
         null,
@@ -30523,6 +30714,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "SOON",
@@ -30616,6 +30808,7 @@
         335.1578441402421,
         1065.7094137998167,
         1073.0861840542293,
+        null,
         null,
         null,
         null,
@@ -30842,7 +31035,8 @@
         35.44217323106731,
         null,
         30.10617146229766,
-        41.17031779944634
+        41.17031779944634,
+        40.056038494840664
       ],
       "name": "SPX6900",
       "platforms": [
@@ -31001,6 +31195,7 @@
         110.88039167177772,
         46.005450914115684,
         68.85926305906796,
+        null,
         null
       ],
       "name": "Subsquid",
@@ -31103,6 +31298,7 @@
         71.84664195512714,
         77.62299818486024,
         102.10884156921627,
+        null,
         null,
         null,
         null,
@@ -31319,6 +31515,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "STBL",
@@ -31334,6 +31531,7 @@
         28.7439851463436,
         24.510825467598128,
         26.62602198473264,
+        null,
         null,
         null,
         null,
@@ -31637,6 +31835,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "SUNDOG",
@@ -31796,6 +31995,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Superp",
@@ -31808,6 +32008,7 @@
         19.888174420078858,
         17.67262692634534,
         18.434439670092008,
+        null,
         null,
         null,
         null,
@@ -32114,6 +32315,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Trusta.AI",
@@ -32273,6 +32475,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "TAC Protocol",
@@ -32361,6 +32564,7 @@
         43.049320843388706,
         null,
         45.14167566929132,
+        null,
         null,
         null,
         null,
@@ -32591,6 +32795,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Taiko",
@@ -32750,7 +32955,8 @@
         47.80402020812339,
         48.91470261157012,
         50.27402960727347,
-        47.54289114317276
+        47.54289114317276,
+        49.14573057774768
       ],
       "name": "OVERTAKE",
       "platforms": [
@@ -32843,6 +33049,7 @@
         60.48697363090601,
         40.84686119236174,
         37.0798699353986,
+        null,
         null,
         null,
         null,
@@ -33068,6 +33275,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Tanssi",
@@ -33103,6 +33311,7 @@
         null,
         null,
         54.320343992255886,
+        null,
         null,
         null,
         null,
@@ -33386,7 +33595,8 @@
         3838.3827807565262,
         2829.1986864048577,
         3333.957623958687,
-        3057.5869747954357
+        3057.5869747954357,
+        2790.7450324617857
       ],
       "name": "MetaArena",
       "platforms": [
@@ -33399,6 +33609,7 @@
         null,
         34.07568854062949,
         45.50911073544224,
+        null,
         null,
         null,
         null,
@@ -33704,6 +33915,7 @@
         30.157275402107732,
         null,
         null,
+        null,
         null
       ],
       "name": "Toshi",
@@ -33863,7 +34075,8 @@
         60.00092673211055,
         42.86484422992057,
         41.297504785141875,
-        160.74958547846373
+        160.74958547846373,
+        68.92662607443225
       ],
       "name": "Tradoor",
       "platforms": [
@@ -33881,6 +34094,7 @@
         null,
         21.56526700128236,
         18.404130123003,
+        null,
         null,
         null,
         null,
@@ -34181,7 +34395,8 @@
         79.24073187827742,
         28.22338747062479,
         28.89283351443284,
-        null
+        null,
+        42.21051570675502
       ],
       "name": "Intuition",
       "platforms": [
@@ -34275,6 +34490,7 @@
         null,
         null,
         57.23359608161249,
+        null,
         null,
         null,
         null,
@@ -34499,6 +34715,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "UnifAI Network",
@@ -34658,6 +34875,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Unibase",
@@ -34750,6 +34968,7 @@
         null,
         null,
         37.17699213068879,
+        null,
         null,
         null,
         null,
@@ -34976,6 +35195,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "UPTOP",
@@ -35071,6 +35291,7 @@
         null,
         71.56955536257635,
         61.69860208579038,
+        null,
         null,
         null,
         null,
@@ -35294,6 +35515,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Velvet",
@@ -35399,6 +35621,7 @@
         57.255094026676176,
         293.9149876088343,
         144.1318847070833,
+        null,
         null,
         null,
         null,
@@ -35613,6 +35836,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Vine Coin",
@@ -35772,6 +35996,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Verasity",
@@ -35824,6 +36049,7 @@
         null,
         null,
         35.285729812294456,
+        null,
         null,
         null,
         null,
@@ -36090,6 +36316,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Walrus",
@@ -36241,6 +36468,7 @@
         48.187241115498,
         null,
         29.72362428789246,
+        null,
         null,
         null,
         null,
@@ -36408,7 +36636,8 @@
         42.88769291569681,
         27.90073712696426,
         29.327915029310407,
-        36.29414133144806
+        36.29414133144806,
+        41.09191143803626
       ],
       "name": "Anoma",
       "platforms": [
@@ -36486,6 +36715,7 @@
         null,
         31.152569964699968,
         33.41053340548094,
+        null,
         null,
         null,
         null,
@@ -36726,6 +36956,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "XPIN Network",
@@ -36777,6 +37008,7 @@
         null,
         null,
         41.46971164320978,
+        null,
         null,
         null,
         null,
@@ -37044,6 +37276,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Yala",
@@ -37203,6 +37436,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Zerebro",
@@ -37285,6 +37519,7 @@
         null,
         null,
         37.8019889967334,
+        null,
         null,
         null,
         null,
@@ -37521,6 +37756,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Zeus Network",
@@ -37615,6 +37851,7 @@
         null,
         null,
         63.4758700561667,
+        null,
         null,
         null,
         null,
@@ -37839,7 +38076,8 @@
         33.00896440861614,
         null,
         28.749432653993367,
-        41.69245239099663
+        41.69245239099663,
+        74.88510122985448
       ],
       "name": "ZORA",
       "platforms": [
@@ -37999,6 +38237,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "Zircuit",
@@ -38051,6 +38290,7 @@
         40.85500864738988,
         43.49936474826844,
         55.021990993732466,
+        null,
         null,
         null,
         null,
@@ -38317,6 +38557,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "修仙",
@@ -38476,6 +38717,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "name": "哈基米",
@@ -38583,6 +38825,7 @@
         null,
         null,
         159.5089012578637,
+        null,
         null,
         null,
         null,
@@ -38794,7 +39037,8 @@
         42.24618262992113,
         26.49303966842388,
         27.261037185033327,
-        34.36343307348367
+        34.36343307348367,
+        null
       ],
       "name": "币安人生",
       "platforms": [
