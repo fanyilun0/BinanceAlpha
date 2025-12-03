@@ -72,7 +72,33 @@ const availableTokens = computed(() => {
     return maxVolume >= minVolume.value
   })
   
-  return tokens.map(([symbol]) => symbol).sort()
+  // Sort tokens by their latest volume (descending)
+  // Use the last available volume data point for sorting
+  tokens.sort((a, b) => {
+    const volumesA = a[1].volumes || a[1]
+    const volumesB = b[1].volumes || b[1]
+    
+    // Get the last non-null volume
+    let lastVolA = 0
+    for (let i = volumesA.length - 1; i >= 0; i--) {
+      if (volumesA[i] !== null && volumesA[i] !== undefined) {
+        lastVolA = volumesA[i]
+        break
+      }
+    }
+    
+    let lastVolB = 0
+    for (let i = volumesB.length - 1; i >= 0; i--) {
+      if (volumesB[i] !== null && volumesB[i] !== undefined) {
+        lastVolB = volumesB[i]
+        break
+      }
+    }
+    
+    return lastVolB - lastVolA
+  })
+  
+  return tokens.map(([symbol]) => symbol)
 })
 
 // 所有日期
@@ -282,7 +308,8 @@ const chartOption = computed(() => {
       }
     },
     yAxis: {
-      type: 'value',
+      type: 'log',
+      logBase: 10,
       position: 'left',
       axisLabel: {
         formatter: '${value}M',
