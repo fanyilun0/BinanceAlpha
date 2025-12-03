@@ -50,6 +50,17 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
     price = usd_quote.get("price", 0)
     percent_change_24h = usd_quote.get("percentChange24h", 0)
     volume_24h = usd_quote.get("volume24h", 0)
+    volume_7d = usd_quote.get("volume7d", 0)
+    volume_30d = usd_quote.get("volume30d", 0)
+    
+    # 提取交易量变化百分比
+    # API返回的是 volumePercentChange (24h)，其他时间段可能不可用
+    volume_change_24h = usd_quote.get("volumePercentChange", 0)
+    if volume_change_24h == 0:
+        volume_change_24h = usd_quote.get("volumeChange24h", 0)
+        
+    volume_change_7d = usd_quote.get("volumeChange7d", 0)
+    volume_change_30d = usd_quote.get("volumeChange30d", 0)
     
     # 计算市值
     market_cap = usd_quote.get("marketCap", 0)
@@ -71,6 +82,11 @@ def _extract_crypto_data(crypto: Dict[str, Any], include_fdv: bool = True) -> Di
         "交易量(M$)": round(volume_24h / 1000000, 2),
         "市值(M$)": round(market_cap / 1000000, 2),
         "VOL/MC": round(vol_mc_ratio, 2),
+        "Vol7d(M$)": round(volume_7d / 1000000, 2),
+        "Vol30d(M$)": round(volume_30d / 1000000, 2),
+        "VolΔ24h(%)": round(volume_change_24h, 2),
+        "VolΔ7d(%)": round(volume_change_7d, 2),
+        "VolΔ30d(%)": round(volume_change_30d, 2),
     }
     
     # 如果需要包含 FDV 数据
