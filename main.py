@@ -639,7 +639,7 @@ async def generate_investment_advice(prepared_data, debug_only=False):
     return len(results) > 0
 
 
-async def monitor_volume_changes(crypto_list, threshold=10.0):
+async def monitor_volume_changes(crypto_list, threshold=50.0):
     """监控交易量变化并发送警报
     
     Args:
