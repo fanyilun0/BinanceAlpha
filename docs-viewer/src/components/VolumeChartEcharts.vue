@@ -10,7 +10,8 @@ import {
   LegendComponent,
   GridComponent,
   DataZoomComponent,
-  ToolboxComponent
+  ToolboxComponent,
+  MarkLineComponent
 } from 'echarts/components'
 
 // 注册 ECharts 组件
@@ -23,7 +24,8 @@ use([
   LegendComponent,
   GridComponent,
   DataZoomComponent,
-  ToolboxComponent
+  ToolboxComponent,
+  MarkLineComponent
 ])
 
 const props = defineProps({
@@ -112,9 +114,14 @@ const startDateIndex = ref(0)
 const endDateIndex = ref(0)
 const displayDays = ref(30) // 默认显示天数
 const searchQuery = ref('') // 搜索关键词
-const sortBy = ref('hotness') // 排序方式: hotness (热度), volume, name, change
+const sortBy = ref('auto') // 排序方式: auto (根据图表模式自动), hotness, volume, name, change
 const showTokenSelector = ref(true) // 是否显示 Token 选择器
 const chartMode = ref('volume') // 图表模式: 'volume' (交易量), 'change' (变化率)
+const showAggregatedLine = ref(true) // 是否显示"其他代币"聚合线
+const focusCount = ref(10) // 焦点组显示的 Token 数量
+const highlightedToken = ref(null) // 当前高亮的 Token
+const tokenRangeStart = ref(1) // Token 范围起始
+const tokenRangeEnd = ref(50) // Token 范围结束
 
 // 防抖后的搜索和筛选值
 const debouncedSearchQuery = ref('')
@@ -170,35 +177,57 @@ const baseFilteredTokens = computed(() => {
   return tokens
 })
 
+// 实际使用的排序方式（auto 模式根据图表模式自动选择）
+const effectiveSortBy = computed(() => {
+  if (sortBy.value === 'auto') {
+    // 交易量图表按交易量排序，变化率图表按变化率排序
+    return chartMode.value === 'volume' ? 'volume' : 'change'
+  }
+  return sortBy.value
+})
+
 // 排序后的 Token 列表
 const sortedTokens = computed(() => {
   const tokens = [...baseFilteredTokens.value]
   
-  if (sortBy.value === 'volume') {
+  if (effectiveSortBy.value === 'volume') {
     tokens.sort((a, b) => b.latestVolume - a.latestVolume)
-  } else if (sortBy.value === 'name') {
+  } else if (effectiveSortBy.value === 'name') {
     tokens.sort((a, b) => a.symbol.localeCompare(b.symbol))
-  } else if (sortBy.value === 'change') {
+  } else if (effectiveSortBy.value === 'change') {
     tokens.sort((a, b) => b.volumeChange - a.volumeChange)
-  } else if (sortBy.value === 'hotness') {
+  } else if (effectiveSortBy.value === 'hotness') {
     tokens.sort((a, b) => b.hotness - a.hotness)
   }
   
   return tokens
 })
 
-// 最终显示的 Token 列表 (应用搜索)
-const filteredTokensWithInfo = computed(() => {
-  if (!debouncedSearchQuery.value) return sortedTokens.value
-  const query = debouncedSearchQuery.value.toLowerCase()
-  return sortedTokens.value.filter(t => 
-    t.symbol.toLowerCase().includes(query)
-  )
+// 应用 range 范围筛选后的 Token 列表
+const rangeFilteredTokens = computed(() => {
+  const start = Math.max(0, tokenRangeStart.value - 1)
+  const end = Math.min(sortedTokens.value.length, tokenRangeEnd.value)
+  return sortedTokens.value.slice(start, end)
 })
 
-// 可用的 token 符号列表
+// 最终显示的 Token 列表 (应用搜索和 range 筛选)
+const filteredTokensWithInfo = computed(() => {
+  let tokens = rangeFilteredTokens.value
+  if (debouncedSearchQuery.value) {
+    const query = debouncedSearchQuery.value.toLowerCase()
+    tokens = tokens.filter(t => t.symbol.toLowerCase().includes(query))
+  }
+  return tokens
+})
+
+// 可用的 token 符号列表（应用 range 筛选）
 const availableTokens = computed(() => {
-  return sortedTokens.value.map(t => t.symbol)
+  return rangeFilteredTokens.value.map(t => t.symbol)
+})
+
+// 总 Token 数量（未筛选）
+const totalTokenCount = computed(() => {
+  return sortedTokens.value.length
 })
 
 // Top N Tokens
@@ -249,13 +278,27 @@ const generateColor = (index) => {
   return colors[index % colors.length]
 }
 
+// 数据对齐与标准化函数 - 处理缺失数据
+const alignDataToTimeline = (volumes, mode = 'volume') => {
+  if (!volumes) return []
+  
+  return volumes.map(v => {
+    if (v === null || v === undefined) {
+      // 交易量模式：缺失填充为 0（表示无交易）
+      // 变化率模式：保持 null（表示未知）
+      return mode === 'volume' ? 0 : null
+    }
+    return v
+  })
+}
+
 // 计算日环比变化率数据
 const calculateDailyChange = (volumes) => {
-  if (!volumes || volumes.length < 2) return volumes.map(() => 0)
+  if (!volumes || volumes.length < 2) return volumes.map(() => null)
   
   const changes = []
-  // 第一个点没有前一天，设为0
-  changes.push(0)
+  // 第一个点没有前一天，设为 null
+  changes.push(null)
   
   for (let i = 1; i < volumes.length; i++) {
     const curr = volumes[i]
@@ -265,11 +308,79 @@ const calculateDailyChange = (volumes) => {
       const change = ((curr - prev) / prev) * 100
       changes.push(change)
     } else {
-      changes.push(0)
+      // 数据缺失时保持 null，不强制填充 0
+      changes.push(null)
     }
   }
   return changes
 }
+
+// 计算聚合线数据（市场平均）
+const calculateAggregatedLine = (tokensData, excludeSymbols, start, end, isChangeMode) => {
+  if (!tokensData || tokensData.length === 0) return []
+  
+  // 过滤掉焦点组的 Token
+  const otherTokens = tokensData.filter(t => !excludeSymbols.includes(t.symbol))
+  if (otherTokens.length === 0) return []
+  
+  const dateCount = end - start + 1
+  const aggregated = []
+  
+  for (let i = 0; i < dateCount; i++) {
+    const dayIndex = start + i
+    let validValues = []
+    
+    otherTokens.forEach(token => {
+      let value
+      if (isChangeMode) {
+        const changes = calculateDailyChange(token.volumes)
+        value = changes[dayIndex]
+      } else {
+        value = token.volumes[dayIndex]
+      }
+      
+      if (value !== null && value !== undefined && !isNaN(value)) {
+        validValues.push(value)
+      }
+    })
+    
+    if (validValues.length > 0) {
+      // 使用中位数而非平均值，更能抵抗极端值
+      validValues.sort((a, b) => a - b)
+      const mid = Math.floor(validValues.length / 2)
+      const median = validValues.length % 2 !== 0 
+        ? validValues[mid] 
+        : (validValues[mid - 1] + validValues[mid]) / 2
+      aggregated.push(median)
+    } else {
+      aggregated.push(null)
+    }
+  }
+  
+  return aggregated
+}
+
+// 检查 Token 数据稀疏度（有效数据占比）
+const getDataDensity = (volumes) => {
+  if (!volumes || volumes.length === 0) return 0
+  const validCount = volumes.filter(v => v !== null && v !== undefined && v > 0).length
+  return validCount / volumes.length
+}
+
+// 获取焦点组 Token（显示独立线条的）
+const focusGroupTokens = computed(() => {
+  return selectedTokens.value.slice(0, focusCount.value)
+})
+
+// 获取聚合组 Token（合并为"其他"线的）
+const aggregatedGroupTokens = computed(() => {
+  return selectedTokens.value.slice(focusCount.value)
+})
+
+// 聚合组的 Token 数量
+const aggregatedCount = computed(() => {
+  return aggregatedGroupTokens.value.length
+})
 
 // ECharts 配置选项
 const chartOption = computed(() => {
@@ -296,48 +407,129 @@ const chartOption = computed(() => {
   const end = endDateIndex.value || allDates.value.length - 1
   const isChangeMode = chartMode.value === 'change'
 
-  const series = selectedTokens.value.map((token, index) => {
-    // 从缓存中直接获取数据对象，避免重复查找
+  // 构建焦点组的 series
+  const series = focusGroupTokens.value.map((token, index) => {
     const tokenInfo = tokenInfoCache.value.find(t => t.symbol === token)
     if (!tokenInfo) return null
     
     let displayData
     if (isChangeMode) {
-      // 计算变化率数据
       const fullChangeData = calculateDailyChange(tokenInfo.volumes)
       displayData = fullChangeData.slice(start, end + 1)
     } else {
-      // 原始交易量数据
-      displayData = tokenInfo.volumes.slice(start, end + 1)
+      // 对交易量数据进行对齐处理：null -> 0
+      const alignedVolumes = alignDataToTimeline(tokenInfo.volumes, 'volume')
+      displayData = alignedVolumes.slice(start, end + 1)
     }
     
     const color = generateColor(index)
+    const isHighlighted = highlightedToken.value === token
+    const isDimmed = highlightedToken.value && highlightedToken.value !== token
     
     return {
       name: token,
       type: 'line',
       data: displayData,
       smooth: true,
-      // 性能模式：关闭数据点图标
       symbol: isPerformanceMode.value ? 'none' : 'circle',
-      symbolSize: isPerformanceMode.value ? 0 : 4,
-      // 性能模式：开启降采样
+      symbolSize: isHighlighted ? 6 : (isPerformanceMode.value ? 0 : 4),
       sampling: isPerformanceMode.value ? 'lttb' : undefined,
+      z: isHighlighted ? 100 : 10, // 高亮时提升层级
       lineStyle: {
-        // 性能模式：线条变细
-        width: isPerformanceMode.value ? 1.5 : 2,
-        color: color
+        width: isHighlighted ? 3 : (isPerformanceMode.value ? 1.5 : 2),
+        color: color,
+        opacity: isDimmed ? 0.15 : 1 // 悬停高亮时降低其他线条透明度
       },
       itemStyle: {
-        color: color
+        color: color,
+        opacity: isDimmed ? 0.15 : 1
       },
       emphasis: {
-        focus: 'series'
+        focus: 'series',
+        blurScope: 'coordinateSystem'
       },
-      // 变化率模式下不连接空数据
+      // 变化率模式下不连接空数据，交易量模式连接
       connectNulls: !isChangeMode
     }
   }).filter(Boolean)
+
+  // 添加聚合组的"其他代币"线
+  if (showAggregatedLine.value && aggregatedCount.value > 0) {
+    const aggregatedData = calculateAggregatedLine(
+      tokenInfoCache.value.filter(t => aggregatedGroupTokens.value.includes(t.symbol)),
+      [], // 不排除任何 token，因为已经筛选过了
+      start,
+      end,
+      isChangeMode
+    )
+    
+    const isDimmed = highlightedToken.value && highlightedToken.value !== '📊 其他代币'
+    
+    series.push({
+      name: `📊 其他代币 (${aggregatedCount.value}个)`,
+      type: 'line',
+      data: aggregatedData,
+      smooth: true,
+      symbol: 'none',
+      lineStyle: {
+        width: 2.5,
+        color: '#999',
+        type: 'dashed',
+        opacity: isDimmed ? 0.15 : 0.8
+      },
+      itemStyle: {
+        color: '#999',
+        opacity: isDimmed ? 0.15 : 0.8
+      },
+      emphasis: {
+        focus: 'series',
+        blurScope: 'coordinateSystem'
+      },
+      connectNulls: true,
+      z: 5 // 放在底层
+    })
+  }
+
+  // 智能 Y 轴配置：处理极端值
+  let yAxisConfig = {
+    type: isChangeMode ? 'value' : 'log',
+    logBase: 10,
+    position: 'left',
+    name: isChangeMode ? '24H 变化率 (%)' : '24H 交易量 (USD)',
+    nameLocation: 'end',
+    nameTextStyle: {
+      align: 'right',
+      padding: [0, 10, 0, 0]
+    },
+    axisLabel: {
+      formatter: isChangeMode ? '{value}%' : function(value) {
+        if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'B'
+        return '$' + value + 'M'
+      },
+      fontSize: 10,
+      color: '#666'
+    },
+    splitLine: {
+      lineStyle: {
+        type: 'dashed',
+        color: '#eee'
+      }
+    },
+    axisLine: {
+      show: false
+    }
+  }
+
+  // 变化率模式：限制 Y 轴范围防止极端值压缩视图
+  if (isChangeMode) {
+    yAxisConfig.max = 500  // 限制最大值为 500%
+    yAxisConfig.min = -100 // 限制最小值为 -100%
+  } else {
+    // 交易量模式：设置合理的范围，使用对数轴自动适应
+    yAxisConfig.min = 1 // 最小 10K
+    yAxisConfig.max = 10000 // 最小 10K
+    // 不设置 max，让 ECharts 自动计算
+  }
 
   return {
     tooltip: {
@@ -348,54 +540,99 @@ const chartOption = computed(() => {
           backgroundColor: '#6a7985'
         }
       },
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      borderColor: '#555',
+      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+      borderColor: '#667eea',
       borderWidth: 1,
       textStyle: {
         color: '#fff',
         fontSize: 12
       },
-      // 优化 Tooltip：排序并限制显示数量
+      extraCssText: 'max-height: 400px; overflow-y: auto;',
+      // 优化 Tooltip：排序、分组、限制显示
       formatter: function(params) {
-        // 按数值降序排序
-        const sortedParams = [...params].sort((a, b) => {
-          const valA = a.value !== null && a.value !== undefined ? a.value : -Infinity
-          const valB = b.value !== null && b.value !== undefined ? b.value : -Infinity
+        if (!params || params.length === 0) return ''
+        
+        // 分离焦点组和聚合组
+        const focusParams = []
+        let aggregatedParam = null
+        
+        params.forEach(param => {
+          if (param.seriesName.startsWith('📊')) {
+            aggregatedParam = param
+          } else {
+            focusParams.push(param)
+          }
+        })
+        
+        // 按数值降序排序焦点组
+        focusParams.sort((a, b) => {
+          const valA = a.value !== null && a.value !== undefined ? Math.abs(a.value) : -Infinity
+          const valB = b.value !== null && b.value !== undefined ? Math.abs(b.value) : -Infinity
           return valB - valA
         })
         
-        // 限制显示数量（最多 15 个）
-        const maxDisplay = 15
-        const displayParams = sortedParams.slice(0, maxDisplay)
-        const remaining = sortedParams.length - maxDisplay
+        // 限制显示数量
+        const maxDisplay = 10
+        const displayParams = focusParams.slice(0, maxDisplay)
+        const remaining = focusParams.length - maxDisplay
         
-        let result = `<div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid #555; padding-bottom: 5px;">${params[0].axisValue}</div>`
+        let result = `<div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid #667eea; padding-bottom: 5px; color: #fff;">${params[0].axisValue}</div>`
         
+        // 显示焦点组数据
         displayParams.forEach(param => {
-          if (param.value !== null && param.value !== undefined) {
-            let valueStr = ''
-            let colorStyle = ''
-            
-            if (isChangeMode) {
-              const val = param.value
+          let valueStr = ''
+          let colorStyle = ''
+          let statusIcon = ''
+          
+          if (param.value === null || param.value === undefined) {
+            valueStr = '无数据'
+            colorStyle = 'color: #666;'
+            statusIcon = '⚠️ '
+          } else if (isChangeMode) {
+            const val = param.value
+            // 标记被截断的极端值
+            if (val > 200) {
+              valueStr = `+${val.toFixed(1)}% 🔥`
+              colorStyle = 'color: #ff6b6b;'
+            } else if (val < -100) {
+              valueStr = `${val.toFixed(1)}% ❄️`
+              colorStyle = 'color: #4ecdc4;'
+            } else {
               const sign = val > 0 ? '+' : ''
               valueStr = `${sign}${val.toFixed(2)}%`
               if (val > 0) colorStyle = 'color: #ff6b6b;'
               else if (val < 0) colorStyle = 'color: #4ecdc4;'
+            }
+          } else {
+            if (param.value === 0) {
+              valueStr = '$0 (无交易)'
+              colorStyle = 'color: #888;'
             } else {
               valueStr = `$${param.value.toFixed(2)}M`
             }
-            
-            result += `<div style="margin: 3px 0; display: flex; align-items: center;">
-              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${param.color};margin-right:8px;"></span>
-              <span style="flex: 1; max-width: 100px; overflow: hidden; text-overflow: ellipsis;">${param.seriesName}</span>
-              <span style="font-weight: bold; margin-left: 10px; ${colorStyle}">${valueStr}</span>
-            </div>`
           }
+          
+          result += `<div style="margin: 4px 0; display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${param.color};flex-shrink:0;"></span>
+            <span style="flex: 1; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${statusIcon}${param.seriesName}</span>
+            <span style="font-weight: bold; ${colorStyle} text-align: right; min-width: 80px;">${valueStr}</span>
+          </div>`
         })
         
         if (remaining > 0) {
-          result += `<div style="margin-top: 5px; color: #999; font-size: 11px; text-align: center;">...还有 ${remaining} 个 Token</div>`
+          result += `<div style="margin: 5px 0; color: #888; font-size: 11px; text-align: center; border-top: 1px dashed #444; padding-top: 5px;">...还有 ${remaining} 个焦点 Token</div>`
+        }
+        
+        // 显示聚合组数据
+        if (aggregatedParam && aggregatedParam.value !== null) {
+          result += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #555;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display:inline-block;width:10px;height:2px;background-color:#999;flex-shrink:0;"></span>
+              <span style="flex: 1; color: #aaa;">${aggregatedParam.seriesName}</span>
+              <span style="font-weight: bold; color: #aaa;">${isChangeMode ? aggregatedParam.value.toFixed(2) + '%' : '$' + aggregatedParam.value.toFixed(2) + 'M'}</span>
+            </div>
+            <div style="font-size: 10px; color: #666; margin-top: 2px; padding-left: 18px;">中位数</div>
+          </div>`
         }
         
         return result
@@ -414,7 +651,9 @@ const chartOption = computed(() => {
       pageIconColor: '#667eea',
       pageTextStyle: {
         color: '#666'
-      }
+      },
+      // 点击图例时触发高亮
+      selected: {}
     },
     grid: {
       left: 60,
@@ -452,9 +691,9 @@ const chartOption = computed(() => {
         bottom: 20,
         borderColor: 'transparent',
         backgroundColor: '#f5f5f5',
-        fillerColor: 'rgba(25, 118, 210, 0.2)',
+        fillerColor: 'rgba(102, 126, 234, 0.2)',
         handleStyle: {
-          color: '#1976d2'
+          color: '#667eea'
         },
         textStyle: {
           fontSize: 11
@@ -477,31 +716,7 @@ const chartOption = computed(() => {
         }
       }
     },
-    yAxis: {
-      type: isChangeMode ? 'value' : 'log', // 变化率用线性轴，交易量用对数轴
-      logBase: 10,
-      position: 'left',
-      name: isChangeMode ? '24H 变化率 (%)' : '24H 交易量 (USD)',
-      nameLocation: 'end',
-      nameTextStyle: {
-        align: 'right',
-        padding: [0, 10, 0, 0]
-      },
-      axisLabel: {
-        formatter: isChangeMode ? '{value}%' : '${value}M',
-        fontSize: 10,
-        color: '#666'
-      },
-      splitLine: {
-        lineStyle: {
-          type: 'dashed',
-          color: '#eee'
-        }
-      },
-      axisLine: {
-        show: false
-      }
-    },
+    yAxis: yAxisConfig,
     series: series
   }
 })
@@ -641,8 +856,8 @@ onMounted(() => {
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-label">已选代币</span>
-          <span class="stat-value highlight">{{ selectedTokens.length }} / {{ availableTokens.length }}</span>
+          <span class="stat-label">焦点/聚合</span>
+          <span class="stat-value highlight">{{ focusGroupTokens.length }} + {{ aggregatedCount }}</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item" v-if="isPerformanceMode">
@@ -727,6 +942,35 @@ onMounted(() => {
 
       <div class="filter-divider"></div>
 
+      <!-- 焦点组数量控制 -->
+      <div class="filter-item">
+        <span class="filter-label">焦点显示</span>
+        <div class="focus-control">
+          <input 
+            type="range" 
+            v-model.number="focusCount"
+            min="3"
+            max="30"
+            step="1"
+            class="focus-slider"
+          >
+          <span class="focus-value">Top {{ focusCount }}</span>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <!-- 聚合线开关 -->
+      <div class="filter-item">
+        <label class="toggle-switch">
+          <input type="checkbox" v-model="showAggregatedLine">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="filter-label" style="margin-left: 8px;">显示聚合线</span>
+      </div>
+
+      <div class="filter-divider"></div>
+
       <!-- 平台过滤 -->
       <div class="filter-item platforms">
         <span class="filter-label">
@@ -780,26 +1024,87 @@ onMounted(() => {
             class="search-input"
           >
           <select v-model="sortBy" class="sort-select">
-            <option value="hotness">按热度 (推荐)</option>
+            <option value="auto">自动排序 (推荐)</option>
             <option value="volume">按交易量</option>
-            <option value="name">按名称</option>
             <option value="change">按涨跌幅</option>
+            <option value="hotness">按热度</option>
+            <option value="name">按名称</option>
           </select>
+          
+          <!-- Range 选择器 -->
+          <div class="range-selector">
+            <div class="range-label">
+              <span>排名范围</span>
+              <span class="range-value">{{ tokenRangeStart }} - {{ tokenRangeEnd }} / {{ totalTokenCount }}</span>
+            </div>
+            <div class="range-sliders">
+              <div class="range-slider-group">
+                <label>起始:</label>
+                <input 
+                  type="range" 
+                  v-model.number="tokenRangeStart"
+                  :min="1"
+                  :max="Math.min(tokenRangeEnd, totalTokenCount)"
+                  class="range-slider"
+                >
+                <span class="range-num">{{ tokenRangeStart }}</span>
+              </div>
+              <div class="range-slider-group">
+                <label>结束:</label>
+                <input 
+                  type="range" 
+                  v-model.number="tokenRangeEnd"
+                  :min="tokenRangeStart"
+                  :max="Math.min(199, totalTokenCount)"
+                  class="range-slider"
+                >
+                <span class="range-num">{{ tokenRangeEnd }}</span>
+              </div>
+            </div>
+            <div class="range-presets">
+              <button @click="tokenRangeStart = 1; tokenRangeEnd = 20" class="range-preset-btn">1-20</button>
+              <button @click="tokenRangeStart = 1; tokenRangeEnd = 50" class="range-preset-btn">1-50</button>
+              <button @click="tokenRangeStart = 1; tokenRangeEnd = 100" class="range-preset-btn">1-100</button>
+              <button @click="tokenRangeStart = 50; tokenRangeEnd = 100" class="range-preset-btn">50-100</button>
+              <button @click="tokenRangeStart = 100; tokenRangeEnd = Math.min(199, totalTokenCount)" class="range-preset-btn">100+</button>
+            </div>
+          </div>
         </div>
 
         <div class="token-list">
           <div 
-            v-for="token in filteredTokensWithInfo" 
+            v-for="(token, index) in filteredTokensWithInfo" 
             :key="token.symbol"
             class="token-item"
-            :class="{ selected: selectedTokens.includes(token.symbol) }"
+            :class="{ 
+              selected: selectedTokens.includes(token.symbol),
+              'in-focus': focusGroupTokens.includes(token.symbol),
+              'in-aggregated': aggregatedGroupTokens.includes(token.symbol),
+              highlighted: highlightedToken === token.symbol
+            }"
             @click="toggleToken(token.symbol)"
+            @mouseenter="highlightedToken = token.symbol"
+            @mouseleave="highlightedToken = null"
           >
             <div class="token-main">
               <span class="token-checkbox">
                 {{ selectedTokens.includes(token.symbol) ? '☑' : '☐' }}
               </span>
               <span class="token-symbol">{{ token.symbol }}</span>
+              <span 
+                v-if="focusGroupTokens.includes(token.symbol)" 
+                class="token-badge focus"
+                :title="`焦点组 #${selectedTokens.indexOf(token.symbol) + 1}`"
+              >
+                #{{ selectedTokens.indexOf(token.symbol) + 1 }}
+              </span>
+              <span 
+                v-else-if="aggregatedGroupTokens.includes(token.symbol)" 
+                class="token-badge aggregated"
+                title="已聚合到'其他代币'线"
+              >
+                聚合
+              </span>
             </div>
             <div class="token-info">
               <span class="token-volume">{{ formatVolume(token.latestVolume) }}</span>
@@ -1029,6 +1334,71 @@ onMounted(() => {
   min-width: 50px;
 }
 
+/* 焦点组数量控制 */
+.focus-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.focus-slider {
+  width: 100px;
+  accent-color: #667eea;
+}
+
+.focus-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #667eea;
+  min-width: 55px;
+}
+
+/* 开关样式 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 20px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #667eea;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(16px);
+}
+
 .filter-divider {
   width: 1px;
   height: 40px;
@@ -1181,7 +1551,7 @@ onMounted(() => {
   padding: 8px 15px;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .token-item:hover {
@@ -1189,8 +1559,26 @@ onMounted(() => {
 }
 
 .token-item.selected {
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: rgba(102, 126, 234, 0.08);
   border-left: 3px solid #667eea;
+}
+
+/* 焦点组样式 */
+.token-item.in-focus {
+  background-color: rgba(102, 126, 234, 0.12);
+  border-left: 3px solid #667eea;
+}
+
+/* 聚合组样式 */
+.token-item.in-aggregated {
+  background-color: rgba(153, 153, 153, 0.08);
+  border-left: 3px solid #999;
+}
+
+/* 高亮状态 */
+.token-item.highlighted {
+  background-color: rgba(102, 126, 234, 0.2);
+  box-shadow: inset 0 0 0 2px #667eea;
 }
 
 .token-main {
@@ -1209,6 +1597,26 @@ onMounted(() => {
   font-weight: 600;
   font-size: 13px;
   color: var(--text-color);
+  flex: 1;
+}
+
+/* Token 徽章 */
+.token-badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 8px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.token-badge.focus {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.token-badge.aggregated {
+  background-color: #e0e0e0;
+  color: #666;
 }
 
 .token-info {
