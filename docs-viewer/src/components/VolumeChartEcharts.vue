@@ -117,8 +117,6 @@ const searchQuery = ref('') // 搜索关键词
 const sortBy = ref('auto') // 排序方式: auto (根据图表模式自动), hotness, volume, name, change
 const showTokenSelector = ref(true) // 是否显示 Token 选择器
 const chartMode = ref('volume') // 图表模式: 'volume' (交易量), 'change' (变化率)
-const showAggregatedLine = ref(true) // 是否显示"其他代币"聚合线
-const focusCount = ref(10) // 焦点组显示的 Token 数量
 const highlightedToken = ref(null) // 当前高亮的 Token
 const tokenRangeStart = ref(1) // Token 范围起始
 const tokenRangeEnd = ref(50) // Token 范围结束
@@ -315,72 +313,6 @@ const calculateDailyChange = (volumes) => {
   return changes
 }
 
-// 计算聚合线数据（市场平均）
-const calculateAggregatedLine = (tokensData, excludeSymbols, start, end, isChangeMode) => {
-  if (!tokensData || tokensData.length === 0) return []
-  
-  // 过滤掉焦点组的 Token
-  const otherTokens = tokensData.filter(t => !excludeSymbols.includes(t.symbol))
-  if (otherTokens.length === 0) return []
-  
-  const dateCount = end - start + 1
-  const aggregated = []
-  
-  for (let i = 0; i < dateCount; i++) {
-    const dayIndex = start + i
-    let validValues = []
-    
-    otherTokens.forEach(token => {
-      let value
-      if (isChangeMode) {
-        const changes = calculateDailyChange(token.volumes)
-        value = changes[dayIndex]
-      } else {
-        value = token.volumes[dayIndex]
-      }
-      
-      if (value !== null && value !== undefined && !isNaN(value)) {
-        validValues.push(value)
-      }
-    })
-    
-    if (validValues.length > 0) {
-      // 使用中位数而非平均值，更能抵抗极端值
-      validValues.sort((a, b) => a - b)
-      const mid = Math.floor(validValues.length / 2)
-      const median = validValues.length % 2 !== 0 
-        ? validValues[mid] 
-        : (validValues[mid - 1] + validValues[mid]) / 2
-      aggregated.push(median)
-    } else {
-      aggregated.push(null)
-    }
-  }
-  
-  return aggregated
-}
-
-// 检查 Token 数据稀疏度（有效数据占比）
-const getDataDensity = (volumes) => {
-  if (!volumes || volumes.length === 0) return 0
-  const validCount = volumes.filter(v => v !== null && v !== undefined && v > 0).length
-  return validCount / volumes.length
-}
-
-// 获取焦点组 Token（显示独立线条的）
-const focusGroupTokens = computed(() => {
-  return selectedTokens.value.slice(0, focusCount.value)
-})
-
-// 获取聚合组 Token（合并为"其他"线的）
-const aggregatedGroupTokens = computed(() => {
-  return selectedTokens.value.slice(focusCount.value)
-})
-
-// 聚合组的 Token 数量
-const aggregatedCount = computed(() => {
-  return aggregatedGroupTokens.value.length
-})
 
 // ECharts 配置选项
 const chartOption = computed(() => {
@@ -407,8 +339,8 @@ const chartOption = computed(() => {
   const end = endDateIndex.value || allDates.value.length - 1
   const isChangeMode = chartMode.value === 'change'
 
-  // 构建焦点组的 series
-  const series = focusGroupTokens.value.map((token, index) => {
+  // 构建 series - 显示所有选中的 Token
+  const series = selectedTokens.value.map((token, index) => {
     const tokenInfo = tokenInfoCache.value.find(t => t.symbol === token)
     if (!tokenInfo) return null
     
@@ -452,43 +384,6 @@ const chartOption = computed(() => {
       connectNulls: !isChangeMode
     }
   }).filter(Boolean)
-
-  // 添加聚合组的"其他代币"线
-  if (showAggregatedLine.value && aggregatedCount.value > 0) {
-    const aggregatedData = calculateAggregatedLine(
-      tokenInfoCache.value.filter(t => aggregatedGroupTokens.value.includes(t.symbol)),
-      [], // 不排除任何 token，因为已经筛选过了
-      start,
-      end,
-      isChangeMode
-    )
-    
-    const isDimmed = highlightedToken.value && highlightedToken.value !== '📊 其他代币'
-    
-    series.push({
-      name: `📊 其他代币 (${aggregatedCount.value}个)`,
-      type: 'line',
-      data: aggregatedData,
-      smooth: true,
-      symbol: 'none',
-      lineStyle: {
-        width: 2.5,
-        color: '#999',
-        type: 'dashed',
-        opacity: isDimmed ? 0.15 : 0.8
-      },
-      itemStyle: {
-        color: '#999',
-        opacity: isDimmed ? 0.15 : 0.8
-      },
-      emphasis: {
-        focus: 'series',
-        blurScope: 'coordinateSystem'
-      },
-      connectNulls: true,
-      z: 5 // 放在底层
-    })
-  }
 
   // 智能 Y 轴配置：处理极端值
   let yAxisConfig = {
@@ -548,37 +443,24 @@ const chartOption = computed(() => {
         fontSize: 12
       },
       extraCssText: 'max-height: 400px; overflow-y: auto;',
-      // 优化 Tooltip：排序、分组、限制显示
+      // 优化 Tooltip：排序、限制显示
       formatter: function(params) {
         if (!params || params.length === 0) return ''
         
-        // 分离焦点组和聚合组
-        const focusParams = []
-        let aggregatedParam = null
-        
-        params.forEach(param => {
-          if (param.seriesName.startsWith('📊')) {
-            aggregatedParam = param
-          } else {
-            focusParams.push(param)
-          }
-        })
-        
-        // 按数值降序排序焦点组
-        focusParams.sort((a, b) => {
+        // 按数值降序排序
+        const sortedParams = [...params].sort((a, b) => {
           const valA = a.value !== null && a.value !== undefined ? Math.abs(a.value) : -Infinity
           const valB = b.value !== null && b.value !== undefined ? Math.abs(b.value) : -Infinity
           return valB - valA
         })
         
         // 限制显示数量
-        const maxDisplay = 10
-        const displayParams = focusParams.slice(0, maxDisplay)
-        const remaining = focusParams.length - maxDisplay
+        const maxDisplay = 15
+        const displayParams = sortedParams.slice(0, maxDisplay)
+        const remaining = sortedParams.length - maxDisplay
         
         let result = `<div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid #667eea; padding-bottom: 5px; color: #fff;">${params[0].axisValue}</div>`
         
-        // 显示焦点组数据
         displayParams.forEach(param => {
           let valueStr = ''
           let colorStyle = ''
@@ -590,7 +472,6 @@ const chartOption = computed(() => {
             statusIcon = '⚠️ '
           } else if (isChangeMode) {
             const val = param.value
-            // 标记被截断的极端值
             if (val > 200) {
               valueStr = `+${val.toFixed(1)}% 🔥`
               colorStyle = 'color: #ff6b6b;'
@@ -620,19 +501,7 @@ const chartOption = computed(() => {
         })
         
         if (remaining > 0) {
-          result += `<div style="margin: 5px 0; color: #888; font-size: 11px; text-align: center; border-top: 1px dashed #444; padding-top: 5px;">...还有 ${remaining} 个焦点 Token</div>`
-        }
-        
-        // 显示聚合组数据
-        if (aggregatedParam && aggregatedParam.value !== null) {
-          result += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #555;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="display:inline-block;width:10px;height:2px;background-color:#999;flex-shrink:0;"></span>
-              <span style="flex: 1; color: #aaa;">${aggregatedParam.seriesName}</span>
-              <span style="font-weight: bold; color: #aaa;">${isChangeMode ? aggregatedParam.value.toFixed(2) + '%' : '$' + aggregatedParam.value.toFixed(2) + 'M'}</span>
-            </div>
-            <div style="font-size: 10px; color: #666; margin-top: 2px; padding-left: 18px;">中位数</div>
-          </div>`
+          result += `<div style="margin: 5px 0; color: #888; font-size: 11px; text-align: center; border-top: 1px dashed #444; padding-top: 5px;">...还有 ${remaining} 个 Token</div>`
         }
         
         return result
@@ -641,23 +510,29 @@ const chartOption = computed(() => {
     legend: {
       show: true,
       type: 'scroll',
-      top: 0,
-      left: 60,
-      right: showTokenSelector.value ? 280 : 20,
+      orient: 'vertical',
+      right: 10,
+      top: 40,
+      bottom: 80,
+      width: 120,
       textStyle: {
         color: '#666',
-        fontSize: 11
+        fontSize: 11,
+        overflow: 'truncate',
+        width: 80
       },
       pageIconColor: '#667eea',
       pageTextStyle: {
         color: '#666'
       },
-      // 点击图例时触发高亮
+      tooltip: {
+        show: true
+      },
       selected: {}
     },
     grid: {
       left: 60,
-      right: showTokenSelector.value ? 280 : 20,
+      right: 150,
       bottom: 80,
       top: 40,
       containLabel: false
@@ -674,8 +549,8 @@ const chartOption = computed(() => {
           title: '保存图片'
         }
       },
-      right: showTokenSelector.value ? 290 : 30,
-      top: 0
+      right: 140,
+      top: 5
     },
     dataZoom: [
       {
@@ -738,6 +613,11 @@ const selectTopN = (n) => {
 
 // 选择所有符合条件的 token
 const selectAllTokens = () => {
+  selectedTokens.value = [...availableTokens.value]
+}
+
+// 应用排名范围选择（自动选中范围内的所有 Token）
+const applyRangeSelection = () => {
   selectedTokens.value = [...availableTokens.value]
 }
 
@@ -815,6 +695,12 @@ watch(debouncedMinVolume, () => {
   )
 })
 
+// 监听排名范围变化，自动选中范围内的 Token
+watch([() => tokenRangeStart.value, () => tokenRangeEnd.value], () => {
+  // 自动选中范围内的所有 Token
+  selectedTokens.value = [...availableTokens.value]
+})
+
 // 初始化时默认选择 BSC 和 Base 链，仅选中 Top 10
 onMounted(() => {
   // 默认选择 BSC 和 Base 平台
@@ -856,8 +742,8 @@ onMounted(() => {
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-label">焦点/聚合</span>
-          <span class="stat-value highlight">{{ focusGroupTokens.length }} + {{ aggregatedCount }}</span>
+          <span class="stat-label">已选代币</span>
+          <span class="stat-value highlight">{{ selectedTokens.length }} 个</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item" v-if="isPerformanceMode">
@@ -942,35 +828,6 @@ onMounted(() => {
 
       <div class="filter-divider"></div>
 
-      <!-- 焦点组数量控制 -->
-      <div class="filter-item">
-        <span class="filter-label">焦点显示</span>
-        <div class="focus-control">
-          <input 
-            type="range" 
-            v-model.number="focusCount"
-            min="3"
-            max="30"
-            step="1"
-            class="focus-slider"
-          >
-          <span class="focus-value">Top {{ focusCount }}</span>
-        </div>
-      </div>
-
-      <div class="filter-divider"></div>
-
-      <!-- 聚合线开关 -->
-      <div class="filter-item">
-        <label class="toggle-switch">
-          <input type="checkbox" v-model="showAggregatedLine">
-          <span class="toggle-slider"></span>
-        </label>
-        <span class="filter-label" style="margin-left: 8px;">显示聚合线</span>
-      </div>
-
-      <div class="filter-divider"></div>
-
       <!-- 平台过滤 -->
       <div class="filter-item platforms">
         <span class="filter-label">
@@ -1009,65 +866,66 @@ onMounted(() => {
         <div class="sidebar-header">
           <h3>Token 列表</h3>
           <div class="quick-actions">
-            <button @click="selectTopN(10)" class="action-btn" title="选择 Top 10">Top 10</button>
-            <button @click="selectTopN(20)" class="action-btn" title="选择 Top 20">Top 20</button>
-            <button @click="selectAllTokens" class="action-btn" title="全选">全选</button>
+            <button @click="selectAllTokens" class="action-btn" title="全选当前范围">全选</button>
             <button @click="clearSelection" class="action-btn clear" title="清空">清空</button>
           </div>
         </div>
         
         <div class="sidebar-controls">
-          <input 
-            type="text"
-            v-model="searchQuery"
-            placeholder="搜索 Token..."
-            class="search-input"
-          >
-          <select v-model="sortBy" class="sort-select">
-            <option value="auto">自动排序 (推荐)</option>
-            <option value="volume">按交易量</option>
-            <option value="change">按涨跌幅</option>
-            <option value="hotness">按热度</option>
-            <option value="name">按名称</option>
-          </select>
-          
-          <!-- Range 选择器 -->
+          <!-- 排名范围选择器 - 双点滑块 -->
           <div class="range-selector">
-            <div class="range-label">
-              <span>排名范围</span>
-              <span class="range-value">{{ tokenRangeStart }} - {{ tokenRangeEnd }} / {{ totalTokenCount }}</span>
+            <div class="range-header">
+              <span class="range-title">排名范围</span>
+              <span class="range-value-display">{{ tokenRangeStart }} - {{ tokenRangeEnd }} / {{ totalTokenCount }}</span>
             </div>
-            <div class="range-sliders">
-              <div class="range-slider-group">
-                <label>起始:</label>
-                <input 
-                  type="range" 
-                  v-model.number="tokenRangeStart"
-                  :min="1"
-                  :max="Math.min(tokenRangeEnd, totalTokenCount)"
-                  class="range-slider"
-                >
-                <span class="range-num">{{ tokenRangeStart }}</span>
+            <div class="dual-range-slider">
+              <div class="range-track">
+                <div 
+                  class="range-fill" 
+                  :style="{
+                    left: ((tokenRangeStart - 1) / Math.max(totalTokenCount - 1, 1)) * 100 + '%',
+                    width: ((tokenRangeEnd - tokenRangeStart) / Math.max(totalTokenCount - 1, 1)) * 100 + '%'
+                  }"
+                ></div>
               </div>
-              <div class="range-slider-group">
-                <label>结束:</label>
-                <input 
-                  type="range" 
-                  v-model.number="tokenRangeEnd"
-                  :min="tokenRangeStart"
-                  :max="Math.min(199, totalTokenCount)"
-                  class="range-slider"
-                >
-                <span class="range-num">{{ tokenRangeEnd }}</span>
-              </div>
+              <input 
+                type="range" 
+                v-model.number="tokenRangeStart"
+                :min="1"
+                :max="Math.max(tokenRangeEnd - 1, 1)"
+                class="range-input range-start"
+              >
+              <input 
+                type="range" 
+                v-model.number="tokenRangeEnd"
+                :min="tokenRangeStart + 1"
+                :max="Math.min(200, totalTokenCount)"
+                class="range-input range-end"
+              >
             </div>
             <div class="range-presets">
-              <button @click="tokenRangeStart = 1; tokenRangeEnd = 20" class="range-preset-btn">1-20</button>
-              <button @click="tokenRangeStart = 1; tokenRangeEnd = 50" class="range-preset-btn">1-50</button>
-              <button @click="tokenRangeStart = 1; tokenRangeEnd = 100" class="range-preset-btn">1-100</button>
-              <button @click="tokenRangeStart = 50; tokenRangeEnd = 100" class="range-preset-btn">50-100</button>
-              <button @click="tokenRangeStart = 100; tokenRangeEnd = Math.min(199, totalTokenCount)" class="range-preset-btn">100+</button>
+              <button @click="tokenRangeStart = 1; tokenRangeEnd = 20; applyRangeSelection()" class="range-preset-btn" :class="{ active: tokenRangeStart === 1 && tokenRangeEnd === 20 }">1-20</button>
+              <button @click="tokenRangeStart = 1; tokenRangeEnd = 50; applyRangeSelection()" class="range-preset-btn" :class="{ active: tokenRangeStart === 1 && tokenRangeEnd === 50 }">1-50</button>
+              <button @click="tokenRangeStart = 1; tokenRangeEnd = 100; applyRangeSelection()" class="range-preset-btn" :class="{ active: tokenRangeStart === 1 && tokenRangeEnd === 100 }">1-100</button>
+              <button @click="tokenRangeStart = 50; tokenRangeEnd = 100; applyRangeSelection()" class="range-preset-btn" :class="{ active: tokenRangeStart === 50 && tokenRangeEnd === 100 }">50-100</button>
+              <button @click="tokenRangeStart = 100; tokenRangeEnd = Math.min(200, totalTokenCount); applyRangeSelection()" class="range-preset-btn" :class="{ active: tokenRangeStart === 100 }">100+</button>
             </div>
+          </div>
+          
+          <div class="controls-row">
+            <input 
+              type="text"
+              v-model="searchQuery"
+              placeholder="搜索 Token..."
+              class="search-input"
+            >
+            <select v-model="sortBy" class="sort-select">
+              <option value="auto">自动排序</option>
+              <option value="volume">按交易量</option>
+              <option value="change">按涨跌幅</option>
+              <option value="hotness">按热度</option>
+              <option value="name">按名称</option>
+            </select>
           </div>
         </div>
 
@@ -1078,8 +936,6 @@ onMounted(() => {
             class="token-item"
             :class="{ 
               selected: selectedTokens.includes(token.symbol),
-              'in-focus': focusGroupTokens.includes(token.symbol),
-              'in-aggregated': aggregatedGroupTokens.includes(token.symbol),
               highlighted: highlightedToken === token.symbol
             }"
             @click="toggleToken(token.symbol)"
@@ -1090,21 +946,8 @@ onMounted(() => {
               <span class="token-checkbox">
                 {{ selectedTokens.includes(token.symbol) ? '☑' : '☐' }}
               </span>
+              <span class="token-rank">#{{ tokenRangeStart + index }}</span>
               <span class="token-symbol">{{ token.symbol }}</span>
-              <span 
-                v-if="focusGroupTokens.includes(token.symbol)" 
-                class="token-badge focus"
-                :title="`焦点组 #${selectedTokens.indexOf(token.symbol) + 1}`"
-              >
-                #{{ selectedTokens.indexOf(token.symbol) + 1 }}
-              </span>
-              <span 
-                v-else-if="aggregatedGroupTokens.includes(token.symbol)" 
-                class="token-badge aggregated"
-                title="已聚合到'其他代币'线"
-              >
-                聚合
-              </span>
             </div>
             <div class="token-info">
               <span class="token-volume">{{ formatVolume(token.latestVolume) }}</span>
@@ -1334,70 +1177,6 @@ onMounted(() => {
   min-width: 50px;
 }
 
-/* 焦点组数量控制 */
-.focus-control {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.focus-slider {
-  width: 100px;
-  accent-color: #667eea;
-}
-
-.focus-value {
-  font-size: 12px;
-  font-weight: 600;
-  color: #667eea;
-  min-width: 55px;
-}
-
-/* 开关样式 */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.3s;
-  border-radius: 20px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background-color: #667eea;
-}
-
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(16px);
-}
 
 .filter-divider {
   width: 1px;
@@ -1541,6 +1320,149 @@ onMounted(() => {
   font-size: 12px;
 }
 
+/* 控制行 */
+.controls-row {
+  display: flex;
+  gap: 8px;
+}
+
+.controls-row .search-input {
+  flex: 1;
+}
+
+.controls-row .sort-select {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+/* 排名范围选择器 */
+.range-selector {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.range-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.range-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.range-value-display {
+  font-size: 12px;
+  font-weight: 600;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* 双点滑块容器 */
+.dual-range-slider {
+  position: relative;
+  height: 24px;
+  margin-bottom: 12px;
+}
+
+.range-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+
+.range-fill {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+}
+
+.range-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  margin: 0;
+}
+
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #667eea;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.range-input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #667eea;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* 预设按钮 */
+.range-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.range-preset-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  color: var(--text-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.range-preset-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.range-preset-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
 .token-list {
   flex: 1;
   overflow-y: auto;
@@ -1563,18 +1485,6 @@ onMounted(() => {
   border-left: 3px solid #667eea;
 }
 
-/* 焦点组样式 */
-.token-item.in-focus {
-  background-color: rgba(102, 126, 234, 0.12);
-  border-left: 3px solid #667eea;
-}
-
-/* 聚合组样式 */
-.token-item.in-aggregated {
-  background-color: rgba(153, 153, 153, 0.08);
-  border-left: 3px solid #999;
-}
-
 /* 高亮状态 */
 .token-item.highlighted {
   background-color: rgba(102, 126, 234, 0.2);
@@ -1593,30 +1503,17 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.token-rank {
+  font-size: 10px;
+  color: #999;
+  min-width: 28px;
+}
+
 .token-symbol {
   font-weight: 600;
   font-size: 13px;
   color: var(--text-color);
   flex: 1;
-}
-
-/* Token 徽章 */
-.token-badge {
-  font-size: 9px;
-  padding: 2px 5px;
-  border-radius: 8px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.token-badge.focus {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.token-badge.aggregated {
-  background-color: #e0e0e0;
-  color: #666;
 }
 
 .token-info {

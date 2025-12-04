@@ -58,8 +58,17 @@ async def monitor_volume_changes(crypto_list, threshold=50.0, debug_only=False):
         
         if triggered:
             # 使用更简洁的格式，一行显示
-            alert_line = f"【{symbol}】{name}: " + " | ".join(triggered)
-            alerts.append(alert_line)
+            # 获取24h变化率用于排序
+            alert_info = {
+                "line": f"【{symbol}】{name}: " + " | ".join(triggered),
+                "change_24h": changes.get("24h", 0)
+            }
+            alerts.append(alert_info)
+    
+    # 按24h变化率排序：先涨后跌（从最高正值到最低负值）
+    alerts.sort(key=lambda x: x["change_24h"], reverse=True)
+    # 提取排序后的告警文本
+    alerts = [a["line"] for a in alerts]
             
     if alerts:
         print(f"发现 {len(alerts)} 个交易量异动项目，准备发送警报...")
@@ -144,4 +153,5 @@ async def get_volume_statistics(crypto_list):
         "top_losers": volume_changes[-10:][::-1] if volume_changes else [],
         "average_change": sum(v["change_24h"] for v in volume_changes) / len(volume_changes) if volume_changes else 0
     }
+
 
