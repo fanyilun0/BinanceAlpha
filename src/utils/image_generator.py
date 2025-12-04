@@ -151,6 +151,89 @@ def _apply_cell_colors(df: pd.DataFrame, highlight_top_vol_mc: bool = False) -> 
     return cell_colors
 
 
+def _compress_image_to_limit(image_path: str, max_size_bytes: int = 2 * 1024 * 1024) -> str:
+    """
+    压缩图片使其大小不超过指定限制
+    
+    Args:
+        image_path: 原始图片路径
+        max_size_bytes: 最大文件大小（字节），默认2MB
+        
+    Returns:
+        str: 压缩后的图片路径（可能是原路径或新路径）
+    """
+    from PIL import Image
+    
+    # 检查当前文件大小
+    current_size = os.path.getsize(image_path)
+    
+    if current_size <= max_size_bytes:
+        return image_path
+    
+    print(f"图片大小 {current_size / 1024 / 1024:.2f}MB 超过限制 {max_size_bytes / 1024 / 1024:.2f}MB，正在压缩...")
+    
+    # 打开图片
+    img = Image.open(image_path)
+    
+    # 转换为RGB模式（如果是RGBA，去除alpha通道以便保存为JPEG）
+    if img.mode == 'RGBA':
+        # 创建白色背景
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[3])  # 使用alpha通道作为mask
+        img = background
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+    
+    # 生成压缩后的文件路径（使用JPEG格式）
+    compressed_path = image_path.replace('.png', '_compressed.jpg')
+    
+    # 尝试不同的质量级别进行压缩
+    quality = 85
+    while quality >= 30:
+        img.save(compressed_path, 'JPEG', quality=quality, optimize=True)
+        new_size = os.path.getsize(compressed_path)
+        
+        if new_size <= max_size_bytes:
+            print(f"压缩成功！质量: {quality}%, 新大小: {new_size / 1024 / 1024:.2f}MB")
+            # 删除原始PNG文件，用压缩后的文件替换
+            os.remove(image_path)
+            # 重命名为原始文件名（但扩展名改为.jpg）
+            final_path = image_path.replace('.png', '.jpg')
+            os.rename(compressed_path, final_path)
+            return final_path
+        
+        quality -= 10
+    
+    # 如果质量压缩不够，尝试缩小尺寸
+    print(f"质量压缩不足，尝试缩小图片尺寸...")
+    scale = 0.9
+    while scale >= 0.5:
+        new_width = int(img.width * scale)
+        new_height = int(img.height * scale)
+        resized_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        resized_img.save(compressed_path, 'JPEG', quality=75, optimize=True)
+        new_size = os.path.getsize(compressed_path)
+        
+        if new_size <= max_size_bytes:
+            print(f"缩放压缩成功！缩放比例: {scale:.1f}, 新大小: {new_size / 1024 / 1024:.2f}MB")
+            os.remove(image_path)
+            final_path = image_path.replace('.png', '.jpg')
+            os.rename(compressed_path, final_path)
+            return final_path
+        
+        scale -= 0.1
+    
+    # 最后的备选方案：使用最小设置
+    print(f"使用最小设置进行压缩...")
+    resized_img = img.resize((int(img.width * 0.5), int(img.height * 0.5)), Image.Resampling.LANCZOS)
+    resized_img.save(compressed_path, 'JPEG', quality=50, optimize=True)
+    os.remove(image_path)
+    final_path = image_path.replace('.png', '.jpg')
+    os.rename(compressed_path, final_path)
+    print(f"最终压缩完成，大小: {os.path.getsize(final_path) / 1024 / 1024:.2f}MB")
+    return final_path
+
+
 def create_base_image_options(
     data: List[Dict[str, Any]], 
     title: str,
@@ -230,11 +313,14 @@ def create_base_image_options(
         cell.set_text_props(weight='bold', color='white')
         cell.set_facecolor(header_color)
     
-    # 保存图片
+    # 保存图片 - 降低DPI以减少文件大小
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     image_path = os.path.join(image_dir, f"{filename_prefix}_{timestamp}.png")
-    plt.savefig(image_path, bbox_inches='tight', dpi=210, pad_inches=0)
+    plt.savefig(image_path, bbox_inches='tight', dpi=150, pad_inches=0)
     plt.close()
+    
+    # 压缩图片确保不超过2MB（企业微信限制）
+    image_path = _compress_image_to_limit(image_path, max_size_bytes=2 * 1024 * 1024)
     
     # 返回图片路径和base64编码
     with open(image_path, "rb") as img_file:

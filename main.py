@@ -24,6 +24,7 @@ from src.utils.image_generator import (
     create_top_vol_mc_ratio_image,
     create_gainers_losers_image
 )
+from src.utils.volume_monitor import monitor_volume_changes
 
 
 # 配置日志
@@ -639,59 +640,6 @@ async def generate_investment_advice(prepared_data, debug_only=False):
     return len(results) > 0
 
 
-async def monitor_volume_changes(crypto_list, threshold=50.0):
-    """监控交易量变化并发送警报
-    
-    Args:
-        crypto_list: 加密货币项目列表
-        threshold: 变化阈值（百分比）
-    """
-    print(f"=== 监控交易量变化 (阈值: {threshold}%) ===\n")
-    
-    alerts = []
-    
-    for crypto in crypto_list:
-        symbol = crypto.get("symbol", "Unknown")
-        name = crypto.get("name", "Unknown")
-        
-        # 获取USD报价
-        quotes = crypto.get("quotes", [])
-        usd_quote = next((q for q in quotes if q.get("name") == "USD"), {})
-        if not usd_quote and len(quotes) > 2:
-            usd_quote = quotes[2]
-            
-        # 检查各个时间段的变化
-        # API主要返回 volumePercentChange (24h)
-        vol_change_24h = usd_quote.get("volumePercentChange", 0)
-        if vol_change_24h == 0:
-            vol_change_24h = usd_quote.get("volumeChange24h", 0)
-            
-        changes = {
-            "24h": vol_change_24h,
-            "7d": usd_quote.get("volumeChange7d", 0),
-            "30d": usd_quote.get("volumeChange30d", 0)
-        }
-        
-        triggered = []
-        for period, change in changes.items():
-            if abs(change) >= threshold:
-                triggered.append(f"{period}: {change:.2f}%")
-        
-        if triggered:
-            alerts.append(f"🚨 **{name} ({symbol})** 交易量异动:\n" + "\n".join([f"- {t}" for t in triggered]))
-            
-    if alerts:
-        print(f"发现 {len(alerts)} 个交易量异动项目，准备发送警报...")
-        message = f"# 📊 交易量异动监控 (阈值 > {threshold}%)\n\n" + "\n\n".join(alerts)
-        
-        # 发送消息
-        from webhook import send_message_async
-        await send_message_async(message)
-        print("交易量异动警报已发送")
-    else:
-        print("未发现超过阈值的交易量变化")
-
-
 async def get_alpha_investment_advice(prepared_data=None, debug_only=False):
     """获取基于当天币安Alpha数据的AI投资建议，按不同区块链平台分类
     
@@ -707,8 +655,14 @@ async def get_alpha_investment_advice(prepared_data=None, debug_only=False):
     return await generate_investment_advice(prepared_data, debug_only)
 
 
-async def run_workflow(debug_only=False, AI_needed=True):
-    """运行完整工作流：图片生成 + AI投资分析"""
+async def run_workflow(debug_only=False, AI_needed=True, volume_monitor=True):
+    """运行完整工作流：图片生成 + AI投资分析
+    
+    Args:
+        debug_only: 是否仅调试模式（不发送消息）
+        AI_needed: 是否需要AI投资分析
+        volume_monitor: 是否启用交易量监控（默认开启）
+    """
     try:
         # 步骤1: 获取并更新Binance交易对列表
         print("步骤1: 获取并更新Binance交易对列表...\n")
@@ -731,13 +685,15 @@ async def run_workflow(debug_only=False, AI_needed=True):
         prepared_data = await prepare_platform_data(alpha_data, listed_tokens)
 
         # 步骤3: 监控交易量变化
+        # debug_only 模式下始终启用交易量监控（用于调试）
         print("\n步骤3: 监控交易量变化...\n")
-        if not debug_only:
-            await monitor_volume_changes(alpha_data.get("data", {}).get("cryptoCurrencyList", []))
+        if volume_monitor or debug_only:
+            await monitor_volume_changes(
+                alpha_data.get("data", {}).get("cryptoCurrencyList", []),
+                debug_only=debug_only
+            )
         else:
-            print("Debug模式：跳过交易量监控警报发送")
-            # 在debug模式下也运行一下逻辑，但不发送
-            await monitor_volume_changes(alpha_data.get("data", {}).get("cryptoCurrencyList", []))
+            print("交易量监控已禁用，跳过")
 
         # 步骤4: 分类项目并生成投资建议
         print("\n步骤4: 分类项目并生成投资建议...\n")
@@ -773,12 +729,18 @@ async def main():
                        help="启用调试模式，仅获取数据推送图片，不进行AI分析")
     parser.add_argument("--AI-needed", action="store_true", 
                        help="启用AI投资分析")
+    parser.add_argument("--no-volume-monitor", action="store_true",
+                       help="禁用交易量监控（默认开启）")
     args = parser.parse_args()
     
     workflow_start_time = time.time()
 
     # 运行完整工作流
-    await run_workflow(debug_only=args.debug_only, AI_needed=args.AI_needed)
+    await run_workflow(
+        debug_only=args.debug_only, 
+        AI_needed=args.AI_needed,
+        volume_monitor=not args.no_volume_monitor
+    )
 
     total_time = time.time() - workflow_start_time
     print(f"\n⏱️  总运行时长: {total_time:.2f}秒 ({total_time/60:.2f}分钟)")

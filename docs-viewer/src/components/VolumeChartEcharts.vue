@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, shallowRef } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -33,81 +33,186 @@ const props = defineProps({
   }
 })
 
+// 获取 token 的最新交易量
+const getLatestVolume = (volumes) => {
+  if (!volumes) return 0
+  for (let i = volumes.length - 1; i >= 0; i--) {
+    if (volumes[i] !== null && volumes[i] !== undefined && volumes[i] > 0) {
+      return volumes[i]
+    }
+  }
+  return 0
+}
+
+// 获取 token 的交易量变化率（最近7天 vs 之前7天）
+const getVolumeChange = (volumes) => {
+  if (!volumes) return 0
+  const validVolumes = volumes.filter(v => v !== null && v !== undefined && v > 0)
+  if (validVolumes.length < 14) return 0
+  
+  const recent7 = validVolumes.slice(-7).reduce((a, b) => a + b, 0) / 7
+  const prev7 = validVolumes.slice(-14, -7).reduce((a, b) => a + b, 0) / 7
+  
+  if (prev7 === 0) return 0
+  return ((recent7 - prev7) / prev7) * 100
+}
+
+// 预计算的 Token 信息缓存
+const tokenInfoCache = shallowRef([])
+
+// 预计算 Token 信息
+const preCalculateTokenInfo = () => {
+  if (!rawChartData.value || !rawChartData.value.tokens) {
+    tokenInfoCache.value = []
+    return
+  }
+
+  const tokens = Object.entries(rawChartData.value.tokens)
+  
+  tokenInfoCache.value = tokens.map(([symbol, data]) => {
+    const volumes = data.volumes || data
+    // 计算最大交易量用于过滤
+    const maxVolume = Math.max(...volumes.filter(v => v !== null && v > 0))
+    const latestVolume = getLatestVolume(volumes)
+    const volumeChange = getVolumeChange(volumes)
+    
+    // 计算热度得分: log(交易量 + 1) * (abs(变化率) + 1)
+    // 这样既考虑了交易量大，也考虑了波动大
+    const hotness = Math.log10(latestVolume + 1) * (Math.abs(volumeChange) + 1)
+
+    return {
+      symbol,
+      name: data.name,
+      platforms: data.platforms || [],
+      volumes: volumes,
+      maxVolume: maxVolume,
+      latestVolume: latestVolume,
+      volumeChange: volumeChange,
+      hotness: hotness
+    }
+  })
+}
+
+// 使用 shallowRef 避免深度响应式带来的性能开销
+const rawChartData = shallowRef(null)
+
+// 监听 props.chartData 变化
+watch(() => props.chartData, (newData) => {
+  if (newData) {
+    rawChartData.value = newData
+    // 数据更新时重新计算所有 token 的预处理信息
+    preCalculateTokenInfo()
+  }
+}, { immediate: true })
+
 const selectedTokens = ref([])
 const selectedPlatforms = ref([])
-const minVolume = ref(0.1) // 默认100K = 0.1M
+const minVolume = ref(1.0) // 默认 1M
 const startDateIndex = ref(0)
 const endDateIndex = ref(0)
 const displayDays = ref(30) // 默认显示天数
+const searchQuery = ref('') // 搜索关键词
+const sortBy = ref('hotness') // 排序方式: hotness (热度), volume, name, change
+const showTokenSelector = ref(true) // 是否显示 Token 选择器
+const chartMode = ref('volume') // 图表模式: 'volume' (交易量), 'change' (变化率)
+
+// 防抖后的搜索和筛选值
+const debouncedSearchQuery = ref('')
+const debouncedMinVolume = ref(1.0)
+
+// 防抖处理
+let searchTimeout = null
+let volumeTimeout = null
+
+watch(searchQuery, (newVal) => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    debouncedSearchQuery.value = newVal
+  }, 300)
+})
+
+watch(minVolume, (newVal) => {
+  if (volumeTimeout) clearTimeout(volumeTimeout)
+  volumeTimeout = setTimeout(() => {
+    debouncedMinVolume.value = newVal
+  }, 300)
+})
+
+// 性能模式阈值
+const PERFORMANCE_THRESHOLD = 20
 
 // 所有平台列表
 const allPlatforms = computed(() => {
-  if (!props.chartData || !props.chartData.tokens) return []
+  if (!tokenInfoCache.value.length) return []
   const platformsSet = new Set()
-  Object.values(props.chartData.tokens).forEach(tokenData => {
-    const platforms = tokenData.platforms || []
-    platforms.forEach(p => platformsSet.add(p))
+  tokenInfoCache.value.forEach(token => {
+    token.platforms.forEach(p => platformsSet.add(p))
   })
   return Array.from(platformsSet).sort()
 })
 
-// 可用的token列表（从数据中提取，应用过滤）
-const availableTokens = computed(() => {
-  if (!props.chartData || !props.chartData.tokens) return []
-  
-  let tokens = Object.entries(props.chartData.tokens)
+// 基础过滤：按平台和最小交易量
+const baseFilteredTokens = computed(() => {
+  let tokens = tokenInfoCache.value
   
   // 按平台过滤
   if (selectedPlatforms.value.length > 0) {
-    tokens = tokens.filter(([_, data]) => {
-      const platforms = data.platforms || []
-      return platforms.some(p => selectedPlatforms.value.includes(p))
+    tokens = tokens.filter(token => {
+      return token.platforms.some(p => selectedPlatforms.value.includes(p))
     })
   }
   
-  // 按最小交易量过滤
-  tokens = tokens.filter(([_, data]) => {
-    const volumes = data.volumes || data
-    const maxVolume = Math.max(...volumes.filter(v => v !== null && v > 0))
-    return maxVolume >= minVolume.value
+  // 按最小交易量过滤 (使用防抖后的值)
+  tokens = tokens.filter(token => {
+    return token.maxVolume >= debouncedMinVolume.value
   })
   
-  // Sort tokens by their latest volume (descending)
-  // Use the last available volume data point for sorting
-  tokens.sort((a, b) => {
-    const volumesA = a[1].volumes || a[1]
-    const volumesB = b[1].volumes || b[1]
-    
-    // Get the last non-null volume
-    let lastVolA = 0
-    for (let i = volumesA.length - 1; i >= 0; i--) {
-      if (volumesA[i] !== null && volumesA[i] !== undefined) {
-        lastVolA = volumesA[i]
-        break
-      }
-    }
-    
-    let lastVolB = 0
-    for (let i = volumesB.length - 1; i >= 0; i--) {
-      if (volumesB[i] !== null && volumesB[i] !== undefined) {
-        lastVolB = volumesB[i]
-        break
-      }
-    }
-    
-    return lastVolB - lastVolA
-  })
+  return tokens
+})
+
+// 排序后的 Token 列表
+const sortedTokens = computed(() => {
+  const tokens = [...baseFilteredTokens.value]
   
-  return tokens.map(([symbol]) => symbol)
+  if (sortBy.value === 'volume') {
+    tokens.sort((a, b) => b.latestVolume - a.latestVolume)
+  } else if (sortBy.value === 'name') {
+    tokens.sort((a, b) => a.symbol.localeCompare(b.symbol))
+  } else if (sortBy.value === 'change') {
+    tokens.sort((a, b) => b.volumeChange - a.volumeChange)
+  } else if (sortBy.value === 'hotness') {
+    tokens.sort((a, b) => b.hotness - a.hotness)
+  }
+  
+  return tokens
+})
+
+// 最终显示的 Token 列表 (应用搜索)
+const filteredTokensWithInfo = computed(() => {
+  if (!debouncedSearchQuery.value) return sortedTokens.value
+  const query = debouncedSearchQuery.value.toLowerCase()
+  return sortedTokens.value.filter(t => 
+    t.symbol.toLowerCase().includes(query)
+  )
+})
+
+// 可用的 token 符号列表
+const availableTokens = computed(() => {
+  return sortedTokens.value.map(t => t.symbol)
+})
+
+// Top N Tokens
+const topTokens = computed(() => {
+  return sortedTokens.value.slice(0, 10).map(t => t.symbol)
 })
 
 // 所有日期
 const allDates = computed(() => {
-  if (!props.chartData || !props.chartData.dates) return []
-  return props.chartData.dates
+  if (!rawChartData.value || !rawChartData.value.dates) return []
+  return rawChartData.value.dates
 })
 
-// 过滤后的时间标签（根据日期范围）
+// 过滤后的时间标签
 const timeLabels = computed(() => {
   if (!allDates.value.length) return []
   const start = startDateIndex.value
@@ -126,6 +231,11 @@ const dateRangeText = computed(() => {
   return `${start} 至 ${end}`
 })
 
+// 是否启用性能模式
+const isPerformanceMode = computed(() => {
+  return selectedTokens.value.length > PERFORMANCE_THRESHOLD
+})
+
 // 生成随机颜色
 const generateColor = (index) => {
   const colors = [
@@ -139,13 +249,35 @@ const generateColor = (index) => {
   return colors[index % colors.length]
 }
 
+// 计算日环比变化率数据
+const calculateDailyChange = (volumes) => {
+  if (!volumes || volumes.length < 2) return volumes.map(() => 0)
+  
+  const changes = []
+  // 第一个点没有前一天，设为0
+  changes.push(0)
+  
+  for (let i = 1; i < volumes.length; i++) {
+    const curr = volumes[i]
+    const prev = volumes[i-1]
+    
+    if (prev !== null && prev !== undefined && prev > 0 && curr !== null && curr !== undefined) {
+      const change = ((curr - prev) / prev) * 100
+      changes.push(change)
+    } else {
+      changes.push(0)
+    }
+  }
+  return changes
+}
+
 // ECharts 配置选项
 const chartOption = computed(() => {
-  if (!props.chartData || !props.chartData.tokens || selectedTokens.value.length === 0) {
+  if (!rawChartData.value || !rawChartData.value.tokens || selectedTokens.value.length === 0) {
     return {
       title: {
-        text: '暂无数据',
-        subtext: '请选择平台后查看数据',
+        text: '请选择 Token',
+        subtext: '从右侧列表中选择要显示的 Token',
         left: 'center',
         top: 'middle',
         textStyle: {
@@ -162,22 +294,38 @@ const chartOption = computed(() => {
 
   const start = startDateIndex.value
   const end = endDateIndex.value || allDates.value.length - 1
+  const isChangeMode = chartMode.value === 'change'
 
   const series = selectedTokens.value.map((token, index) => {
-    const tokenData = props.chartData.tokens[token]
-    const volumes = tokenData?.volumes || tokenData || []
-    const filteredVolumes = volumes.slice(start, end + 1)
+    // 从缓存中直接获取数据对象，避免重复查找
+    const tokenInfo = tokenInfoCache.value.find(t => t.symbol === token)
+    if (!tokenInfo) return null
+    
+    let displayData
+    if (isChangeMode) {
+      // 计算变化率数据
+      const fullChangeData = calculateDailyChange(tokenInfo.volumes)
+      displayData = fullChangeData.slice(start, end + 1)
+    } else {
+      // 原始交易量数据
+      displayData = tokenInfo.volumes.slice(start, end + 1)
+    }
+    
     const color = generateColor(index)
     
     return {
       name: token,
       type: 'line',
-      data: filteredVolumes,
+      data: displayData,
       smooth: true,
-      symbol: 'circle',
-      symbolSize: 4,
+      // 性能模式：关闭数据点图标
+      symbol: isPerformanceMode.value ? 'none' : 'circle',
+      symbolSize: isPerformanceMode.value ? 0 : 4,
+      // 性能模式：开启降采样
+      sampling: isPerformanceMode.value ? 'lttb' : undefined,
       lineStyle: {
-        width: 2,
+        // 性能模式：线条变细
+        width: isPerformanceMode.value ? 1.5 : 2,
         color: color
       },
       itemStyle: {
@@ -185,9 +333,11 @@ const chartOption = computed(() => {
       },
       emphasis: {
         focus: 'series'
-      }
+      },
+      // 变化率模式下不连接空数据
+      connectNulls: !isChangeMode
     }
-  })
+  }).filter(Boolean)
 
   return {
     tooltip: {
@@ -205,52 +355,72 @@ const chartOption = computed(() => {
         color: '#fff',
         fontSize: 12
       },
+      // 优化 Tooltip：排序并限制显示数量
       formatter: function(params) {
+        // 按数值降序排序
+        const sortedParams = [...params].sort((a, b) => {
+          const valA = a.value !== null && a.value !== undefined ? a.value : -Infinity
+          const valB = b.value !== null && b.value !== undefined ? b.value : -Infinity
+          return valB - valA
+        })
+        
+        // 限制显示数量（最多 15 个）
+        const maxDisplay = 15
+        const displayParams = sortedParams.slice(0, maxDisplay)
+        const remaining = sortedParams.length - maxDisplay
+        
         let result = `<div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; border-bottom: 1px solid #555; padding-bottom: 5px;">${params[0].axisValue}</div>`
-        params.forEach(param => {
+        
+        displayParams.forEach(param => {
           if (param.value !== null && param.value !== undefined) {
+            let valueStr = ''
+            let colorStyle = ''
+            
+            if (isChangeMode) {
+              const val = param.value
+              const sign = val > 0 ? '+' : ''
+              valueStr = `${sign}${val.toFixed(2)}%`
+              if (val > 0) colorStyle = 'color: #ff6b6b;'
+              else if (val < 0) colorStyle = 'color: #4ecdc4;'
+            } else {
+              valueStr = `$${param.value.toFixed(2)}M`
+            }
+            
             result += `<div style="margin: 3px 0; display: flex; align-items: center;">
               <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${param.color};margin-right:8px;"></span>
-              <span style="flex: 1;">${param.seriesName}</span>
-              <span style="font-weight: bold; margin-left: 10px;">$${param.value.toFixed(2)}M</span>
+              <span style="flex: 1; max-width: 100px; overflow: hidden; text-overflow: ellipsis;">${param.seriesName}</span>
+              <span style="font-weight: bold; margin-left: 10px; ${colorStyle}">${valueStr}</span>
             </div>`
           }
         })
+        
+        if (remaining > 0) {
+          result += `<div style="margin-top: 5px; color: #999; font-size: 11px; text-align: center;">...还有 ${remaining} 个 Token</div>`
+        }
+        
         return result
       }
     },
     legend: {
+      show: true,
       type: 'scroll',
-      orient: 'vertical',
-      right: 10,
-      top: 60,
-      bottom: 60,
-      padding: [5, 10],
-      itemGap: 8,
-      itemWidth: 20,
-      itemHeight: 12,
+      top: 0,
+      left: 60,
+      right: showTokenSelector.value ? 280 : 20,
       textStyle: {
+        color: '#666',
         fontSize: 11
       },
-      pageButtonItemGap: 5,
-      pageButtonGap: 10,
-      pageIconSize: 12,
+      pageIconColor: '#667eea',
       pageTextStyle: {
-        fontSize: 11
-      },
-      selector: [
-        { type: 'all', title: '全选' },
-        { type: 'inverse', title: '反选' }
-      ],
-      selectorLabel: {
-        fontSize: 11
+        color: '#666'
       }
     },
     grid: {
       left: 60,
-      right: 180,
+      right: showTokenSelector.value ? 280 : 20,
       bottom: 80,
-      top: 60,
+      top: 40,
       containLabel: false
     },
     toolbox: {
@@ -261,12 +431,12 @@ const chartOption = computed(() => {
         },
         restore: { title: '重置' },
         saveAsImage: {
-          name: 'token_volume_chart',
+          name: isChangeMode ? 'token_volume_change_chart' : 'token_volume_chart',
           title: '保存图片'
         }
       },
-      right: 180,
-      top: 10
+      right: showTokenSelector.value ? 290 : 30,
+      top: 0
     },
     dataZoom: [
       {
@@ -308,11 +478,17 @@ const chartOption = computed(() => {
       }
     },
     yAxis: {
-      type: 'log',
+      type: isChangeMode ? 'value' : 'log', // 变化率用线性轴，交易量用对数轴
       logBase: 10,
       position: 'left',
+      name: isChangeMode ? '24H 变化率 (%)' : '24H 交易量 (USD)',
+      nameLocation: 'end',
+      nameTextStyle: {
+        align: 'right',
+        padding: [0, 10, 0, 0]
+      },
       axisLabel: {
-        formatter: '${value}M',
+        formatter: isChangeMode ? '{value}%' : '${value}M',
         fontSize: 10,
         color: '#666'
       },
@@ -330,6 +506,31 @@ const chartOption = computed(() => {
   }
 })
 
+// 切换 Token 选择
+const toggleToken = (symbol) => {
+  const index = selectedTokens.value.indexOf(symbol)
+  if (index > -1) {
+    selectedTokens.value.splice(index, 1)
+  } else {
+    selectedTokens.value.push(symbol)
+  }
+}
+
+// 选择 Top N 个 Token
+const selectTopN = (n) => {
+  selectedTokens.value = availableTokens.value.slice(0, n)
+}
+
+// 选择所有符合条件的 token
+const selectAllTokens = () => {
+  selectedTokens.value = [...availableTokens.value]
+}
+
+// 清空选择
+const clearSelection = () => {
+  selectedTokens.value = []
+}
+
 // 切换平台选择
 const togglePlatform = (platform) => {
   const index = selectedPlatforms.value.indexOf(platform)
@@ -338,8 +539,8 @@ const togglePlatform = (platform) => {
   } else {
     selectedPlatforms.value.push(platform)
   }
-  // 重新选择所有符合条件的token
-  selectAllTokens()
+  // 重新选择 Top 10
+  selectTopN(10)
 }
 
 // 全选/取消全选平台
@@ -349,12 +550,7 @@ const toggleAllPlatforms = () => {
   } else {
     selectedPlatforms.value = [...allPlatforms.value]
   }
-  selectAllTokens()
-}
-
-// 选择所有符合条件的token
-const selectAllTokens = () => {
-  selectedTokens.value = [...availableTokens.value]
+  selectTopN(10)
 }
 
 // 重置日期范围
@@ -372,30 +568,59 @@ const setRecentDays = (days) => {
   displayDays.value = days
 }
 
+// 格式化交易量显示
+const formatVolume = (volume) => {
+  if (volume >= 1) {
+    return `$${volume.toFixed(1)}M`
+  } else {
+    return `$${(volume * 1000).toFixed(0)}K`
+  }
+}
+
+// 格式化变化率显示
+const formatChange = (change) => {
+  if (change === 0) return '-'
+  const sign = change > 0 ? '+' : ''
+  return `${sign}${change.toFixed(1)}%`
+}
+
 // 监听平台变化，自动更新token选择
 watch(selectedPlatforms, () => {
-  selectAllTokens()
+  // 保留已选中且仍然可用的 token
+  selectedTokens.value = selectedTokens.value.filter(token => 
+    availableTokens.value.includes(token)
+  )
 }, { deep: true })
 
-// 监听最小交易量变化
-watch(minVolume, () => {
-  selectAllTokens()
+// 监听最小交易量变化 (使用防抖后的值)
+watch(debouncedMinVolume, () => {
+  // 保留已选中且仍然可用的 token
+  selectedTokens.value = selectedTokens.value.filter(token => 
+    availableTokens.value.includes(token)
+  )
 })
 
-// 初始化时默认选择 BSC 和 Base 链
+// 初始化时默认选择 BSC 和 Base 链，仅选中 Top 10
 onMounted(() => {
   // 默认选择 BSC 和 Base 平台
   const defaultPlatforms = ['BNB', 'BASE']
-  selectedPlatforms.value = allPlatforms.value.filter(p => 
-    defaultPlatforms.includes(p.toUpperCase())
-  )
-  
-  // 如果没有找到这些平台，则不选择任何平台
-  // 设置日期范围为最近30天
-  setRecentDays(30)
-  
-  // 选择所有符合条件的token
-  selectAllTokens()
+  // 等待数据加载完成后再筛选
+  let unwatch = null
+  unwatch = watch(allPlatforms, (platforms) => {
+    if (platforms.length > 0) {
+      selectedPlatforms.value = platforms.filter(p => 
+        defaultPlatforms.includes(p.toUpperCase())
+      )
+      
+      // 设置日期范围为最近30天
+      setRecentDays(30)
+      
+      // 智能默认选中：仅选择 Top 10 交易量最大的 Token
+      selectTopN(10)
+      
+      unwatch?.()
+    }
+  }, { immediate: true })
 })
 </script>
 
@@ -416,13 +641,35 @@ onMounted(() => {
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-label">代币数量</span>
-          <span class="stat-value highlight">{{ selectedTokens.length }} 个</span>
+          <span class="stat-label">已选代币</span>
+          <span class="stat-value highlight">{{ selectedTokens.length }} / {{ availableTokens.length }}</span>
         </div>
         <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-label">总数据量</span>
-          <span class="stat-value">{{ allDates.length }} 天可用</span>
+        <div class="stat-item" v-if="isPerformanceMode">
+          <span class="stat-label">⚡ 性能模式</span>
+          <span class="stat-value highlight">已启用</span>
+        </div>
+      </div>
+
+      <!-- 中间：图表模式切换 -->
+      <div class="toolbar-mode-switch">
+        <div class="mode-switch-group">
+          <button 
+            class="mode-btn" 
+            :class="{ active: chartMode === 'volume' }"
+            @click="chartMode = 'volume'"
+            title="显示24小时交易量"
+          >
+            交易量
+          </button>
+          <button 
+            class="mode-btn" 
+            :class="{ active: chartMode === 'change' }"
+            @click="chartMode = 'change'"
+            title="显示24小时交易量变化率"
+          >
+            变化率 %
+          </button>
         </div>
       </div>
 
@@ -450,6 +697,13 @@ onMounted(() => {
             :class="{ active: displayDays === allDates.length }"
           >全部</button>
         </div>
+        <button 
+          class="toggle-sidebar-btn"
+          @click="showTokenSelector = !showTokenSelector"
+          :title="showTokenSelector ? '隐藏选择器' : '显示选择器'"
+        >
+          {{ showTokenSelector ? '◀' : '▶' }}
+        </button>
       </div>
     </div>
 
@@ -463,8 +717,8 @@ onMounted(() => {
             type="range" 
             v-model.number="minVolume"
             min="0"
-            max="10"
-            step="0.1"
+            max="20"
+            step="0.5"
             class="volume-slider"
           >
           <span class="volume-value">${{ minVolume.toFixed(1) }}M</span>
@@ -495,13 +749,73 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 图表区域 -->
-    <div class="chart-content">
-      <v-chart 
-        class="chart" 
-        :option="chartOption" 
-        autoresize
-      />
+    <!-- 主内容区域 -->
+    <div class="chart-main">
+      <!-- 图表区域 -->
+      <div class="chart-content">
+        <v-chart 
+          class="chart" 
+          :option="chartOption" 
+          autoresize
+        />
+      </div>
+
+      <!-- Token 选择器侧边栏 -->
+      <div class="token-sidebar" v-show="showTokenSelector">
+        <div class="sidebar-header">
+          <h3>Token 列表</h3>
+          <div class="quick-actions">
+            <button @click="selectTopN(10)" class="action-btn" title="选择 Top 10">Top 10</button>
+            <button @click="selectTopN(20)" class="action-btn" title="选择 Top 20">Top 20</button>
+            <button @click="selectAllTokens" class="action-btn" title="全选">全选</button>
+            <button @click="clearSelection" class="action-btn clear" title="清空">清空</button>
+          </div>
+        </div>
+        
+        <div class="sidebar-controls">
+          <input 
+            type="text"
+            v-model="searchQuery"
+            placeholder="搜索 Token..."
+            class="search-input"
+          >
+          <select v-model="sortBy" class="sort-select">
+            <option value="hotness">按热度 (推荐)</option>
+            <option value="volume">按交易量</option>
+            <option value="name">按名称</option>
+            <option value="change">按涨跌幅</option>
+          </select>
+        </div>
+
+        <div class="token-list">
+          <div 
+            v-for="token in filteredTokensWithInfo" 
+            :key="token.symbol"
+            class="token-item"
+            :class="{ selected: selectedTokens.includes(token.symbol) }"
+            @click="toggleToken(token.symbol)"
+          >
+            <div class="token-main">
+              <span class="token-checkbox">
+                {{ selectedTokens.includes(token.symbol) ? '☑' : '☐' }}
+              </span>
+              <span class="token-symbol">{{ token.symbol }}</span>
+            </div>
+            <div class="token-info">
+              <span class="token-volume">{{ formatVolume(token.latestVolume) }}</span>
+              <span 
+                class="token-change"
+                :class="{ positive: token.volumeChange > 0, negative: token.volumeChange < 0 }"
+              >
+                {{ formatChange(token.volumeChange) }}
+              </span>
+            </div>
+          </div>
+          <div v-if="filteredTokensWithInfo.length === 0" class="no-tokens">
+            未找到匹配的 Token
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -561,6 +875,43 @@ onMounted(() => {
   margin: 0 12px;
 }
 
+/* 模式切换按钮 */
+.toolbar-mode-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mode-switch-group {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  padding: 3px;
+}
+
+.mode-btn {
+  padding: 5px 15px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  color: white;
+}
+
+.mode-btn.active {
+  background-color: white;
+  color: #667eea;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
@@ -593,6 +944,21 @@ onMounted(() => {
   color: #667eea;
   border-color: white;
   font-weight: 600;
+}
+
+.toggle-sidebar-btn {
+  padding: 6px 10px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.toggle-sidebar-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 /* 过滤器区域 */
@@ -632,23 +998,17 @@ onMounted(() => {
 .toggle-all-btn {
   padding: 2px 8px;
   background-color: transparent;
-  color: #1976d2;
-  border: 1px solid #1976d2;
-  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 4px;
   cursor: pointer;
   font-size: 10px;
-  transition: all 0.2s;
+  opacity: 0.7;
 }
 
 .toggle-all-btn:hover {
-  background-color: #1976d2;
-  color: white;
-}
-
-.filter-divider {
-  width: 1px;
-  height: 40px;
-  background-color: var(--border-color);
+  opacity: 1;
+  background-color: var(--hover-color);
 }
 
 .volume-control {
@@ -659,15 +1019,21 @@ onMounted(() => {
 
 .volume-slider {
   width: 120px;
-  cursor: pointer;
-  accent-color: #1976d2;
+  accent-color: #667eea;
 }
 
 .volume-value {
   font-size: 12px;
   font-weight: 600;
-  color: #1976d2;
+  color: #667eea;
   min-width: 50px;
+}
+
+.filter-divider {
+  width: 1px;
+  height: 40px;
+  background-color: var(--border-color);
+  margin: 0 5px;
 }
 
 .platform-tags {
@@ -677,41 +1043,213 @@ onMounted(() => {
 }
 
 .platform-tag {
-  padding: 4px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 15px;
+  padding: 3px 10px;
   background-color: var(--bg-color);
-  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s;
-  user-select: none;
+  color: var(--text-color);
 }
 
 .platform-tag:hover {
-  border-color: #1976d2;
-  color: #1976d2;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 .platform-tag.selected {
-  background-color: #1976d2;
-  border-color: #1976d2;
+  background-color: #667eea;
   color: white;
-  font-weight: 500;
+  border-color: #667eea;
 }
 
-/* 图表区域 */
+/* 主内容区域 */
+.chart-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
 .chart-content {
   flex: 1;
+  height: 100%;
+  position: relative;
   overflow: hidden;
-  min-height: 0;
-  padding: 10px;
 }
 
 .chart {
   width: 100%;
   height: 100%;
-  min-height: 400px;
+}
+
+/* 侧边栏 */
+.token-sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.3s;
+}
+
+.sidebar-header {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.action-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.action-btn.clear {
+  color: #f44336;
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+.action-btn.clear:hover {
+  background-color: #ffebee;
+  border-color: #f44336;
+}
+
+.sidebar-controls {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 12px;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  outline: none;
+}
+
+.sort-select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 12px;
+}
+
+.token-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 5px 0;
+}
+
+.token-item {
+  padding: 8px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.token-item:hover {
+  background-color: var(--hover-color);
+}
+
+.token-item.selected {
+  background-color: rgba(102, 126, 234, 0.1);
+  border-left: 3px solid #667eea;
+}
+
+.token-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.token-checkbox {
+  color: #667eea;
+  font-size: 14px;
+}
+
+.token-symbol {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.token-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+  padding-left: 22px;
+}
+
+.token-change.positive {
+  color: #4caf50;
+}
+
+.token-change.negative {
+  color: #f44336;
+}
+
+.no-tokens {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+}
+
+/* 滚动条样式 */
+.token-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.token-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.token-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.token-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 /* 响应式 */
@@ -735,6 +1273,10 @@ onMounted(() => {
   
   .stat-value {
     font-size: 11px;
+  }
+  
+  .token-sidebar {
+    width: 220px;
   }
 }
 
@@ -764,6 +1306,17 @@ onMounted(() => {
   .volume-slider {
     flex: 1;
     width: auto;
+  }
+  
+  .chart-main {
+    flex-direction: column;
+  }
+  
+  .token-sidebar {
+    width: 100%;
+    max-height: 200px;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
   }
 }
 </style>
