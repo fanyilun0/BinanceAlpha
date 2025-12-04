@@ -36,12 +36,11 @@ function extractDateFromFilename(filename) {
 }
 
 /**
- * 从JSON数据中提取交易量前N的token
+ * 从JSON数据中提取所有token的交易量数据
  * @param {Array} data - JSON数据数组
- * @param {number} topN - 前N个
  * @returns {Array} - 包含 {symbol, name, volume24h, platform} 的数组
  */
-function getTopVolumeTokens(data, topN = 30) {
+function getAllTokensWithVolume(data) {
   if (!Array.isArray(data)) {
     return [];
   }
@@ -58,9 +57,7 @@ function getTopVolumeTokens(data, topN = 30) {
         platform: platform
       };
     })
-    .filter(item => item.symbol && item.volume24h > 0)
-    .sort((a, b) => b.volume24h - a.volume24h)
-    .slice(0, topN);
+    .filter(item => item.symbol); // 只要求有symbol，允许volume为0
 
   return tokensWithVolume;
 }
@@ -93,10 +90,10 @@ function processHistoricalData() {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(content);
-      const topTokens = getTopVolumeTokens(data, 30);
+      const allTokens = getAllTokensWithVolume(data);
 
-      dateDataMap.set(date, topTokens);
-      console.log(`处理完成: ${date} - 找到 ${topTokens.length} 个token`);
+      dateDataMap.set(date, allTokens);
+      console.log(`处理完成: ${date} - 找到 ${allTokens.length} 个token`);
     } catch (error) {
       console.error(`处理文件失败 ${file}:`, error.message);
     }
