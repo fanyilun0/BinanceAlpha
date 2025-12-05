@@ -24,7 +24,6 @@ from src.utils.image_generator import (
     create_top_vol_mc_ratio_image,
     create_gainers_losers_image
 )
-from src.utils.volume_monitor import monitor_volume_changes
 
 
 # 配置日志
@@ -684,19 +683,9 @@ async def run_workflow(debug_only=False, AI_needed=True, volume_monitor=True):
         print("\n步骤2.2: 数据处理...\n")
         prepared_data = await prepare_platform_data(alpha_data, listed_tokens)
 
-        # 步骤3: 监控交易量变化
-        # debug_only 模式下始终启用交易量监控（用于调试）
-        print("\n步骤3: 监控交易量变化...\n")
-        if volume_monitor or debug_only:
-            await monitor_volume_changes(
-                alpha_data.get("data", {}).get("cryptoCurrencyList", []),
-                debug_only=debug_only
-            )
-        else:
-            print("交易量监控已禁用，跳过")
 
-        # 步骤4: 分类项目并生成投资建议
-        print("\n步骤4: 分类项目并生成投资建议...\n")
+        # 步骤3: 分类项目并生成投资建议
+        print("\n步骤3: 分类项目并生成投资建议...\n")
         
         if not AI_needed:
             print("AI投资分析已禁用，程序退出")
