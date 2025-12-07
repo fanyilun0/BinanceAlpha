@@ -59,17 +59,17 @@ async def send_alpha_rank_image(crypto_list, date, debug_only=False, max_items=1
     )
     
     # 发送图片消息
-    print(f"准备发送按排名排序的图片到webhook...")
+    # print(f"准备发送按排名排序的图片到webhook...")
     
-    if not debug_only:
-        from webhook import send_image_async
-        await send_image_async(
-            image_path=image_path, 
-            image_base64=image_base64,
-        )
-        print("按排名排序的图片已成功发送到webhook")
-    else:
-        print("Debug模式：跳过发送按排名排序的图片")
+    # if not debug_only:
+    #     from webhook import send_image_async
+    #     await send_image_async(
+    #         image_path=image_path, 
+    #         image_base64=image_base64,
+    #     )
+    #     print("按排名排序的图片已成功发送到webhook")
+    # else:
+    #     print("Debug模式：跳过发送按排名排序的图片")
     
     return image_path, image_base64
 
@@ -92,17 +92,17 @@ async def send_alpha_liquidity_image(crypto_list, date, debug_only=False, max_it
         max_items=max_items
     )
     
-    print(f"准备发送按流动性排序的图片到webhook...")
+    # print(f"准备发送按流动性排序的图片到webhook...")
     
-    if not debug_only:
-        from webhook import send_image_async
-        await send_image_async(
-            image_path=image_path,
-            image_base64=image_base64,
-        )
-        print("按流动性排序的图片已成功发送到webhook")
-    else:
-        print("Debug模式：跳过发送按流动性排序的图片")
+    # if not debug_only:
+    #     from webhook import send_image_async
+    #     await send_image_async(
+    #         image_path=image_path,
+    #         image_base64=image_base64,
+    #     )
+    #     print("按流动性排序的图片已成功发送到webhook")
+    # else:
+    #     print("Debug模式：跳过发送按流动性排序的图片")
     
     return image_path, image_base64
 
@@ -127,17 +127,17 @@ async def send_alpha_gainers_losers_image(crypto_list, date, debug_only=False, m
         max_items=max_items
     )
     
-    print(f"准备发送涨跌幅榜图片到webhook...")
+    # print(f"准备发送涨跌幅榜图片到webhook...")
     
-    if not debug_only:
-        from webhook import send_image_async
-        await send_image_async(
-            image_path=image_path,
-            image_base64=image_base64,
-        )
-        print("涨跌幅榜图片已成功发送到webhook")
-    else:
-        print("Debug模式：跳过发送涨跌幅榜图片")
+    # if not debug_only:
+    #     from webhook import send_image_async
+    #     await send_image_async(
+    #         image_path=image_path,
+    #         image_base64=image_base64,
+    #     )
+    #     print("涨跌幅榜图片已成功发送到webhook")
+    # else:
+    #     print("Debug模式：跳过发送涨跌幅榜图片")
     
     return image_path, image_base64
 
