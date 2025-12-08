@@ -60,6 +60,13 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     """
     print(f"=== 监控交易量变化 (阈值: {threshold}%) ===\n")
     
+    # 初始化历史数据管理器
+    history_manager = HistoryManager(os.path.join(project_root, 'data'))
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    from datetime import timedelta  # 局部引入避免修改文件头部
+    yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    day_before_str = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
+    
     if crypto_list is None:
         data = load_data()
         if not data:
@@ -72,6 +79,10 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     dealer_accumulation_alerts = []  # 吸筹: 量增价平/小涨
     dealer_distribution_alerts = []  # 出货/洗盘: 量增价跌
     
+    # 最低交易量门槛: 24H > 2.4M
+    MIN_VOLUME_24H = 2_400_000
+    MIN_MARKET_CAP = 1_000_000
+
     for crypto in crypto_list:
         symbol = crypto.get("symbol", "Unknown")
         name = crypto.get("name", "Unknown")
@@ -95,6 +106,14 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         volume_24h = usd_quote.get("volume24h", 0)
         market_cap = usd_quote.get("marketCap", 0)
         fullyDilluttedMarketCap = usd_quote.get("fullyDilluttedMarketCap", 0)
+        platform = crypto.get("platform", {}).get("name", "")
+        
+        # 实时保存今日数据 (用于后续对比)
+        if volume_24h >= MIN_VOLUME_24H:
+            history_manager.update(today_str, symbol, {
+                "volume": volume_24h,
+                "price": usd_quote.get("price", 0)
+            })
 
         changes = {
             "24h": vol_change_24h,
@@ -110,10 +129,6 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                 triggered.append(f"{arrow}{period}: {change:+.1f}%")
         
         # 庄家行为检测逻辑
-        # 最低交易量门槛: 24H > 2.4M
-        MIN_VOLUME_24H = 2_400_000
-        MIN_MARKET_CAP = 1_000_000
-        
         is_accumulation = False
         
         if vol_change_24h > threshold and volume_24h >= MIN_VOLUME_24H and market_cap > MIN_MARKET_CAP:
@@ -124,13 +139,38 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                 "price_change": price_change_24h,
                 "volume": volume_24h,
                 "market_cap": market_cap,
-                "fdv": fullyDilluttedMarketCap
+                "fdv": fullyDilluttedMarketCap,
+                "platform": platform
             }
             
             # 吸筹: 量增 + 价格不变或小涨 (-2% ~ +10%)
             if -2 <= price_change_24h <= 10:
                 is_accumulation = True
+                
+                # 检查是否连续吸筹 (基于前两天历史)
+                h_yest = history_manager.get_data(symbol, yesterday_str)
+                h_before = history_manager.get_data(symbol, day_before_str)
+                # 也获取今日（刚刚更新的）内存数据
+                h_today = history_manager.get_data(symbol, today_str) 
+                
+                if h_today and h_yest and h_before:
+                    v_t, p_t = h_today["volume"], h_today["price"]
+                    v_y, p_y = h_yest["volume"], h_yest["price"]
+                    v_b, p_b = h_before["volume"], h_before["price"]
+                    
+                    # 1. 交易量稳定性检测 (任意两者差异不超过20%，即 min >= max * 0.8)
+                    vols = [v_t, v_y, v_b]
+                    v_stable = min(vols) >= max(vols) * 0.8
+                    
+                    # 2. 价格稳定性检测 (整体波动不超过 5%，即 max <= min * 1.05)
+                    prices = [p_t, p_y, p_b]
+                    p_stable = max(prices) <= min(prices) * 1.05
+                    
+                    if v_stable and p_stable:
+                        alert_data["is_continuous"] = True
+                
                 dealer_accumulation_alerts.append(alert_data)
+                
             # 出货/洗盘: 量增 + 价格下跌 (< -2%)
             elif price_change_24h < -2:
                 dealer_distribution_alerts.append(alert_data)
@@ -142,9 +182,15 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                 "name": name,
                 "change_24h": changes.get("24h", 0),
                 "volume_24h": volume_24h,
-                "is_accumulation": is_accumulation
+                "is_accumulation": is_accumulation,
+                "market_cap": market_cap,
+                "fdv": fullyDilluttedMarketCap,
+                "platform": platform
             }
             alerts.append(alert_info)
+    
+    # 保存历史数据到文件
+    history_manager.save()
     
     # 按24h变化率排序
     alerts.sort(key=lambda x: x["change_24h"], reverse=True)
@@ -178,6 +224,44 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     }
 
 
+class HistoryManager:
+    """管理历史交易量数据"""
+    def __init__(self, data_dir):
+        self.file_path = os.path.join(data_dir, 'volume_monitor_history.json')
+        self.history = self._load()
+
+    def _load(self):
+        if os.path.exists(self.file_path):
+            try:
+                with open(self.file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                logging.getLogger(__name__).error(f"加载历史数据失败: {e}")
+                return {}
+        return {}
+
+    def save(self):
+        try:
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.history, f, indent=2)
+        except Exception as e:
+            logging.getLogger(__name__).error(f"保存历史数据失败: {e}")
+
+    def update(self, date_str, symbol, data):
+        if symbol not in self.history:
+            self.history[symbol] = {}
+        self.history[symbol][date_str] = data
+        
+        # 只保留最近7天
+        dates = sorted(self.history[symbol].keys())
+        if len(dates) > 7:
+            for d in dates[:-7]:
+                del self.history[symbol][d]
+
+    def get_data(self, symbol, date_str):
+        return self.history.get(symbol, {}).get(date_str)
+
+
 def _format_number(num: float) -> str:
     """格式化数字，大数字用 K/M/B 表示"""
     if abs(num) >= 1_000_000_000:
@@ -188,6 +272,49 @@ def _format_number(num: float) -> str:
         return f"{num / 1_000:.1f}K"
     else:
         return f"{num:.0f}"
+
+
+async def _send_paginated_embed(
+    title: str,
+    items: list[dict],
+    description_template: str,
+    color: int,
+    table_builder,
+    batch_size: int = 20
+):
+    """通用分页发送 Discord Embed 消息"""
+    if not items:
+        return
+
+    # 构建完整表格以检查长度
+    full_table = table_builder(items)
+    
+    # 如果总长度未超限，直接发送
+    if len(full_table) <= 4000:
+        description = description_template.format(table=full_table)
+        await send_discord_embed(
+            title=f"{title} ({len(items)}个)",
+            description=description,
+            color=color,
+            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        return
+
+    # 分页发送
+    total_pages = (len(items) - 1) // batch_size + 1
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        batch_table = table_builder(batch)
+        page_num = i // batch_size + 1
+        
+        description = description_template.format(table=batch_table)
+        await send_discord_embed(
+            title=f"{title} ({page_num}/{total_pages})",
+            description=description,
+            color=color,
+            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        await asyncio.sleep(0.3)
 
 
 async def _send_volume_alerts(alerts: list[dict], threshold: float):
@@ -211,54 +338,66 @@ async def _send_volume_alerts(alerts: list[dict], threshold: float):
         
         lines = []
         lines.append("```")
-        lines.append(f"{'Symbol':<8} {'Name':<16} {'Vol%':>9} {'Volume':>9}")
-        lines.append(f"{'-'*8} {'-'*16} {'-'*9} {'-'*9}")
+        lines.append(f"{'Symbol':<8} {'Name':<12} {'Vol%':>7} {'Vol':>7} {'MCap':>7} {'FDV':>7} {'Plat':>8}")
+        lines.append(f"{'-'*8} {'-'*12} {'-'*7} {'-'*7} {'-'*7} {'-'*7} {'-'*8}")
         
         for item in items:
             symbol = item["symbol"][:8]
-            name = item["name"][:16]
+            name = item["name"][:12]
             change = f"{item['change_24h']:+.0f}%"
             volume = _format_number(item.get("volume_24h", 0))
-            lines.append(f"{symbol:<8} {name:<16} {change:>9} {volume:>9}")
+            mcap = _format_number(item.get("market_cap", 0))
+            fdv = _format_number(item.get("fdv", 0))
+            platform = item.get("platform", "")[:8]
+            lines.append(f"{symbol:<8} {name:<12} {change:>7} {volume:>7} {mcap:>7} {fdv:>7} {platform:>8}")
         
         lines.append("```")
         return "\n".join(lines)
     
     # 发送涨幅榜
     if gainers:
-        table = build_table(gainers)
-        await send_discord_embed(
-            title=f"📈 交易量激增 ({len(gainers)}个)",
-            description=f"**阈值:** Vol > +{threshold}% & Vol24h > $2.4M\n{table}",
+        await _send_paginated_embed(
+            title="📈 交易量激增",
+            items=gainers,
+            description_template=f"**阈值:** Vol > +{threshold}% & Vol24h > $2.4M\n{{table}}",
             color=DiscordColors.GREEN,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            table_builder=build_table
         )
-        await asyncio.sleep(0.3)
     
     # 发送跌幅榜
     if losers:
-        table = build_table(losers)
-        await send_discord_embed(
-            title=f"📉 交易量骤降 ({len(losers)}个)",
-            description=f"**阈值:** Vol < -{threshold}% & Vol24h > $2.4M\n{table}",
+        await _send_paginated_embed(
+            title="📉 交易量骤降",
+            items=losers,
+            description_template=f"**阈值:** Vol < -{threshold}% & Vol24h > $2.4M\n{{table}}",
             color=DiscordColors.RED,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            table_builder=build_table
         )
 
 
 def _build_dealer_table(items: list[dict]) -> str:
     """构建庄家行为表格"""
     lines = ["```"]
-    lines.append(f"{'Symbol':<8} {'Vol%':>7} {'Price%':>7} {'MCap':>8} {'Volume':>8}")
-    lines.append(f"{'-'*8} {'-'*7} {'-'*7} {'-'*8} {'-'*8}")
+    lines.append(f"{'Symbol':<8} {'Vol%':>7} {'Prc%':>6} {'Vol':>7} {'MCap':>7} {'FDV':>7} {'Plat':>8}")
+    lines.append(f"{'-'*8} {'-'*7} {'-'*6} {'-'*7} {'-'*7} {'-'*7} {'-'*8}")
     
     for item in items:
-        symbol = item["symbol"][:8]
+        # 标记连续吸筹
+        is_cont = item.get("is_continuous", False)
+        raw_sym = item["symbol"]
+        if is_cont:
+            # 如果是持续吸筹，加星号，截断留出空间
+            symbol = ("★" + raw_sym)[:8]
+        else:
+            symbol = raw_sym[:8]
+            
         vol_change = f"+{item['vol_change']:.0f}%"
         price_change = f"{item['price_change']:+.1f}%"
-        mcap = _format_number(item["market_cap"])
         volume = _format_number(item["volume"])
-        lines.append(f"{symbol:<8} {vol_change:>7} {price_change:>7} {mcap:>8} {volume:>8}")
+        mcap = _format_number(item["market_cap"])
+        fdv = _format_number(item["fdv"])
+        platform = item["platform"][:8]
+        lines.append(f"{symbol:<8} {vol_change:>7} {price_change:>6} {volume:>7} {mcap:>7} {fdv:>7} {platform:>8}")
     
     lines.append("```")
     return "\n".join(lines)
@@ -269,30 +408,13 @@ async def _send_accumulation_alerts(items: list[dict]):
     # 按市值降序排列
     items_sorted = sorted(items, key=lambda x: x["market_cap"], reverse=True)
     
-    table = _build_dealer_table(items_sorted)
-    
-    # Discord Embed description 限制 4096 字符
-    if len(table) > 4000:
-        batch_size = 20
-        for i in range(0, len(items_sorted), batch_size):
-            batch = items_sorted[i:i + batch_size]
-            batch_table = _build_dealer_table(batch)
-            batch_num = f" ({i // batch_size + 1}/{(len(items_sorted) - 1) // batch_size + 1})"
-            
-            await send_discord_embed(
-                title=f"🐋 疑似吸筹{batch_num}",
-                description=f"**特征:** 量增价平/小涨 (Vol↑ Price -2%~+10%)\n{batch_table}",
-                color=DiscordColors.PURPLE,
-                footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-            await asyncio.sleep(0.3)
-    else:
-        await send_discord_embed(
-            title=f"🐋 疑似吸筹 ({len(items)}个)",
-            description=f"**特征:** 量增价平/小涨 (Vol↑ Price -2%~+10%)\n{table}",
-            color=DiscordColors.PURPLE,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        )
+    await _send_paginated_embed(
+        title="🐋 疑似吸筹",
+        items=items_sorted,
+        description_template="**特征:** 量增价平/小涨 (Vol↑ Price -2%~+10%)\n**★:** 3日量价稳定(持续吸筹)\n{table}",
+        color=DiscordColors.PURPLE,
+        table_builder=_build_dealer_table
+    )
 
 
 async def _send_distribution_alerts(items: list[dict]):
@@ -300,64 +422,13 @@ async def _send_distribution_alerts(items: list[dict]):
     # 按跌幅排序 (跌得最多的在前)
     items_sorted = sorted(items, key=lambda x: x["price_change"])
     
-    table = _build_dealer_table(items_sorted)
-    
-    if len(table) > 4000:
-        batch_size = 20
-        for i in range(0, len(items_sorted), batch_size):
-            batch = items_sorted[i:i + batch_size]
-            batch_table = _build_dealer_table(batch)
-            batch_num = f" ({i // batch_size + 1}/{(len(items_sorted) - 1) // batch_size + 1})"
-            
-            await send_discord_embed(
-                title=f"⚠️ 疑似出货/洗盘{batch_num}",
-                description=f"**特征:** 量增价跌 (Vol↑ Price < -2%)\n{batch_table}",
-                color=DiscordColors.RED,
-                footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-            await asyncio.sleep(0.3)
-    else:
-        await send_discord_embed(
-            title=f"⚠️ 疑似出货/洗盘 ({len(items)}个)",
-            description=f"**特征:** 量增价跌 (Vol↑ Price < -2%)\n{table}",
-            color=DiscordColors.RED,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        )
-
-
-async def _send_accumulation_alerts(items: list[dict]):
-    """发送庄家吸筹警报到 Discord"""
-    # 构建 Embed fields
-    fields = []
-    for item in items:
-        field_value = (
-            f"量变: **+{item['vol_change']:.1f}%** | 价变: **{item['price_change']:+.2f}%**\n"
-            f"交易量: ${item['volume']:,.0f}\n"
-            f"市值: ${item['market_cap']:,.0f} | FDV: ${item['fdv']:,.0f}"
-        )
-        fields.append({
-            "name": f"🔹 {item['symbol']} - {item['name']}",
-            "value": field_value,
-            "inline": False
-        })
-    
-    # Discord Embed 最多 25 个 fields，需要分批
-    MAX_FIELDS = 25
-    for i in range(0, len(fields), MAX_FIELDS):
-        batch_fields = fields[i:i + MAX_FIELDS]
-        batch_num = f" ({i // MAX_FIELDS + 1}/{(len(fields) - 1) // MAX_FIELDS + 1})" if len(fields) > MAX_FIELDS else ""
-        
-        await send_discord_embed(
-            title=f"🐋 疑似庄家吸筹监控{batch_num}",
-            description="**特征:** 交易量大增，价格波动小 (量增价平)",
-            color=DiscordColors.PURPLE,
-            fields=batch_fields,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        )
-        
-        # 避免频率限制
-        if i + MAX_FIELDS < len(fields):
-            await asyncio.sleep(0.5)
+    await _send_paginated_embed(
+        title="⚠️ 疑似出货/洗盘",
+        items=items_sorted,
+        description_template="**特征:** 量增价跌 (Vol↑ Price < -2%)\n{table}",
+        color=DiscordColors.RED,
+        table_builder=_build_dealer_table
+    )
 
 async def get_volume_statistics(crypto_list):
     """获取交易量统计信息 (保留原有功能)"""
