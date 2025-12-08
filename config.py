@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 添加默认值和类型检查
-WEBHOOK_URL = os.getenv('WEBHOOK_URL', '')  # 设置默认空字符串
+WEBHOOK_URL = os.getenv('WEBHOOK_URL', '')  # 企业微信 webhook
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL', '')  # Discord webhook
 
 # 根据环境变量判断是否在Docker中运行
 IS_DOCKER = os.getenv('IS_DOCKER', 'false').lower() == 'true'
