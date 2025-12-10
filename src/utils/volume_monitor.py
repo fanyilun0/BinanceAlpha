@@ -541,37 +541,42 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     
     # 按24h变化率排序
     alerts.sort(key=lambda x: x["change_24h"], reverse=True)
+    
+    # 保存吸筹/洗盘数据到本地 JSON (供 docs-viewer 使用)
+    await _save_trend_data(
+        trend_signals=trend_signals,
+        accumulation_alerts=dealer_accumulation_alerts,
+        distribution_alerts=dealer_distribution_alerts
+    )
 
-    # ============================================
-    # 阶段3: 发送告警
-    # ============================================
+    # 阶段3: 发送告警 (顺序: 三日趋势 → 吸筹 → 洗盘 → 交易量)
     print("\n阶段3: 发送告警...")
     
-    # 发送三日趋势信号告警 (新增)
+    # 1. 发送三日趋势信号告警 (高优先级)
     if trend_signals:
         print(f"发现 {len(trend_signals)} 个三日趋势信号")
         if not debug_only:
             await _send_trend_signals(trend_signals)
+    
+    # 2. 发送庄家吸筹警报 (量增价平/小涨)
+    if dealer_accumulation_alerts:
+        print(f"发现 {len(dealer_accumulation_alerts)} 个疑似庄家吸筹项目")
+        if not debug_only:
+            await _send_accumulation_alerts(dealer_accumulation_alerts)
+    
+    # 3. 发送出货/洗盘警报 (量增价跌)
+    if dealer_distribution_alerts:
+        print(f"发现 {len(dealer_distribution_alerts)} 个疑似出货/洗盘项目")
+        if not debug_only:
+            await _send_distribution_alerts(dealer_distribution_alerts)
 
-    # 发送常规交易量异动警报
+    # 4. 发送常规交易量异动警报 (最后)
     if alerts:
         print(f"发现 {len(alerts)} 个交易量异动项目")
         if not debug_only:
             await _send_volume_alerts(alerts, threshold)
     else:
         print("未发现超过阈值的交易量变化")
-
-    # 发送庄家吸筹警报 (量增价平/小涨)
-    if dealer_accumulation_alerts:
-        print(f"发现 {len(dealer_accumulation_alerts)} 个疑似庄家吸筹项目")
-        if not debug_only:
-            await _send_accumulation_alerts(dealer_accumulation_alerts)
-    
-    # 发送出货/洗盘警报 (量增价跌)
-    if dealer_distribution_alerts:
-        print(f"发现 {len(dealer_distribution_alerts)} 个疑似出货/洗盘项目")
-        if not debug_only:
-            await _send_distribution_alerts(dealer_distribution_alerts)
     
     return {
         "alerts": alerts,
@@ -1157,6 +1162,190 @@ async def _send_summary_embed(
     }
     
     await _send_embed_raw(embed)
+
+
+async def _save_trend_data(
+    trend_signals: list[dict],
+    accumulation_alerts: list[dict],
+    distribution_alerts: list[dict]
+):
+    """保存吸筹/洗盘数据到本地 JSON 文件 (供 docs-viewer 使用)
+    
+    输出路径: data/trend_signals_YYYYMMDD.json
+    (通过 generate-list.js 脚本复制到 docs-viewer/public/tables/)
+    
+    Args:
+        trend_signals: 三日趋势信号列表
+        accumulation_alerts: 吸筹告警列表
+        distribution_alerts: 出货/洗盘告警列表
+    """
+    # 目标目录 (保存到 data 目录，与 filtered_crypto_list 同级)
+    data_dir = os.path.join(project_root, 'data')
+    if not os.path.exists(data_dir):
+        logger.warning(f"data 目录不存在，跳过保存: {data_dir}")
+        return
+    
+    today_str = datetime.now().strftime('%Y%m%d')
+    output_file = os.path.join(data_dir, f'trend_signals_{today_str}.json')
+    
+    # 构建输出数据结构
+    output_data = {
+        "title": "吸筹/洗盘信号分析",
+        "date": datetime.now().strftime('%Y-%m-%d'),
+        "generated_at": datetime.now().isoformat(),
+        "summary": {
+            "trend_signals_count": len(trend_signals),
+            "accumulation_count": len(accumulation_alerts),
+            "distribution_count": len(distribution_alerts)
+        },
+        "columns": [
+            "代号", "名称", "信号类型", "置信度", "交易量变化(%)", "价格变化(%)",
+            "24h交易量", "市值", "FDV", "平台", "信号解读",
+            "T0交易量", "T0换手率", "T-1交易量", "T-1换手率", "T-2交易量", "T-2换手率"
+        ],
+        "data": []
+    }
+    
+    # 合并所有信号数据
+    all_items = []
+    
+    # 添加三日趋势信号
+    for item in trend_signals:
+        signal_type = item.get("signal_type", "UNKNOWN")
+        signal_name = _get_signal_name(signal_type)
+        history_3d = item.get("history_3d", [])
+        
+        row = {
+            "代号": item.get("symbol", "-"),
+            "名称": item.get("name", "-"),
+            "信号类型": signal_name,
+            "置信度": f"{item.get('score', 0):.2f}",
+            "交易量变化(%)": f"{item.get('vol_change', 0):+.1f}%",
+            "价格变化(%)": f"{item.get('price_change', 0):+.1f}%",
+            "24h交易量": f"${_format_number(item.get('volume', 0))}",
+            "市值": f"${_format_number(item.get('market_cap', 0))}",
+            "FDV": f"${_format_number(item.get('fdv', 0))}",
+            "平台": item.get("platform", "-"),
+            "信号解读": item.get("reason", "-"),
+            "signal_type_raw": signal_type,
+            "score_raw": item.get("score", 0),
+            "vol_change_raw": item.get("vol_change", 0),
+            "price_change_raw": item.get("price_change", 0),
+            "volume_raw": item.get("volume", 0),
+            "market_cap_raw": item.get("market_cap", 0),
+        }
+        
+        # 三日数据
+        if history_3d and len(history_3d) >= 3:
+            for i, label in enumerate(["T0", "T-1", "T-2"]):
+                d = history_3d[i]
+                row[f"{label}交易量"] = f"${_format_number(d.get('volume', 0))}"
+                row[f"{label}换手率"] = _format_turnover(d.get("turnover", 0))
+                row[f"{label}_volume_raw"] = d.get("volume", 0)
+                row[f"{label}_turnover_raw"] = d.get("turnover", 0)
+        else:
+            for label in ["T0", "T-1", "T-2"]:
+                row[f"{label}交易量"] = "-"
+                row[f"{label}换手率"] = "-"
+        
+        all_items.append(row)
+    
+    # 添加吸筹告警 (如果不在 trend_signals 中)
+    existing_symbols = {item["代号"] for item in all_items}
+    for item in accumulation_alerts:
+        symbol = item.get("symbol", "-")
+        if symbol in existing_symbols:
+            continue
+        
+        history_3d = item.get("history_3d", [])
+        row = {
+            "代号": symbol,
+            "名称": item.get("name", "-"),
+            "信号类型": "疑似吸筹" if not item.get("is_continuous") else "持续吸筹",
+            "置信度": "0.70" if not item.get("is_continuous") else "0.85",
+            "交易量变化(%)": f"{item.get('vol_change', 0):+.1f}%",
+            "价格变化(%)": f"{item.get('price_change', 0):+.1f}%",
+            "24h交易量": f"${_format_number(item.get('volume', 0))}",
+            "市值": f"${_format_number(item.get('market_cap', 0))}",
+            "FDV": f"${_format_number(item.get('fdv', 0))}",
+            "平台": item.get("platform", "-"),
+            "信号解读": "量增价平/小涨" + (" + 连续3日稳定" if item.get("is_continuous") else ""),
+            "signal_type_raw": "ACCUMULATION_SINGLE" if not item.get("is_continuous") else "ACCUMULATION_CONTINUOUS",
+            "score_raw": 0.70 if not item.get("is_continuous") else 0.85,
+            "vol_change_raw": item.get("vol_change", 0),
+            "price_change_raw": item.get("price_change", 0),
+            "volume_raw": item.get("volume", 0),
+            "market_cap_raw": item.get("market_cap", 0),
+        }
+        
+        if history_3d and len(history_3d) >= 3:
+            for i, label in enumerate(["T0", "T-1", "T-2"]):
+                d = history_3d[i]
+                row[f"{label}交易量"] = f"${_format_number(d.get('volume', 0))}"
+                row[f"{label}换手率"] = _format_turnover(d.get("turnover", 0))
+                row[f"{label}_volume_raw"] = d.get("volume", 0)
+                row[f"{label}_turnover_raw"] = d.get("turnover", 0)
+        else:
+            for label in ["T0", "T-1", "T-2"]:
+                row[f"{label}交易量"] = "-"
+                row[f"{label}换手率"] = "-"
+        
+        all_items.append(row)
+        existing_symbols.add(symbol)
+    
+    # 添加出货/洗盘告警
+    for item in distribution_alerts:
+        symbol = item.get("symbol", "-")
+        if symbol in existing_symbols:
+            continue
+        
+        history_3d = item.get("history_3d", [])
+        row = {
+            "代号": symbol,
+            "名称": item.get("name", "-"),
+            "信号类型": "疑似出货/洗盘",
+            "置信度": "0.65",
+            "交易量变化(%)": f"{item.get('vol_change', 0):+.1f}%",
+            "价格变化(%)": f"{item.get('price_change', 0):+.1f}%",
+            "24h交易量": f"${_format_number(item.get('volume', 0))}",
+            "市值": f"${_format_number(item.get('market_cap', 0))}",
+            "FDV": f"${_format_number(item.get('fdv', 0))}",
+            "平台": item.get("platform", "-"),
+            "信号解读": "量增价跌，注意风险",
+            "signal_type_raw": "DISTRIBUTION",
+            "score_raw": 0.65,
+            "vol_change_raw": item.get("vol_change", 0),
+            "price_change_raw": item.get("price_change", 0),
+            "volume_raw": item.get("volume", 0),
+            "market_cap_raw": item.get("market_cap", 0),
+        }
+        
+        if history_3d and len(history_3d) >= 3:
+            for i, label in enumerate(["T0", "T-1", "T-2"]):
+                d = history_3d[i]
+                row[f"{label}交易量"] = f"${_format_number(d.get('volume', 0))}"
+                row[f"{label}换手率"] = _format_turnover(d.get("turnover", 0))
+                row[f"{label}_volume_raw"] = d.get("volume", 0)
+                row[f"{label}_turnover_raw"] = d.get("turnover", 0)
+        else:
+            for label in ["T0", "T-1", "T-2"]:
+                row[f"{label}交易量"] = "-"
+                row[f"{label}换手率"] = "-"
+        
+        all_items.append(row)
+    
+    # 按置信度和市值排序
+    all_items.sort(key=lambda x: (x.get("score_raw", 0), x.get("market_cap_raw", 0)), reverse=True)
+    output_data["data"] = all_items
+    output_data["total_count"] = len(all_items)
+    
+    # 写入文件
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(output_data, f, indent=2, ensure_ascii=False)
+        logger.info(f"已保存吸筹/洗盘数据到: {output_file}, 共 {len(all_items)} 条")
+    except Exception as e:
+        logger.error(f"保存吸筹/洗盘数据失败: {e}")
 
 
 async def _send_trend_signals(items: list[dict]):

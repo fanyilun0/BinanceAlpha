@@ -42,6 +42,14 @@ const isRawData = computed(() => {
   return Array.isArray(props.tableData)
 })
 
+// 判断是否为趋势信号数据（trend_signals 格式）
+const isTrendSignalData = computed(() => {
+  if (!props.tableData || Array.isArray(props.tableData)) return false
+  return props.tableData.title?.includes('吸筹') || 
+         props.tableData.title?.includes('洗盘') ||
+         props.tableData.columns?.includes('信号类型')
+})
+
 // 转换原始数据为表格格式
 const formattedTableData = computed(() => {
   if (isRawData.value) {
@@ -93,6 +101,17 @@ const formattedTableData = computed(() => {
       columns: ['排名', '名称', '代号', '平台', '价格(USD)',  '合约','24h变化(%)', '7d变化(%)', '市值(MC)', '24h交易量', 'Vol/MC', 'FDV', 'MC/FDV'],
       data: data
     }
+  } else if (isTrendSignalData.value) {
+    // 吸筹/洗盘信号数据格式
+    return {
+      title: props.tableData.title || '吸筹/洗盘信号分析',
+      date: props.tableData.date || new Date().toLocaleDateString('zh-CN'),
+      total_count: props.tableData.total_count || props.tableData.data?.length || 0,
+      summary: props.tableData.summary || null,
+      // 精简列展示，隐藏 raw 字段
+      columns: ['代号', '名称', '信号类型', '置信度', '交易量变化(%)', '价格变化(%)', '24h交易量', '市值', '平台', 'T0换手率', 'T-1换手率', 'T-2换手率', '信号解读'],
+      data: props.tableData.data || []
+    }
   } else {
     // 已格式化的表格数据
     return props.tableData
@@ -135,6 +154,56 @@ const getCellColor = (row, column) => {
     }
   }
   
+  // 信号类型列 - 不同类型不同颜色
+  if (column === '信号类型') {
+    const value = row[column]
+    if (value?.includes('稳定吸筹') || value?.includes('持续吸筹')) {
+      return '#e8d5f5'  // 紫色 - 稳定吸筹
+    }
+    if (value?.includes('疑似吸筹')) {
+      return '#f3e5f5'  // 浅紫色 - 疑似吸筹
+    }
+    if (value?.includes('洗盘结束')) {
+      return '#fff8e1'  // 黄色 - 洗盘结束
+    }
+    if (value?.includes('牛旗')) {
+      return '#e8f5e9'  // 绿色 - 牛旗整理
+    }
+    if (value?.includes('出货') || value?.includes('洗盘')) {
+      return '#ffebee'  // 红色 - 出货/洗盘
+    }
+  }
+  
+  // 置信度列 - 高置信度高亮
+  if (column === '置信度') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'transparent'
+    if (value >= 0.85) return '#c8e6c9'  // 高置信度：绿色
+    if (value >= 0.7) return '#fff9c4'   // 中置信度：黄色
+    return 'transparent'
+  }
+  
+  // 交易量变化(%) 列
+  if (column === '交易量变化(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'transparent'
+    if (value >= 100) return '#00b050'  // 暴涨：深绿色
+    if (value >= 50) return '#92d050'   // 大涨：中绿色
+    if (value > 0) return '#d8f3dc'     // 小涨：浅绿色
+    if (value <= -50) return '#c00000'  // 暴跌：深红色
+    if (value < 0) return '#ffccd5'     // 小跌：浅红色
+  }
+  
+  // 价格变化(%) 列
+  if (column === '价格变化(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'transparent'
+    if (value >= 10) return '#92d050'   // 大涨
+    if (value > 0) return '#d8f3dc'     // 小涨
+    if (value <= -10) return '#ff6b6b'  // 大跌
+    if (value < 0) return '#ffccd5'     // 小跌
+  }
+  
   return 'transparent'
 }
 
@@ -147,6 +216,13 @@ const getCellTextColor = (row, column) => {
     if (value >= 50 || value <= -50 || (value >= 20 && value < 50) || (value <= -20 && value > -50)) {
       return 'white'
     }
+  }
+  
+  // 交易量变化列
+  if (column === '交易量变化(%)') {
+    const value = parseFloat(row[column])
+    if (isNaN(value)) return 'inherit'
+    if (value >= 100 || value <= -50) return 'white'
   }
   
   return 'inherit'
@@ -240,6 +316,18 @@ const getSortIcon = (column) => {
         <span>日期: {{ formattedTableData.date }}</span>
         <span>数据量: {{ formattedTableData.total_count }} 条</span>
       </div>
+      <!-- 趋势信号 Summary -->
+      <div v-if="formattedTableData.summary" class="table-summary">
+        <span class="summary-item summary-trend">
+          📊 趋势信号: {{ formattedTableData.summary.trend_signals_count || 0 }}
+        </span>
+        <span class="summary-item summary-accumulation">
+          🐋 吸筹: {{ formattedTableData.summary.accumulation_count || 0 }}
+        </span>
+        <span class="summary-item summary-distribution">
+          ⚠️ 出货/洗盘: {{ formattedTableData.summary.distribution_count || 0 }}
+        </span>
+      </div>
     </div>
     
     <div class="table-wrapper">
@@ -301,6 +389,35 @@ const getSortIcon = (column) => {
   font-size: 14px;
   color: var(--text-color);
   opacity: 0.8;
+}
+
+.table-summary {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.summary-item {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.summary-trend {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.summary-accumulation {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.summary-distribution {
+  background-color: #ffebee;
+  color: #c62828;
 }
 
 .table-wrapper {

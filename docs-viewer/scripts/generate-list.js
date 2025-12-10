@@ -89,17 +89,29 @@ if (fs.existsSync(imagesSourceDir)) {
 }
 
 // 读取表格数据目录中的所有 .json 文件，并按类型分类
+// 支持: filtered_crypto_list_*.json 和 trend_signals_*.json
 let tableFiles = [];
 if (fs.existsSync(tablesSourceDir)) {
   tableFiles = fs.readdirSync(tablesSourceDir)
-    .filter(file => file.startsWith('filtered_crypto_list_') && file.endsWith('.json'))
+    .filter(file => {
+      // 支持两种表格数据文件
+      return (file.startsWith('filtered_crypto_list_') || file.startsWith('trend_signals_')) && file.endsWith('.json');
+    })
     .map(file => {
+      // 确定表格类型
+      let type = 'other';
+      if (file.startsWith('filtered_crypto_list_')) {
+        type = 'crypto_list';
+      } else if (file.startsWith('trend_signals_')) {
+        type = 'trend_signals';
+      }
       
       return {
         name: file,
         title: file.replace('.json', '').replace(/_/g, ' '),
-        // 提取日期信息（假设文件名格式为 filtered_crypto_list_20250426.json 或 alpha_list_20250930083006.json）
+        // 提取日期信息（假设文件名格式为 filtered_crypto_list_20250426.json 或 trend_signals_20251210.json）
         date: file.match(/\d{8}/)?.[0] || '',
+        type: type  // 新增类型字段
       };
     })
     .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
