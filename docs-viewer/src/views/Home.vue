@@ -12,6 +12,7 @@ const images = ref([])
 const tables = ref([])
 const currentTab = ref('docs') // 'docs', 'images', or 'tables'
 const currentImageTab = ref('alpha_list') // 'alpha_list', 'vol_mc_ratio', or 'gainers_losers'
+const currentTableTab = ref('crypto_list') // 'crypto_list' or 'trend_signals'
 const currentFile = ref('')
 const currentContent = ref('')
 const currentImage = ref('')
@@ -20,6 +21,26 @@ const currentTableData = ref(null)
 const searchQuery = ref('')
 const isDarkMode = ref(false)
 const isLoading = ref(false)
+
+// 按类型分组表格 (使用 list.json 中的 type 字段)
+const tablesByType = computed(() => {
+  const grouped = {
+    crypto_list: [],      // filtered_crypto_list_*.json
+    trend_signals: [],    // trend_signals_*.json
+    other: []
+  }
+  
+  tables.value.forEach(table => {
+    const type = table.type || 'other'
+    if (grouped[type]) {
+      grouped[type].push(table)
+    } else {
+      grouped.other.push(table)
+    }
+  })
+  
+  return grouped
+})
 
 // 按类型分组图片
 const imagesByType = computed(() => {
@@ -63,7 +84,8 @@ const filteredItems = computed(() => {
       (item.name && item.name.toLowerCase().includes(query))
     )
   } else {
-    const items = tables.value
+    // 表格标签页：根据当前子标签页过滤
+    const items = tablesByType.value[currentTableTab.value] || []
     if (!searchQuery.value) return items
     const query = searchQuery.value.toLowerCase()
     return items.filter(item => 
@@ -125,10 +147,23 @@ const switchTab = (tab) => {
   // 切换tab时默认选中第一个数据来预览
   if (tab === 'docs' && files.value.length > 0) {
     selectFile(files.value[0])
-  } else if (tab === 'tables' && tables.value.length > 0) {
-    selectTable(tables.value[0])
+  } else if (tab === 'tables' && tablesByType.value[currentTableTab.value]?.length > 0) {
+    selectTable(tablesByType.value[currentTableTab.value][0])
   } else if (tab === 'images' && imagesByType.value[currentImageTab.value]?.length > 0) {
     selectImage(imagesByType.value[currentImageTab.value][0])
+  }
+}
+
+const switchTableTab = (tab) => {
+  currentTableTab.value = tab
+  searchQuery.value = '' // 切换表格子标签时清空搜索
+  
+  // 切换表格子标签时默认选中第一个表格
+  if (tablesByType.value[tab]?.length > 0) {
+    selectTable(tablesByType.value[tab][0])
+  } else {
+    currentTable.value = '' // 如果没有表格，清空当前选中
+    currentTableData.value = null
   }
 }
 
@@ -240,14 +275,30 @@ onMounted(async () => {
           📈 涨跌幅榜 ({{ imagesByType.gainers_losers.length }})
         </button>
       </div>
+      
+      <!-- 表格子标签 (仅在表格标签页时显示) -->
+      <div v-if="currentTab === 'tables'" class="sub-tabs">
+        <button 
+          :class="{ active: currentTableTab === 'crypto_list' }" 
+          @click="switchTableTab('crypto_list')"
+        >
+          📋 加密货币列表 ({{ tablesByType.crypto_list.length }})
+        </button>
+        <button 
+          :class="{ active: currentTableTab === 'trend_signals' }" 
+          @click="switchTableTab('trend_signals')"
+        >
+          🐋 吸筹/洗盘信号 ({{ tablesByType.trend_signals.length }})
+        </button>
+      </div>
 
       
-      <!-- 搜索框：仅在文档和图片标签页显示 -->
-      <div v-if="currentTab !== 'tables'" class="search-box">
+      <!-- 搜索框：在所有标签页显示 -->
+      <div class="search-box">
         <input 
           type="text" 
           v-model="searchQuery"
-          :placeholder="currentTab === 'docs' ? '搜索文档...' : '搜索图片...'"
+          :placeholder="currentTab === 'docs' ? '搜索文档...' : currentTab === 'tables' ? '搜索表格...' : '搜索图片...'"
         >
       </div>
       

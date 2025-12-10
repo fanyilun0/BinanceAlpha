@@ -149,26 +149,6 @@ function processHistoricalData() {
   fs.writeFileSync(outputPath, JSON.stringify(timeSeriesData, null, 2));
   console.log(`\n图表数据已保存到: ${outputPath}`);
 
-  // 生成统计信息
-  const stats = {
-    totalDays: sortedDates.length,
-    totalTokens: allTokens.length,
-    dateRange: {
-      start: sortedDates[0],
-      end: sortedDates[sortedDates.length - 1]
-    },
-    topTokensByAppearance: getTopTokensByAppearance(timeSeriesData.tokens, 30)
-  };
-
-  console.log('\n统计信息:');
-  console.log(`- 数据天数: ${stats.totalDays}`);
-  console.log(`- Token数量: ${stats.totalTokens}`);
-  console.log(`- 日期范围: ${stats.dateRange.start} 至 ${stats.dateRange.end}`);
-  console.log('\n出现次数最多的Token (前10):');
-  stats.topTokensByAppearance.slice(0, 10).forEach((item, index) => {
-    console.log(`  ${index + 1}. ${item.token}: ${item.count} 天 (${(item.count / stats.totalDays * 100).toFixed(1)}%)`);
-  });
-
   return timeSeriesData;
 }
 
