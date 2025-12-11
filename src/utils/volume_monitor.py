@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TrendSignal:
     """三日趋势分析信号"""
-    signal_type: str  # ACCUMULATION_STABLE, WASH_COMPLETE, BULL_FLAG, NEUTRAL
+    signal_type: str  # ACCUMULATION_STABLE, WASH_COMPLETE, NEUTRAL
     score: float  # 0-1 置信度
     reason: str
     details: dict = None
@@ -47,119 +47,316 @@ class TrendSignal:
     history_3d: list = None  # [T0, T-1, T-2] 每项包含 volume, price, market_cap, turnover
 
 
-class TrendAnalyzer:
-    """三日趋势分析器 - 基于量价时空四维判断"""
+@dataclass
+class MarketTierConfig:
+    """不同市值层级的动态阈值配置"""
+    name: str
+    min_mcap: float
+    max_cv: float          # 允许的最大交易量变异系数 (越小越严)
+    max_price_dev: float   # 允许的最大价格偏差 (%, ±值)
+    min_turnover: float    # 最低换手率要求
+    vol_weight: float      # 交易量权重
+    price_weight: float    # 价格权重
+
+
+# 定义分层配置
+MARKET_TIERS: list[MarketTierConfig] = [
+    MarketTierConfig("LARGE", 100_000_000, max_cv=0.10, max_price_dev=2.0, min_turnover=0.01, vol_weight=0.5, price_weight=0.5),
+    MarketTierConfig("MID",   10_000_000, max_cv=0.18, max_price_dev=4.0, min_turnover=0.02, vol_weight=0.4, price_weight=0.6),
+    MarketTierConfig("SMALL",  5_000_000, max_cv=0.30, max_price_dev=8.0, min_turnover=0.03, vol_weight=0.3, price_weight=0.7),
+]
+
+
+class ScoringConfig:
+    """评分与风控配置"""
+    # 市值门槛 (单位: USD)
+    MIN_MCAP_THRESHOLD = 1_000_000         # 1M: 低于此值直接忽略
+    TARGET_MCAP_MIN = 10_000_000           # 10M: 重点关注下限
+    TARGET_MCAP_MAX = 100_000_000          # 100M: 重点关注上限
+
+    # 换手率健康区间
+    TURNOVER_HEALTHY_MIN = 0.03            # 3%: 低于此值流动性差
+    TURNOVER_HEALTHY_MAX = 0.30            # 30%: 高于此值可能过热/P&D风险
+
+    # 权重配置
+    WEIGHT_PATTERN = 0.6                   # 形态权重 (技术面)
+    WEIGHT_MCAP = 0.3                      # 市值权重 (策略面)
+    WEIGHT_LIQUIDITY = 0.1                 # 流动性权重 (资金面)
+
+
+class ConfidenceEngine:
+    """置信度计算引擎
     
-    # 阈值配置
-    CV_THRESHOLD = 0.15  # 交易量变异系数阈值 (越小越稳定)
-    PRICE_FLAT_THRESHOLD = 3.0  # 价格横盘阈值 (±3%)
-    MIN_TURNOVER = 0.02  # 最低换手率 (2%)
-    VOL_SHRINK_RATIO = 0.9  # 缩量判断比例
-    
+    基于市值分层和换手率健康度，对基础形态分数进行加权调整。
+    重点关注 10M-100M 黄金区间，过滤 <1M 垃圾盘。
+    """
+
     @staticmethod
-    def analyze(history_3d: list[dict]) -> Optional[TrendSignal]:
-        """
-        分析连续3天的量价数据
+    def calculate_score(base_score: float, market_cap: float, turnover: float) -> tuple[float, str]:
+        """计算最终置信度
         
         Args:
-            history_3d: 3天数据列表 [今天, 昨天, 前天]
-                       每项包含: volume, price, market_cap (可选), turnover (可选)
-        
+            base_score: 基础形态分数 (0-1)
+            market_cap: 市值 (USD)
+            turnover: 换手率 (0-1)
+            
         Returns:
-            TrendSignal or None
+            (final_score, mcap_tag): 最终分数和市值标签
+        """
+        # 1. 市值系数 (Market Cap Multiplier)
+        mcap_score = 1.0
+        mcap_tag = ""
+
+        if ScoringConfig.TARGET_MCAP_MIN <= market_cap <= ScoringConfig.TARGET_MCAP_MAX:
+            # 黄金区间 (10M-100M): 给予加成
+            mcap_score = 1.2
+            mcap_tag = "[黄金市值]"
+        elif market_cap > ScoringConfig.TARGET_MCAP_MAX:
+            # 大市值: 保持标准
+            mcap_score = 1.0
+            mcap_tag = "[大市值稳健]"
+        elif market_cap >= 5_000_000:
+            # 小市值 (5M-10M): 降权
+            mcap_score = 0.85
+            mcap_tag = "[小市值高风]"
+        else:
+            # 微型市值 (1M-5M): 重度降权
+            mcap_score = 0.7
+            mcap_tag = "[微型市值]"
+
+        # 2. 换手率修正 (Turnover Correction)
+        # 使用正态分布逻辑，中间优，两头差
+        turnover_score = 1.0
+        if turnover < ScoringConfig.TURNOVER_HEALTHY_MIN:
+            turnover_score = 0.7  # 流动性不足
+        elif turnover > ScoringConfig.TURNOVER_HEALTHY_MAX:
+            turnover_score = 0.8  # 过热风险
+        else:
+            turnover_score = 1.1  # 健康换手
+
+        # 3. 综合计算
+        # 基础分 * 市值系数 * 换手修正 (限制最大值为 0.99)
+        raw_final = base_score * mcap_score * turnover_score
+        final_score = min(0.99, raw_final)
+
+        return final_score, mcap_tag
+
+    @staticmethod
+    def get_score_emoji(score: float) -> str:
+        """根据置信度返回 Emoji"""
+        if score >= 0.9:
+            return "🔥"  # 极高置信度 (通常是黄金市值+完美形态)
+        if score >= 0.8:
+            return "⭐"  # 高置信度
+        if score >= 0.7:
+            return "🔹"  # 中等置信度
+        return "⚪"  # 低置信度
+
+
+class DynamicTrendAnalyzer:
+    """基于市值分层的动态趋势分析器
+    
+    核心改进:
+    1. 动态阈值：根据市值分层调整 CV/价格偏差容忍度
+    2. 加权评分：集成 ConfidenceEngine 进行市值分层加权
+    3. 多策略检测：吸筹、洗盘结束、牛旗整理
+    """
+
+    @staticmethod
+    def _get_tier(market_cap: float) -> MarketTierConfig:
+        """根据市值获取对应层级的配置"""
+        for tier in MARKET_TIERS:
+            if market_cap >= tier.min_mcap:
+                return tier
+        return MARKET_TIERS[-1]
+
+    @staticmethod
+    def _normalize_score(value: float, threshold: float, inverse: bool = True) -> float:
+        """归一化打分函数 (0-1)
+        inverse=True: 值越小分越高 (如CV)
+        inverse=False: 值越大分越高 (如换手率)
+        """
+        if inverse:
+            if value >= threshold:
+                return 0.0
+            return 1.0 - (value / threshold)
+        if value >= threshold:
+            return 1.0
+        return min(value / threshold, 1.0)
+
+    @staticmethod
+    def analyze(history_3d: list[dict]) -> Optional[TrendSignal]:
+        """分析三日趋势并返回信号
+        
+        Args:
+            history_3d: 三日数据列表 [T0, T-1, T-2]，每项包含 volume, price, market_cap
+            
+        Returns:
+            TrendSignal 或 None
         """
         if len(history_3d) < 3:
             return None
-        
+
         d0, d1, d2 = history_3d[0], history_3d[1], history_3d[2]
-        
-        # 提取数据
-        volumes = [d0["volume"], d1["volume"], d2["volume"]]
-        prices = [d0["price"], d1["price"], d2["price"]]
-        
-        # 计算价格变化率 (相对于前一天)
-        p_change_d0 = ((prices[0] - prices[1]) / prices[1] * 100) if prices[1] > 0 else 0
-        p_change_d1 = ((prices[1] - prices[2]) / prices[2] * 100) if prices[2] > 0 else 0
-        
-        # 计算换手率 (如果有market_cap)
-        turnovers = []
+        volumes = [d['volume'] for d in history_3d]
+        prices = [d['price'] for d in history_3d]
+        market_cap = d0.get("market_cap", 0)
+
+        # 获取该币种的动态阈值配置
+        config = DynamicTrendAnalyzer._get_tier(market_cap)
+
+        # 计算统计指标
+        vol_mean = sum(volumes) / 3
+        vol_std = (sum((v - vol_mean) ** 2 for v in volumes) / 3) ** 0.5
+        vol_cv = vol_std / vol_mean if vol_mean > 0 else float('inf')
+
+        # 价格变化序列
+        p_changes = [
+            ((prices[0] - prices[1]) / prices[1] * 100) if prices[1] else 0,
+            ((prices[1] - prices[2]) / prices[2] * 100) if prices[2] else 0
+        ]
+        max_p_change = max(abs(c) for c in p_changes)
+
+        # 换手率
+        avg_turnover = sum(d.get("volume", 0) / d.get("market_cap", 1) for d in history_3d) / 3
+        current_turnover = d0.get("volume", 0) / market_cap if market_cap > 0 else 0
+
+        # 构建返回用的历史数据
+        history_enriched = []
         for d in history_3d:
-            if d.get("market_cap") and d["market_cap"] > 0:
-                turnovers.append(d["volume"] / d["market_cap"])
-            elif d.get("turnover"):
-                turnovers.append(d["turnover"])
-            else:
-                turnovers.append(0)
-        
-        # 构建带换手率的三日数据 (用于展示)
-        history_3d_enriched = []
-        for i, d in enumerate(history_3d):
-            history_3d_enriched.append({
+            history_enriched.append({
                 "volume": d["volume"],
                 "price": d["price"],
                 "market_cap": d.get("market_cap", 0),
-                "turnover": turnovers[i]
+                "turnover": d.get("volume", 0) / d.get("market_cap", 1) if d.get("market_cap") else 0
             })
-        
-        # 计算交易量变异系数 (CV = std / mean)
-        vol_mean = sum(volumes) / len(volumes)
-        vol_variance = sum((v - vol_mean) ** 2 for v in volumes) / len(volumes)
-        vol_std = vol_variance ** 0.5
-        vol_cv = vol_std / vol_mean if vol_mean > 0 else float('inf')
-        
-        # === 逻辑 A：稳定吸筹 ===
-        # 条件：交易量极其稳定 (CV < 0.15)，价格波动极小 (|Change| < 3%)，且不是死盘 (Turnover > 0.02)
-        is_stable_vol = vol_cv < TrendAnalyzer.CV_THRESHOLD
-        is_flat_price = abs(p_change_d0) < TrendAnalyzer.PRICE_FLAT_THRESHOLD and abs(p_change_d1) < TrendAnalyzer.PRICE_FLAT_THRESHOLD
-        is_active = all(t > TrendAnalyzer.MIN_TURNOVER for t in turnovers) if turnovers and all(t > 0 for t in turnovers) else True
-        
-        if is_stable_vol and is_flat_price and is_active:
-            return TrendSignal(
-                signal_type="ACCUMULATION_STABLE",
-                score=0.9,
-                reason="连续3日量能极度稳定且价格横盘，主力控盘吸筹迹象明显",
-                details={"vol_cv": vol_cv, "price_changes": [p_change_d0, p_change_d1], "turnovers": turnovers},
-                history_3d=history_3d_enriched
+
+        # ==========================================
+        # 策略 A: 智能吸筹检测 (Accumulation)
+        # ==========================================
+        # 逻辑：价格要在动态阈值内横盘，且量能稳定
+
+        # A1. 量能稳定性得分 (CV越低分越高)
+        score_vol_stability = DynamicTrendAnalyzer._normalize_score(vol_cv, config.max_cv, inverse=True)
+
+        # A2. 价格横盘得分 (变化幅度越小分越高)
+        score_price_flat = DynamicTrendAnalyzer._normalize_score(max_p_change, config.max_price_dev, inverse=True)
+
+        # A3. 活跃度惩罚 (如果是死盘，直接扣分)
+        active_ratio = min(avg_turnover / config.min_turnover, 1.0) if config.min_turnover > 0 else 0
+
+        # 基础形态分数 (加权)
+        base_accumulation_score = (
+            score_vol_stability * config.vol_weight +
+            score_price_flat * config.price_weight
+        ) * active_ratio
+
+        if base_accumulation_score > 0.60:  # 基础门槛降低，让 ConfidenceEngine 决定最终分数
+            # 使用 ConfidenceEngine 计算最终置信度
+            final_score, mcap_tag = ConfidenceEngine.calculate_score(
+                base_accumulation_score, market_cap, current_turnover
             )
-        
-        # === 逻辑 B：缩量洗盘结束 ===
-        # 条件：连续两天缩量 (今天<昨天<前天)，且今天价格止跌 (Change > -1%)
-        is_vol_shrinking = (
-            volumes[0] < volumes[1] * TrendAnalyzer.VOL_SHRINK_RATIO and 
-            volumes[1] < volumes[2] * TrendAnalyzer.VOL_SHRINK_RATIO
+
+            # 最终分数过滤
+            if final_score >= 0.60:
+                return TrendSignal(
+                    signal_type="ACCUMULATION_STABLE",
+                    score=round(final_score, 2),
+                    reason=f"{mcap_tag} [{config.name}级] 量稳({score_vol_stability:.2f}) 价平({score_price_flat:.2f})",
+                    details={
+                        "tier": config.name,
+                        "mcap_tag": mcap_tag,
+                        "vol_cv": round(vol_cv, 4),
+                        "max_p_change": round(max_p_change, 2),
+                        "avg_turnover": round(avg_turnover, 4),
+                        "base_score": round(base_accumulation_score, 2)
+                    },
+                    history_3d=history_enriched
+                )
+
+        # ==========================================
+        # 策略 B: 洗盘结束 (Wash Complete)
+        # ==========================================
+        # 逻辑：连续缩量 + 价格企稳
+
+        # B1. 缩量得分 (今天<昨天<前天)
+        is_shrinking = volumes[0] < volumes[1] < volumes[2]
+        shrink_magnitude = (volumes[2] - volumes[0]) / volumes[2] if volumes[2] > 0 else 0
+        score_shrink = 0.8 if is_shrinking else 0.0
+        if is_shrinking and 0.3 <= shrink_magnitude <= 0.7:
+            # 如果缩量幅度在 30%-70% 之间，加分 (缩太少没意义，缩太多可能是归零)
+            score_shrink += 0.2
+
+        # B2. 企稳得分 (今天价格没跌 或 微跌)
+        # 容忍微跌 -1.5% 到 +inf
+        score_stabilize = 1.0 if p_changes[0] > -1.5 else 0.0
+
+        base_wash_score = (score_shrink * 0.6 + score_stabilize * 0.4)
+
+        if base_wash_score > 0.70:
+            # 使用 ConfidenceEngine 计算最终置信度
+            final_score, mcap_tag = ConfidenceEngine.calculate_score(
+                base_wash_score, market_cap, current_turnover
+            )
+
+            if final_score >= 0.60:
+                return TrendSignal(
+                    signal_type="WASH_COMPLETE",
+                    score=round(final_score, 2),
+                    reason=f"{mcap_tag} 连续缩量({shrink_magnitude*100:.1f}%)且价格企稳",
+                    details={
+                        "tier": config.name,
+                        "mcap_tag": mcap_tag,
+                        "shrink_mag": round(shrink_magnitude, 4),
+                        "base_score": round(base_wash_score, 2)
+                    },
+                    history_3d=history_enriched
+                )
+
+        # ==========================================
+        # 策略 C: 牛旗整理 (Bull Flag)
+        # ==========================================
+        # 逻辑：前日放量大涨 + 昨日/今日缩量回调
+
+        # C1. 前日是否放量大涨
+        is_prev_pump = (
+            p_changes[1] > 10 and  # T-2 到 T-1 涨幅 > 10%
+            volumes[1] > volumes[2] * 1.5  # T-1 量能 > T-2 * 1.5
         )
-        is_price_stabilizing = p_change_d0 > -1.0
-        
-        if is_vol_shrinking and is_price_stabilizing:
-            return TrendSignal(
-                signal_type="WASH_COMPLETE",
-                score=0.85,
-                reason="交易量连续萎缩（卖盘枯竭），价格企稳，洗盘可能结束",
-                details={"vol_shrink": [volumes[0]/volumes[1], volumes[1]/volumes[2]], "price_change_d0": p_change_d0, "turnovers": turnovers},
-                history_3d=history_3d_enriched
+
+        # C2. 今日是否缩量整理
+        is_now_correction = (
+            -5 < p_changes[0] < 5 and  # T-1 到 T0 波动 < ±5%
+            volumes[0] < volumes[1] * 0.7  # T0 量能 < T-1 * 0.7
+        )
+
+        if is_prev_pump and is_now_correction:
+            base_flag_score = 0.75
+            final_score, mcap_tag = ConfidenceEngine.calculate_score(
+                base_flag_score, market_cap, current_turnover
             )
-        
-        # === 逻辑 C：放量后的缩量确认 (空中加油/牛旗) ===
-        # 条件：昨天大涨放量，今天缩量回调但价格没跌多少
-        is_prev_pump = p_change_d1 > 5  # 昨天大涨
-        is_now_correction = -3 < p_change_d0 < 1  # 今天微跌或微涨
-        is_vol_drop_healthy = volumes[0] < volumes[1]  # 今天量缩
-        
-        if is_prev_pump and is_now_correction and is_vol_drop_healthy:
-            return TrendSignal(
-                signal_type="BULL_FLAG",
-                score=0.8,
-                reason="放量上涨后缩量回调，属于良性整理，上涨中继",
-                details={"prev_pump": p_change_d1, "correction": p_change_d0, "turnovers": turnovers},
-                history_3d=history_3d_enriched
-            )
-        
+
+            if final_score >= 0.60:
+                return TrendSignal(
+                    signal_type="BULL_FLAG",
+                    score=round(final_score, 2),
+                    reason=f"{mcap_tag} 昨日放量涨{p_changes[1]:.1f}%，今日缩量整理",
+                    details={
+                        "tier": config.name,
+                        "mcap_tag": mcap_tag,
+                        "prev_pump_pct": round(p_changes[1], 2),
+                        "vol_shrink_ratio": round(volumes[0] / volumes[1], 2) if volumes[1] > 0 else 0,
+                        "base_score": round(base_flag_score, 2)
+                    },
+                    history_3d=history_enriched
+                )
+
         return TrendSignal(
             signal_type="NEUTRAL",
-            score=0.5,
+            score=0.1,
             reason="无明显特征",
-            details={"vol_cv": vol_cv, "price_changes": [p_change_d0, p_change_d1], "turnovers": turnovers},
-            history_3d=history_3d_enriched
+            details={"tier": config.name, "vol_cv": round(vol_cv, 4)},
+            history_3d=history_enriched
         )
 
 def _find_latest_file_for_date(data_dir: str, target_date: str) -> Optional[str]:
@@ -266,9 +463,11 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     """监控交易量变化并发送警报
     
     流程：
-    1. 批量处理所有项目，更新今日数据到历史记录
-    2. 基于三日历史数据进行趋势分析 (换手率/吸筹/洗盘)
-    3. 发送告警
+    1. 硬性市值过滤 (< MIN_MCAP_THRESHOLD 直接忽略)
+    2. 批量处理所有项目，更新今日数据到历史记录
+    3. 基于三日历史数据进行趋势分析 (换手率/吸筹/洗盘)
+    4. 使用 ConfidenceEngine 进行置信度加权
+    5. 智能排序并发送告警
     
     Args:
         crypto_list: 加密货币项目列表 (如果为None，则从文件加载)
@@ -305,13 +504,14 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
 
     # 最低交易量门槛
     MIN_VOLUME_24H = 2_400_000
-    MIN_MARKET_CAP = 1_000_000
     
     # ============================================
-    # 阶段1: 批量更新今日数据到历史记录
+    # 阶段1: 硬性过滤 + 批量更新今日数据
     # ============================================
-    print("阶段1: 批量更新今日数据...")
+    print("阶段1: 硬性过滤及批量更新今日数据...")
     processed_symbols = []
+    valid_crypto_list = []  # 用于后续分析的清洗后列表
+    filtered_count = 0
     
     for crypto in crypto_list:
         symbol = crypto.get("symbol", "Unknown")
@@ -327,6 +527,13 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         price = usd_quote.get("price", 0)
         market_cap = usd_quote.get("marketCap", 0)
         
+        # ---> 硬性市值过滤 <---
+        if market_cap < ScoringConfig.MIN_MCAP_THRESHOLD:
+            filtered_count += 1
+            continue  # 直接跳过 < 1M 的代币
+        
+        valid_crypto_list.append(crypto)
+        
         # 保存今日数据 (不过滤，便于后续趋势分析)
         if volume_24h > 0 and price > 0:
             history_manager.update(today_str, symbol, {
@@ -336,6 +543,7 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
             })
             processed_symbols.append(symbol)
     
+    print(f"过滤后剩余关注项目: {len(valid_crypto_list)} (原: {len(crypto_list)}, 过滤: {filtered_count})")
     print(f"已更新 {len(processed_symbols)} 个项目的今日数据")
     
     # ============================================
@@ -346,9 +554,9 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     alerts = []
     dealer_accumulation_alerts = []  # 吸筹: 量增价平/小涨
     dealer_distribution_alerts = []  # 出货/洗盘: 量增价跌
-    trend_signals = []  # 三日趋势信号 (稳定吸筹/洗盘结束/牛旗)
+    trend_signals = []  # 三日趋势信号 (稳定吸筹/洗盘结束)
     
-    for crypto in crypto_list:
+    for crypto in valid_crypto_list:  # 使用过滤后的列表
         symbol = crypto.get("symbol", "Unknown")
         name = crypto.get("name", "Unknown")
         
@@ -367,6 +575,7 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         price_change_24h = usd_quote.get("percentChange24h", 0)
         volume_24h = usd_quote.get("volume24h", 0)
         market_cap = usd_quote.get("marketCap", 0)
+        price = usd_quote.get("price", 0)
         fullyDilluttedMarketCap = usd_quote.get("fullyDilluttedMarketCap", 0)
         platform = crypto.get("platform", {}).get("name", "")
 
@@ -428,32 +637,36 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         is_continuous_accumulation = False
         
         if h_today and h_yest and h_before:
-            # 构建3日数据序列 [今天, 昨天, 前天]
             history_3d = [h_today, h_yest, h_before]
-            trend_signal = TrendAnalyzer.analyze(history_3d)
+            trend_signal = DynamicTrendAnalyzer.analyze(history_3d)
             
-            if trend_signal and trend_signal.signal_type != "NEUTRAL" and trend_signal.score >= 0.8:
-                # 高置信度信号
-                signal_data = {
-                    "symbol": symbol,
-                    "name": name,
-                    "signal_type": trend_signal.signal_type,
-                    "score": trend_signal.score,
-                    "reason": trend_signal.reason,
-                    "volume": volume_24h,
-                    "market_cap": market_cap,
-                    "fdv": fullyDilluttedMarketCap,
-                    "platform": platform,
-                    "price_change": price_change_24h,
-                    "vol_change": vol_change_24h,
-                    # 三日数据 [T0, T-1, T-2]
-                    "history_3d": trend_signal.history_3d
-                }
-                trend_signals.append(signal_data)
+            if trend_signal and trend_signal.signal_type != "NEUTRAL":
+                should_alert = False
+                if trend_signal.score >= 0.85:
+                    should_alert = True
+                elif trend_signal.score >= 0.75 and market_cap > 5_000_000:
+                    should_alert = True
                 
-                # 稳定吸筹信号标记
-                if trend_signal.signal_type == "ACCUMULATION_STABLE":
-                    is_continuous_accumulation = True
+                if should_alert:
+                    signal_data = {
+                        "symbol": symbol,
+                        "name": name,
+                        "signal_type": trend_signal.signal_type,
+                        "score": trend_signal.score,
+                        "reason": trend_signal.reason,
+                        "details": trend_signal.details,
+                        "volume": volume_24h,
+                        "market_cap": market_cap,
+                        "fdv": fullyDilluttedMarketCap,
+                        "platform": platform,
+                        "price_change": price_change_24h,
+                        "vol_change": vol_change_24h,
+                        "history_3d": trend_signal.history_3d
+                    }
+                    trend_signals.append(signal_data)
+                    
+                    if trend_signal.signal_type == "ACCUMULATION_STABLE" and trend_signal.score > 0.8:
+                        is_continuous_accumulation = True
         
         # ============================================
         # 构建三日历史数据 (用于展示)
@@ -477,11 +690,19 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
             ]
         
         # ============================================
-        # 庄家行为检测 (当日维度)
+        # 庄家行为检测 (当日维度 + 置信度加权)
         # ============================================
         is_accumulation = False
+        current_turnover = volume_24h / market_cap if market_cap > 0 else 0
         
-        if vol_change_24h > threshold and volume_24h >= MIN_VOLUME_24H and market_cap > MIN_MARKET_CAP:
+        if vol_change_24h > threshold and volume_24h >= MIN_VOLUME_24H:
+            # 计算动态置信度 (即使不是三日趋势，单日异动也可以有置信度)
+            base_alert_score = 0.65  # 单日异动基础分
+            alert_score, mcap_tag = ConfidenceEngine.calculate_score(
+                base_alert_score, market_cap, current_turnover
+            )
+            score_emoji = ConfidenceEngine.get_score_emoji(alert_score)
+            
             alert_data = {
                 "symbol": symbol,
                 "name": name,
@@ -491,35 +712,41 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                 "market_cap": market_cap,
                 "fdv": fullyDilluttedMarketCap,
                 "platform": platform,
-                "history_3d": history_3d_enriched  # 添加三日数据
+                "price": price,
+                "history_3d": history_3d_enriched,  # 添加三日数据
+                "score": alert_score,  # 新增分数
+                "mcap_tag": mcap_tag,  # 新增标签
+                "score_emoji": score_emoji  # 新增 emoji
             }
             
-            # 吸筹: 量增 + 价格不变或小涨 (-2% ~ +10%)
-            if -2 <= price_change_24h <= 10:
-                is_accumulation = True
-                
-                # 标记连续吸筹 (基于三日趋势分析结果)
-                if is_continuous_accumulation:
-                    alert_data["is_continuous"] = True
-                # 备用逻辑：直接计算三日稳定性
-                elif h_today and h_yest and h_before:
-                    v_t, p_t = h_today["volume"], h_today["price"]
-                    v_y, p_y = h_yest["volume"], h_yest["price"]
-                    v_b, p_b = h_before["volume"], h_before["price"]
+            # 只有分数达标才加入警报
+            if alert_score >= 0.55:
+                # 吸筹: 量增 + 价格不变或小涨 (-2% ~ +10%)
+                if -2 <= price_change_24h <= 10:
+                    is_accumulation = True
                     
-                    vols = [v_t, v_y, v_b]
-                    prices = [p_t, p_y, p_b]
-                    v_stable = min(vols) >= max(vols) * 0.8
-                    p_stable = max(prices) <= min(prices) * 1.05
-                    
-                    if v_stable and p_stable:
+                    # 标记连续吸筹 (基于三日趋势分析结果)
+                    if is_continuous_accumulation:
                         alert_data["is_continuous"] = True
-                
-                dealer_accumulation_alerts.append(alert_data)
-                
-            # 出货/洗盘: 量增 + 价格下跌 (< -2%)
-            elif price_change_24h < -2:
-                dealer_distribution_alerts.append(alert_data)
+                    # 备用逻辑：直接计算三日稳定性
+                    elif h_today and h_yest and h_before:
+                        v_t, p_t = h_today["volume"], h_today["price"]
+                        v_y, p_y = h_yest["volume"], h_yest["price"]
+                        v_b, p_b = h_before["volume"], h_before["price"]
+                        
+                        vols = [v_t, v_y, v_b]
+                        prices = [p_t, p_y, p_b]
+                        v_stable = min(vols) >= max(vols) * 0.8
+                        p_stable = max(prices) <= min(prices) * 1.05
+                        
+                        if v_stable and p_stable:
+                            alert_data["is_continuous"] = True
+                    
+                    dealer_accumulation_alerts.append(alert_data)
+                    
+                # 出货/洗盘: 量增 + 价格下跌 (< -2%)
+                elif price_change_24h < -2:
+                    dealer_distribution_alerts.append(alert_data)
 
         if triggered:
             alert_info = {
@@ -539,7 +766,26 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     # 保存历史数据
     history_manager.save()
     
-    # 按24h变化率排序
+    # ============================================
+    # 智能排序 (Sorting Optimization)
+    # ============================================
+    # 不再单纯按市值排序，而是按 [置信度 desc, 市值 desc] 排序
+    # 这样 10M-100M 的高分项目会排在 500M 的普通项目前面
+    
+    def smart_sort_key(item):
+        """智能排序键: (置信度, 市值)"""
+        return (item.get("score", 0), item.get("market_cap", 0))
+    
+    # 趋势信号按置信度和市值排序
+    trend_signals.sort(key=smart_sort_key, reverse=True)
+    
+    # 吸筹告警按置信度和市值排序
+    dealer_accumulation_alerts.sort(key=smart_sort_key, reverse=True)
+    
+    # 出货/洗盘告警按置信度和市值排序
+    dealer_distribution_alerts.sort(key=smart_sort_key, reverse=True)
+    
+    # 常规异动按24h变化率排序
     alerts.sort(key=lambda x: x["change_24h"], reverse=True)
     
     # 保存吸筹/洗盘数据到本地 JSON (供 docs-viewer 使用)
@@ -909,21 +1155,42 @@ async def _send_signal_card(signal_data: dict):
     reason = signal_data["reason"]
     history_3d = signal_data.get("history_3d", [])
     market_cap = signal_data.get("market_cap", 0)
+    fdv = signal_data.get("fdv", 0)
     price_change = signal_data.get("price_change", 0)
+    price = signal_data.get("price", 0)
     platform = signal_data.get("platform", "")
+    details = signal_data.get("details", {}) or {}
+    tier_name = details.get("tier", "UNKNOWN")
+    mcap_tag = details.get("mcap_tag", "")
     
-    # 构建标题
+    # 获取置信度 Emoji
+    score_emoji = ConfidenceEngine.get_score_emoji(score)
+    
+    # 构建标题 (时间放最前面)
     signal_emoji = _get_signal_emoji(signal_type)
     signal_name = _get_signal_name(signal_type)
-    title = f"{signal_emoji} {symbol} 发现{signal_name}信号 (置信度: {score:.2f})"
+    title = f"{signal_emoji} {symbol} 发现{signal_name}信号 {score_emoji}"
     
-    # 构建描述（基本信息）
+    # 构建描述（时间放最上方，市值和FDV突出显示）
     price_emoji = "📈" if price_change > 0 else "📉" if price_change < 0 else "➡️"
-    description = f"**{name}** | {platform}\n"
-    description += f"市值: **${_format_number(market_cap)}** | 24h价格: **{price_change:+.2f}%** {price_emoji}"
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    description = f"⏰ **{current_time}**\n\n"
+    description += f"**{name}** | {platform}\n"
+    description += f"💰 **MC: ${_format_number(market_cap)}** | **FDV: ${_format_number(fdv)}**\n"
+    if price > 0:
+        description += f"💵 当前价格: **${price:.6g}**\n"
+    description += f"📊 24h价格: **{price_change:+.2f}%** {price_emoji}"
     
     # 构建三日量价趋势 (垂直布局)
     fields = []
+
+    # 置信度与分层信息
+    fields.append({
+        "name": "🎚️ 置信度分析",
+        "value": f"**得分: {score:.2f}/1.0** {score_emoji} (等级: {tier_name}) {mcap_tag}\n说明: {reason}",
+        "inline": False
+    })
     
     if history_3d and len(history_3d) >= 3:
         # T-2 (前天)
@@ -996,7 +1263,7 @@ async def _send_signal_card(signal_data: dict):
         "color": _get_signal_color(signal_type),
         "fields": fields,
         "footer": {
-            "text": f"判定逻辑: CV<0.15 & Price±3% | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            "text": f"基于市值分层的动态阈值 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         }
     }
     
@@ -1070,8 +1337,10 @@ async def _send_summary_embed(
     # 限制数量
     display_items = items[:max_items]
     
-    # 构建描述内容 (紧凑列表格式)
-    lines = []
+    # 构建描述内容 (时间放最上方)
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    lines = [f"⏰ **{current_time}**\n"]
+    
     if description_prefix:
         lines.append(description_prefix)
         lines.append("")
@@ -1083,6 +1352,13 @@ async def _send_summary_embed(
         price_change = item.get("price_change", 0)
         volume = _format_number(item.get("volume", item.get("volume_24h", 0)))
         market_cap = _format_number(item.get("market_cap", 0))
+        fdv = _format_number(item.get("fdv", 0))
+        price = item.get("price", 0)
+        score = item.get("score", 0)
+        mcap_tag = item.get("mcap_tag", "")
+        
+        # 获取置信度 Emoji
+        score_emoji = ConfidenceEngine.get_score_emoji(score) if score > 0 else ""
         
         # 状态标记
         vol_emoji = "🚀" if vol_change > 50 else "↗️" if vol_change > 0 else "↘️"
@@ -1098,6 +1374,10 @@ async def _send_summary_embed(
             status = "🔥 放量上涨"
         else:
             status = f"Vol {vol_change:+.0f}% | Price {price_change:+.1f}%"
+        
+        # 添加置信度信息
+        score_info = f" | 置信度: {score:.2f} {score_emoji}" if score > 0 else ""
+        mcap_info = f" {mcap_tag}" if mcap_tag else ""
         
         # 构建三日数据展示
         history_3d = item.get("history_3d", [])
@@ -1132,11 +1412,15 @@ async def _send_summary_embed(
                 f"├─ T-1: Vol {t1_vol} | TR {t1_tr} | ${t1_price:.4g}{t1_pct}\n"
             )
         
+        # 价格信息
+        price_info = f" | Price: ${price:.6g}" if price > 0 else ""
+        
         block = (
-            f"**{i}. {symbol}** ({name})\n"
+            f"**{i}. {symbol}** ({name}){mcap_info}\n"
+            f"├─ 💰 **MC: ${market_cap}** | **FDV: ${fdv}**{price_info}\n"
             f"├─ T0 Vol: ${volume} ({vol_change:+.0f}% {vol_emoji})\n"
             f"{history_lines}"
-            f"├─ MCap: ${market_cap} | Price: {price_change:+.1f}% {price_emoji}\n"
+            f"├─ Price: {price_change:+.1f}% {price_emoji}{score_info}\n"
             f"└─ {status}"
         )
         lines.append(block)
@@ -1157,7 +1441,7 @@ async def _send_summary_embed(
         "description": description,
         "color": color,
         "footer": {
-            "text": f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            "text": f"基于市值分层的动态阈值 | {current_time}"
         }
     }
     
@@ -1199,7 +1483,7 @@ async def _save_trend_data(
             "distribution_count": len(distribution_alerts)
         },
         "columns": [
-            "代号", "名称", "信号类型", "置信度", "交易量变化(%)", "价格变化(%)",
+            "代号", "名称", "信号类型", "置信度", "市值分层", "市值标签", "交易量变化(%)", "价格变化(%)",
             "24h交易量", "市值", "FDV", "平台", "信号解读",
             "T0交易量", "T0换手率", "T-1交易量", "T-1换手率", "T-2交易量", "T-2换手率"
         ],
@@ -1215,11 +1499,16 @@ async def _save_trend_data(
         signal_name = _get_signal_name(signal_type)
         history_3d = item.get("history_3d", [])
         
+        details = item.get("details", {}) or {}
+        tier_name = details.get("tier", "-")
+        mcap_tag = details.get("mcap_tag", "-")
         row = {
             "代号": item.get("symbol", "-"),
             "名称": item.get("name", "-"),
             "信号类型": signal_name,
             "置信度": f"{item.get('score', 0):.2f}",
+            "市值分层": tier_name,
+            "市值标签": mcap_tag,
             "交易量变化(%)": f"{item.get('vol_change', 0):+.1f}%",
             "价格变化(%)": f"{item.get('price_change', 0):+.1f}%",
             "24h交易量": f"${_format_number(item.get('volume', 0))}",
@@ -1229,6 +1518,8 @@ async def _save_trend_data(
             "信号解读": item.get("reason", "-"),
             "signal_type_raw": signal_type,
             "score_raw": item.get("score", 0),
+            "tier_raw": tier_name,
+            "mcap_tag_raw": mcap_tag,
             "vol_change_raw": item.get("vol_change", 0),
             "price_change_raw": item.get("price_change", 0),
             "volume_raw": item.get("volume", 0),
@@ -1258,20 +1549,38 @@ async def _save_trend_data(
             continue
         
         history_3d = item.get("history_3d", [])
+        score = item.get("score", 0.70 if not item.get("is_continuous") else 0.85)
+        mcap_tag = item.get("mcap_tag", "-")
+        
+        # 计算市值分层
+        market_cap = item.get("market_cap", 0)
+        if market_cap >= 100_000_000:
+            tier_name = "LARGE"
+        elif market_cap >= 10_000_000:
+            tier_name = "MID"
+        elif market_cap >= 5_000_000:
+            tier_name = "SMALL"
+        else:
+            tier_name = "MICRO"
+        
         row = {
             "代号": symbol,
             "名称": item.get("name", "-"),
             "信号类型": "疑似吸筹" if not item.get("is_continuous") else "持续吸筹",
-            "置信度": "0.70" if not item.get("is_continuous") else "0.85",
+            "置信度": f"{score:.2f}",
+            "市值分层": tier_name,
+            "市值标签": mcap_tag,
             "交易量变化(%)": f"{item.get('vol_change', 0):+.1f}%",
             "价格变化(%)": f"{item.get('price_change', 0):+.1f}%",
             "24h交易量": f"${_format_number(item.get('volume', 0))}",
             "市值": f"${_format_number(item.get('market_cap', 0))}",
             "FDV": f"${_format_number(item.get('fdv', 0))}",
             "平台": item.get("platform", "-"),
-            "信号解读": "量增价平/小涨" + (" + 连续3日稳定" if item.get("is_continuous") else ""),
+            "信号解读": "量增价平/小涨" + (" + 连续3日稳定" if item.get("is_continuous") else "") + f" {mcap_tag}",
             "signal_type_raw": "ACCUMULATION_SINGLE" if not item.get("is_continuous") else "ACCUMULATION_CONTINUOUS",
-            "score_raw": 0.70 if not item.get("is_continuous") else 0.85,
+            "score_raw": score,
+            "tier_raw": tier_name,
+            "mcap_tag_raw": mcap_tag,
             "vol_change_raw": item.get("vol_change", 0),
             "price_change_raw": item.get("price_change", 0),
             "volume_raw": item.get("volume", 0),
@@ -1300,20 +1609,38 @@ async def _save_trend_data(
             continue
         
         history_3d = item.get("history_3d", [])
+        score = item.get("score", 0.65)
+        mcap_tag = item.get("mcap_tag", "-")
+        
+        # 计算市值分层
+        market_cap = item.get("market_cap", 0)
+        if market_cap >= 100_000_000:
+            tier_name = "LARGE"
+        elif market_cap >= 10_000_000:
+            tier_name = "MID"
+        elif market_cap >= 5_000_000:
+            tier_name = "SMALL"
+        else:
+            tier_name = "MICRO"
+        
         row = {
             "代号": symbol,
             "名称": item.get("name", "-"),
             "信号类型": "疑似出货/洗盘",
-            "置信度": "0.65",
+            "置信度": f"{score:.2f}",
+            "市值分层": tier_name,
+            "市值标签": mcap_tag,
             "交易量变化(%)": f"{item.get('vol_change', 0):+.1f}%",
             "价格变化(%)": f"{item.get('price_change', 0):+.1f}%",
             "24h交易量": f"${_format_number(item.get('volume', 0))}",
             "市值": f"${_format_number(item.get('market_cap', 0))}",
             "FDV": f"${_format_number(item.get('fdv', 0))}",
             "平台": item.get("platform", "-"),
-            "信号解读": "量增价跌，注意风险",
+            "信号解读": f"量增价跌，注意风险 {mcap_tag}",
             "signal_type_raw": "DISTRIBUTION",
-            "score_raw": 0.65,
+            "score_raw": score,
+            "tier_raw": tier_name,
+            "mcap_tag_raw": mcap_tag,
             "vol_change_raw": item.get("vol_change", 0),
             "price_change_raw": item.get("price_change", 0),
             "volume_raw": item.get("volume", 0),

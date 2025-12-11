@@ -108,8 +108,8 @@ const formattedTableData = computed(() => {
       date: props.tableData.date || new Date().toLocaleDateString('zh-CN'),
       total_count: props.tableData.total_count || props.tableData.data?.length || 0,
       summary: props.tableData.summary || null,
-      // 精简列展示，隐藏 raw 字段
-      columns: ['代号', '名称', '信号类型', '置信度', '交易量变化(%)', '价格变化(%)', '24h交易量', '市值', '平台', 'T0换手率', 'T-1换手率', 'T-2换手率', '信号解读'],
+      // 精简列展示，隐藏 raw 字段，添加市值标签列
+      columns: ['代号', '名称', '信号类型', '置信度', '市值分层', '市值标签', '交易量变化(%)', '价格变化(%)', '24h交易量', '市值', 'FDV', '平台', 'T0换手率', 'T-1换手率', 'T-2换手率', '信号解读'],
       data: props.tableData.data || []
     }
   } else {
@@ -180,6 +180,26 @@ const getCellColor = (row, column) => {
     if (isNaN(value)) return 'transparent'
     if (value >= 0.85) return '#c8e6c9'  // 高置信度：绿色
     if (value >= 0.7) return '#fff9c4'   // 中置信度：黄色
+    return 'transparent'
+  }
+  
+  // 市值分层列 - 不同层级不同颜色
+  if (column === '市值分层') {
+    const value = row[column]
+    if (value === 'LARGE') return '#e3f2fd'   // 大市值：浅蓝色
+    if (value === 'MID') return '#e8f5e9'     // 中市值：浅绿色
+    if (value === 'SMALL') return '#fff3e0'   // 小市值：浅橙色
+    if (value === 'MICRO') return '#ffebee'   // 微型市值：浅红色
+    return 'transparent'
+  }
+  
+  // 市值标签列 - 黄金市值高亮
+  if (column === '市值标签') {
+    const value = row[column]
+    if (value?.includes('黄金')) return '#fff176'     // 黄金市值：金色
+    if (value?.includes('大市值')) return '#e3f2fd'   // 大市值稳健：浅蓝色
+    if (value?.includes('小市值')) return '#ffcc80'   // 小市值高风：浅橙色
+    if (value?.includes('微型')) return '#ef9a9a'     // 微型市值：浅红色
     return 'transparent'
   }
   
