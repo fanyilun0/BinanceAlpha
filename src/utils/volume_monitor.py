@@ -74,6 +74,12 @@ class ScoringConfig:
     TARGET_MCAP_MIN = 10_000_000           # 10M: 重点关注下限
     TARGET_MCAP_MAX = 100_000_000          # 100M: 重点关注上限
 
+    # ==========================================
+    # 优化: 提高硬性过滤门槛，剔除噪音
+    # ==========================================
+    MIN_VOLUME_24H = 3_000_000             # 3M: 最低24h交易量门槛 (原2.4M)
+    MIN_TURNOVER = 0.02                    # 2%: 最低换手率，剔除死盘
+    
     # 换手率健康区间
     TURNOVER_HEALTHY_MIN = 0.03            # 3%: 低于此值流动性差
     TURNOVER_HEALTHY_MAX = 0.30            # 30%: 高于此值可能过热/P&D风险
@@ -151,6 +157,226 @@ class ConfidenceEngine:
         if score >= 0.7:
             return "🔹"  # 中等置信度
         return "⚪"  # 低置信度
+
+
+# ==============================================================================
+# SignalArbiter: 信号仲裁器 - 实现"赢家通吃"去重逻辑
+# ==============================================================================
+
+class SignalCategory:
+    """信号分类枚举"""
+    ALPHA_TREND = "alpha_trend"           # 🎯 Alpha: 完美三日趋势
+    ALPHA_WHALE = "alpha_whale"           # 🎯 Alpha: 巨鲸吸筹
+    RISK_DISTRIBUTION = "risk_distribution"  # ⚠️ 风险: 主力出货
+    ANOMALY_EXTREME = "anomaly_extreme"   # ⚠️ 异动: 极端爆量
+
+
+@dataclass
+class ClassifiedSignal:
+    """分类后的信号"""
+    symbol: str
+    name: str
+    category: str           # SignalCategory
+    sub_type: str           # 细分类型: ACCUMULATION_STABLE, WASH_COMPLETE, BULL_FLAG, etc.
+    score: float            # 置信度 0-1
+    mcap_tag: str           # 市值标签
+    data: dict              # 原始数据
+    reason: str             # 信号原因
+
+
+class SignalArbiter:
+    """信号仲裁器
+    
+    核心职责：
+    1. 按优先级顺序判定每个代币的最终分类
+    2. 实现"赢家通吃"：一个代币只能归入一个类别
+    3. 输出两条数据流：🎯 Alpha + ⚠️ 异动
+    
+    优先级顺序：
+    1. Trend (完美三日趋势) → Alpha
+    2. Accumulation (强力吸筹, score > 0.8) → Alpha  
+    3. Distribution (出货) → 异动/风险
+    4. Extreme Vol (极端波动) → 异动
+    """
+    
+    # 阈值配置
+    ALPHA_WHALE_MIN_SCORE = 0.80          # 巨鲸吸筹最低分
+    EXTREME_VOL_MIN_CHANGE = 100          # 极端爆量最低变化率 (%)
+    EXTREME_VOL_MIN_TURNOVER = 0.05       # 极端爆量最低换手率 (5%)
+    
+    def __init__(self):
+        self.alpha_signals: list[ClassifiedSignal] = []
+        self.anomaly_signals: list[ClassifiedSignal] = []
+        self._processed_symbols: set[str] = set()
+    
+    def classify(
+        self,
+        trend_signals: list[dict],
+        accumulation_alerts: list[dict],
+        distribution_alerts: list[dict],
+        volume_alerts: list[dict]
+    ) -> tuple[list[ClassifiedSignal], list[ClassifiedSignal]]:
+        """执行分类仲裁
+        
+        Args:
+            trend_signals: 三日趋势信号
+            accumulation_alerts: 吸筹告警
+            distribution_alerts: 出货告警
+            volume_alerts: 常规交易量异动
+            
+        Returns:
+            (alpha_signals, anomaly_signals)
+        """
+        self.alpha_signals.clear()
+        self.anomaly_signals.clear()
+        self._processed_symbols.clear()
+        
+        # ========================================
+        # Priority 1: 完美三日趋势 → Alpha
+        # ========================================
+        for item in trend_signals:
+            symbol = item.get("symbol", "")
+            if not symbol or symbol in self._processed_symbols:
+                continue
+            
+            signal = ClassifiedSignal(
+                symbol=symbol,
+                name=item.get("name", ""),
+                category=SignalCategory.ALPHA_TREND,
+                sub_type=item.get("signal_type", "TREND"),
+                score=item.get("score", 0),
+                mcap_tag=item.get("details", {}).get("mcap_tag", "") if item.get("details") else "",
+                data=item,
+                reason=item.get("reason", "三日趋势信号")
+            )
+            self.alpha_signals.append(signal)
+            self._processed_symbols.add(symbol)
+        
+        # ========================================
+        # Priority 2: 强力吸筹 (高分) → Alpha
+        # ========================================
+        for item in accumulation_alerts:
+            symbol = item.get("symbol", "")
+            if not symbol or symbol in self._processed_symbols:
+                continue
+            
+            score = item.get("score", 0)
+            # 只有高分吸筹才进入 Alpha
+            if score >= self.ALPHA_WHALE_MIN_SCORE or item.get("is_continuous"):
+                signal = ClassifiedSignal(
+                    symbol=symbol,
+                    name=item.get("name", ""),
+                    category=SignalCategory.ALPHA_WHALE,
+                    sub_type="ACCUMULATION_WHALE",
+                    score=score,
+                    mcap_tag=item.get("mcap_tag", ""),
+                    data=item,
+                    reason=f"{item.get('mcap_tag', '')} 巨鲸吸筹 (量增价平)"
+                )
+                self.alpha_signals.append(signal)
+                self._processed_symbols.add(symbol)
+        
+        # ========================================
+        # Priority 3: 主力出货 → 异动/风险
+        # ========================================
+        for item in distribution_alerts:
+            symbol = item.get("symbol", "")
+            if not symbol or symbol in self._processed_symbols:
+                continue
+            
+            signal = ClassifiedSignal(
+                symbol=symbol,
+                name=item.get("name", ""),
+                category=SignalCategory.RISK_DISTRIBUTION,
+                sub_type="DISTRIBUTION",
+                score=item.get("score", 0.65),
+                mcap_tag=item.get("mcap_tag", ""),
+                data=item,
+                reason=f"放量下跌 {item.get('price_change', 0):+.1f}%"
+            )
+            self.anomaly_signals.append(signal)
+            self._processed_symbols.add(symbol)
+        
+        # ========================================
+        # Priority 4: 低分吸筹 → 异动
+        # ========================================
+        for item in accumulation_alerts:
+            symbol = item.get("symbol", "")
+            if not symbol or symbol in self._processed_symbols:
+                continue
+            
+            score = item.get("score", 0)
+            # 低分吸筹进入异动
+            signal = ClassifiedSignal(
+                symbol=symbol,
+                name=item.get("name", ""),
+                category=SignalCategory.ANOMALY_EXTREME,
+                sub_type="ACCUMULATION_SINGLE",
+                score=score,
+                mcap_tag=item.get("mcap_tag", ""),
+                data=item,
+                reason=f"单日吸筹 (Vol+{item.get('vol_change', 0):.0f}%)"
+            )
+            self.anomaly_signals.append(signal)
+            self._processed_symbols.add(symbol)
+        
+        # ========================================
+        # Priority 5: 极端交易量异动 → 异动
+        # ========================================
+        for item in volume_alerts:
+            symbol = item.get("symbol", "")
+            if not symbol or symbol in self._processed_symbols:
+                continue
+            
+            change = abs(item.get("change_24h", 0))
+            turnover = item.get("volume_24h", 0) / item.get("market_cap", 1) if item.get("market_cap", 0) > 0 else 0
+            
+            # 只保留极端异动
+            if change >= self.EXTREME_VOL_MIN_CHANGE and turnover >= self.EXTREME_VOL_MIN_TURNOVER:
+                price_change = item.get("price_change", 0)
+                if price_change > 10:
+                    reason = "🔥 放量上涨"
+                elif price_change < -5:
+                    reason = "⚠️ 放量下跌"
+                else:
+                    reason = "📊 极端爆量"
+                
+                signal = ClassifiedSignal(
+                    symbol=symbol,
+                    name=item.get("name", ""),
+                    category=SignalCategory.ANOMALY_EXTREME,
+                    sub_type="EXTREME_VOLUME",
+                    score=0.5,  # 极端爆量基础分较低
+                    mcap_tag="",
+                    data=item,
+                    reason=reason
+                )
+                self.anomaly_signals.append(signal)
+                self._processed_symbols.add(symbol)
+        
+        # 排序：按 score desc, market_cap desc
+        self.alpha_signals.sort(key=lambda x: (x.score, x.data.get("market_cap", 0)), reverse=True)
+        self.anomaly_signals.sort(key=lambda x: (x.score, x.data.get("market_cap", 0)), reverse=True)
+        
+        return self.alpha_signals, self.anomaly_signals
+    
+    def get_stats(self) -> dict:
+        """获取分类统计"""
+        alpha_by_type = {}
+        for s in self.alpha_signals:
+            alpha_by_type[s.sub_type] = alpha_by_type.get(s.sub_type, 0) + 1
+        
+        anomaly_by_type = {}
+        for s in self.anomaly_signals:
+            anomaly_by_type[s.sub_type] = anomaly_by_type.get(s.sub_type, 0) + 1
+        
+        return {
+            "alpha_total": len(self.alpha_signals),
+            "alpha_by_type": alpha_by_type,
+            "anomaly_total": len(self.anomaly_signals),
+            "anomaly_by_type": anomaly_by_type,
+            "processed_symbols": len(self._processed_symbols)
+        }
 
 
 class DynamicTrendAnalyzer:
@@ -502,8 +728,8 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         crypto_list = t0_list
         print(f"已加载 {len(crypto_list)} 个项目数据")
 
-    # 最低交易量门槛
-    MIN_VOLUME_24H = 2_400_000
+    # 使用统一配置的交易量门槛
+    MIN_VOLUME_24H = ScoringConfig.MIN_VOLUME_24H
     
     # ============================================
     # 阶段1: 硬性过滤 + 批量更新今日数据
@@ -527,10 +753,22 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         price = usd_quote.get("price", 0)
         market_cap = usd_quote.get("marketCap", 0)
         
-        # ---> 硬性市值过滤 <---
+        # ---> 硬性过滤 (优化: 增加交易量和换手率门槛) <---
+        # 1. 市值过滤
         if market_cap < ScoringConfig.MIN_MCAP_THRESHOLD:
             filtered_count += 1
             continue  # 直接跳过 < 1M 的代币
+        
+        # 2. 交易量过滤 (新增)
+        if volume_24h < ScoringConfig.MIN_VOLUME_24H:
+            filtered_count += 1
+            continue  # 跳过低交易量代币
+        
+        # 3. 换手率过滤 (新增: 剔除死盘)
+        turnover = volume_24h / market_cap if market_cap > 0 else 0
+        if turnover < ScoringConfig.MIN_TURNOVER:
+            filtered_count += 1
+            continue  # 跳过换手率过低的代币
         
         valid_crypto_list.append(crypto)
         
@@ -788,49 +1026,61 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     # 常规异动按24h变化率排序
     alerts.sort(key=lambda x: x["change_24h"], reverse=True)
     
-    # 保存吸筹/洗盘数据到本地 JSON (供 docs-viewer 使用)
-    await _save_trend_data(
+    # ============================================
+    # 优化: 使用 SignalArbiter 实现"赢家通吃"去重
+    # ============================================
+    arbiter = SignalArbiter()
+    alpha_signals, anomaly_signals = arbiter.classify(
         trend_signals=trend_signals,
         accumulation_alerts=dealer_accumulation_alerts,
-        distribution_alerts=dealer_distribution_alerts
+        distribution_alerts=dealer_distribution_alerts,
+        volume_alerts=alerts
+    )
+    
+    stats = arbiter.get_stats()
+    print(f"\n📊 SignalArbiter 分类完成:")
+    print(f"   🎯 Alpha 信号: {stats['alpha_total']} 个 {stats['alpha_by_type']}")
+    print(f"   ⚠️ 异动警告: {stats['anomaly_total']} 个 {stats['anomaly_by_type']}")
+    print(f"   📋 已处理代币: {stats['processed_symbols']} 个")
+    
+    # 保存吸筹/洗盘数据到本地 JSON (供 docs-viewer 使用)
+    # 从 ClassifiedSignal 提取原始数据
+    trend_for_save = [s.data for s in alpha_signals if s.category == SignalCategory.ALPHA_TREND]
+    accum_for_save = [s.data for s in alpha_signals if s.category == SignalCategory.ALPHA_WHALE]
+    dist_for_save = [s.data for s in anomaly_signals if s.category == SignalCategory.RISK_DISTRIBUTION]
+    
+    await _save_trend_data(
+        trend_signals=trend_for_save,
+        accumulation_alerts=accum_for_save,
+        distribution_alerts=dist_for_save
     )
 
-    # 阶段3: 发送告警 (顺序: 三日趋势 → 吸筹 → 洗盘 → 交易量)
-    print("\n阶段3: 发送告警...")
+    # ============================================
+    # 阶段3: 发送告警 (双流输出)
+    # ============================================
+    print("\n阶段3: 发送告警 (双流输出)...")
     
-    # 1. 发送三日趋势信号告警 (高优先级)
-    if trend_signals:
-        print(f"发现 {len(trend_signals)} 个三日趋势信号")
+    # 🎯 Alpha 信号流 (High Confidence Long Setup)
+    if alpha_signals:
+        print(f"🎯 发送 Alpha 信号: {len(alpha_signals)} 个")
         if not debug_only:
-            await _send_trend_signals(trend_signals)
+            await _send_unified_alpha(alpha_signals)
     
-    # 2. 发送庄家吸筹警报 (量增价平/小涨)
-    if dealer_accumulation_alerts:
-        print(f"发现 {len(dealer_accumulation_alerts)} 个疑似庄家吸筹项目")
+    # ⚠️ 异动与风控流 (Anomalies & Risks)
+    if anomaly_signals:
+        print(f"⚠️ 发送异动警告: {len(anomaly_signals)} 个")
         if not debug_only:
-            await _send_accumulation_alerts(dealer_accumulation_alerts)
+            await _send_unified_anomaly(anomaly_signals)
     
-    # 3. 发送出货/洗盘警报 (量增价跌)
-    if dealer_distribution_alerts:
-        print(f"发现 {len(dealer_distribution_alerts)} 个疑似出货/洗盘项目")
-        if not debug_only:
-            await _send_distribution_alerts(dealer_distribution_alerts)
-
-    # 4. 发送常规交易量异动警报 (最后)
-    if alerts:
-        print(f"发现 {len(alerts)} 个交易量异动项目")
-        if not debug_only:
-            await _send_volume_alerts(alerts, threshold)
-    else:
-        print("未发现超过阈值的交易量变化")
+    if not alpha_signals and not anomaly_signals:
+        print("未发现符合条件的信号")
     
     return {
-        "alerts": alerts,
-        "triggered_count": len(alerts),
-        "accumulation_count": len(dealer_accumulation_alerts),
-        "distribution_count": len(dealer_distribution_alerts),
-        "trend_signals_count": len(trend_signals),
-        "trend_signals": trend_signals
+        "alpha_signals": [s.__dict__ for s in alpha_signals],
+        "anomaly_signals": [s.__dict__ for s in anomaly_signals],
+        "alpha_count": len(alpha_signals),
+        "anomaly_count": len(anomaly_signals),
+        "stats": stats
     }
 
 
@@ -884,182 +1134,6 @@ def _format_number(num: float) -> str:
         return f"{num:.0f}"
 
 
-async def _send_paginated_embed(
-    title: str,
-    items: list[dict],
-    description_template: str,
-    color: int,
-    table_builder,
-    batch_size: int = 20
-):
-    """通用分页发送 Discord Embed 消息"""
-    if not items:
-        return
-
-    # 构建完整表格以检查长度
-    full_table = table_builder(items)
-    
-    # 如果总长度未超限，直接发送
-    if len(full_table) <= 4000:
-        description = description_template.format(table=full_table)
-        await send_discord_embed(
-            title=f"{title} ({len(items)}个)",
-            description=description,
-            color=color,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        )
-        return
-
-    # 分页发送
-    total_pages = (len(items) - 1) // batch_size + 1
-    for i in range(0, len(items), batch_size):
-        batch = items[i:i + batch_size]
-        batch_table = table_builder(batch)
-        page_num = i // batch_size + 1
-        
-        description = description_template.format(table=batch_table)
-        await send_discord_embed(
-            title=f"{title} ({page_num}/{total_pages})",
-            description=description,
-            color=color,
-            footer=f"监控时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        )
-        await asyncio.sleep(0.3)
-
-
-async def _send_volume_alerts(alerts: list[dict], threshold: float):
-    """发送交易量警报消息到 Discord - 紧凑列表格式
-    
-    使用与吸筹告警相同的展示方式，支持三日数据展示
-    """
-    # 过滤最低交易量门槛
-    MIN_VOLUME_24H = 2_400_000
-    filtered_alerts = [a for a in alerts if a.get("volume_24h", 0) >= MIN_VOLUME_24H]
-    
-    if not filtered_alerts:
-        print(f"过滤后无符合条件的交易量异动 (门槛: ${MIN_VOLUME_24H:,})")
-        return
-    
-    # 分离涨跌
-    gainers = [a for a in filtered_alerts if a["change_24h"] > 0]
-    losers = [a for a in filtered_alerts if a["change_24h"] < 0]
-    
-    # 发送涨幅榜 (交易量激增)
-    if gainers:
-        # 按变化率排序
-        gainers_sorted = sorted(gainers, key=lambda x: x["change_24h"], reverse=True)
-        await _send_summary_embed(
-            title="📈 交易量激增",
-            items=gainers_sorted,
-            color=DiscordColors.GREEN,
-            description_prefix=f"**阈值:** Vol > +{threshold}% & Vol24h > $2.4M",
-            max_items=15
-        )
-    
-    # 发送跌幅榜 (交易量骤降)
-    if losers:
-        # 按变化率排序 (跌幅最大的在前)
-        losers_sorted = sorted(losers, key=lambda x: x["change_24h"])
-        await _send_summary_embed(
-            title="📉 交易量骤降",
-            items=losers_sorted,
-            color=DiscordColors.RED,
-            description_prefix=f"**阈值:** Vol < -{threshold}% & Vol24h > $2.4M",
-            max_items=15
-        )
-
-
-def _build_dealer_table(items: list[dict]) -> str:
-    """构建庄家行为表格
-    
-    使用固定宽度，适配 Discord embed 显示
-    总宽度约 72 字符 (Discord embed 代码块最佳宽度)
-    """
-    # 列宽定义
-    W_SYM = 10   # Symbol
-    W_VOL = 8    # Vol%
-    W_PRC = 7    # Prc%
-    W_V24 = 8    # Vol
-    W_MC = 8     # MCap
-    W_FDV = 8    # FDV
-    W_PLT = 10   # Platform
-    
-    header = f"{'Symbol':<{W_SYM}}{'Vol%':>{W_VOL}}{'Prc%':>{W_PRC}}{'Vol':>{W_V24}}{'MCap':>{W_MC}}{'FDV':>{W_FDV}}{'Plat':>{W_PLT}}"
-    sep = "-" * (W_SYM + W_VOL + W_PRC + W_V24 + W_MC + W_FDV + W_PLT)
-    
-    lines = [f"```\n{header}\n{sep}"]
-    
-    for item in items:
-        # 标记连续吸筹
-        is_cont = item.get("is_continuous", False)
-        raw_sym = item["symbol"]
-        if is_cont:
-            symbol = ("★" + raw_sym)[:W_SYM]
-        else:
-            symbol = raw_sym[:W_SYM]
-            
-        vol_change = f"+{item['vol_change']:.0f}%"
-        price_change = f"{item['price_change']:+.1f}%"
-        volume = _format_number(item["volume"])
-        mcap = _format_number(item["market_cap"])
-        fdv = _format_number(item["fdv"])
-        platform = (item.get("platform") or "")[:W_PLT]
-        
-        row = f"{symbol:<{W_SYM}}{vol_change:>{W_VOL}}{price_change:>{W_PRC}}{volume:>{W_V24}}{mcap:>{W_MC}}{fdv:>{W_FDV}}{platform:>{W_PLT}}"
-        lines.append(row)
-    
-    lines.append("```")
-    return "\n".join(lines)
-
-
-async def _send_accumulation_alerts(items: list[dict]):
-    """发送庄家吸筹警报到 Discord - 量增价平/小涨
-    
-    使用紧凑列表格式，突出显示连续吸筹标记
-    """
-    # 按市值降序排列
-    items_sorted = sorted(items, key=lambda x: x["market_cap"], reverse=True)
-    
-    # 分离连续吸筹和单日吸筹
-    continuous = [i for i in items_sorted if i.get("is_continuous", False)]
-    single_day = [i for i in items_sorted if not i.get("is_continuous", False)]
-    
-    # 发送连续吸筹（高优先级）
-    if continuous:
-        await _send_summary_embed(
-            title="🐋⭐ 持续吸筹 (连续3日)",
-            items=continuous,
-            color=DiscordColors.PURPLE,
-            description_prefix="**特征:** 量增价平/小涨 + 连续3日量价稳定\n**含义:** 主力持续吸筹，高度关注",
-            max_items=15
-        )
-    
-    # 发送单日吸筹
-    if single_day:
-        await _send_summary_embed(
-            title="🐋 疑似吸筹 (单日)",
-            items=single_day,
-            color=DiscordColors.PURPLE,
-            description_prefix="**特征:** 量增价平/小涨 (Vol↑ Price -2%~+10%)",
-            max_items=15
-        )
-
-
-async def _send_distribution_alerts(items: list[dict]):
-    """发送出货/洗盘警报到 Discord - 量增价跌
-    
-    使用紧凑列表格式
-    """
-    # 按跌幅排序 (跌得最多的在前)
-    items_sorted = sorted(items, key=lambda x: x["price_change"])
-    
-    await _send_summary_embed(
-        title="⚠️ 疑似出货/洗盘",
-        items=items_sorted,
-        color=DiscordColors.RED,
-        description_prefix="**特征:** 量增价跌 (Vol↑ Price < -2%)\n**风险提示:** 注意规避下跌风险",
-        max_items=15
-    )
 
 
 def _format_turnover(turnover: float) -> str:
@@ -1139,136 +1213,6 @@ def _get_signal_name(signal_type: str) -> str:
     return name_map.get(signal_type, signal_type)
 
 
-async def _send_signal_card(signal_data: dict):
-    """发送单个信号的详情卡片（一级告警）
-    
-    使用 Embed Fields 垂直布局，展示三日量价数据
-    适用于高置信度信号 (Score > 0.8)
-    
-    Args:
-        signal_data: 包含信号详情的字典
-    """
-    symbol = signal_data["symbol"]
-    name = signal_data["name"]
-    signal_type = signal_data["signal_type"]
-    score = signal_data["score"]
-    reason = signal_data["reason"]
-    history_3d = signal_data.get("history_3d", [])
-    market_cap = signal_data.get("market_cap", 0)
-    fdv = signal_data.get("fdv", 0)
-    price_change = signal_data.get("price_change", 0)
-    price = signal_data.get("price", 0)
-    platform = signal_data.get("platform", "")
-    details = signal_data.get("details", {}) or {}
-    tier_name = details.get("tier", "UNKNOWN")
-    mcap_tag = details.get("mcap_tag", "")
-    
-    # 获取置信度 Emoji
-    score_emoji = ConfidenceEngine.get_score_emoji(score)
-    
-    # 构建标题 (时间放最前面)
-    signal_emoji = _get_signal_emoji(signal_type)
-    signal_name = _get_signal_name(signal_type)
-    title = f"{signal_emoji} {symbol} 发现{signal_name}信号 {score_emoji}"
-    
-    # 构建描述（时间放最上方，市值和FDV突出显示）
-    price_emoji = "📈" if price_change > 0 else "📉" if price_change < 0 else "➡️"
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
-    description = f"⏰ **{current_time}**\n\n"
-    description += f"**{name}** | {platform}\n"
-    description += f"💰 **MC: ${_format_number(market_cap)}** | **FDV: ${_format_number(fdv)}**\n"
-    if price > 0:
-        description += f"💵 当前价格: **${price:.6g}**\n"
-    description += f"📊 24h价格: **{price_change:+.2f}%** {price_emoji}"
-    
-    # 构建三日量价趋势 (垂直布局)
-    fields = []
-
-    # 置信度与分层信息
-    fields.append({
-        "name": "🎚️ 置信度分析",
-        "value": f"**得分: {score:.2f}/1.0** {score_emoji} (等级: {tier_name}) {mcap_tag}\n说明: {reason}",
-        "inline": False
-    })
-    
-    if history_3d and len(history_3d) >= 3:
-        # T-2 (前天)
-        t2 = history_3d[2]
-        t2_vol = _format_number(t2.get("volume", 0))
-        t2_tr = _format_turnover(t2.get("turnover", 0))
-        t2_price = t2.get("price", 0)
-        
-        # T-1 (昨天)
-        t1 = history_3d[1]
-        t1_vol = _format_number(t1.get("volume", 0))
-        t1_tr = _format_turnover(t1.get("turnover", 0))
-        t1_price = t1.get("price", 0)
-        
-        # T0 (今天)
-        t0 = history_3d[0]
-        t0_vol = _format_number(t0.get("volume", 0))
-        t0_tr = _format_turnover(t0.get("turnover", 0))
-        t0_price = t0.get("price", 0)
-        
-        # 计算趋势
-        volumes = [t0.get("volume", 0), t1.get("volume", 0), t2.get("volume", 0)]
-        prices = [t0_price, t1_price, t2_price]
-        vol_trend = _get_trend_emoji(volumes)
-        price_trend = _get_trend_emoji(prices)
-        
-        # 三日数据字段 (垂直堆叠)
-        trend_text = (
-            f"📅 **T-2 (前天):** Vol {t2_vol} | TR {t2_tr} | Price ${t2_price:.4g}\n"
-            f"📅 **T-1 (昨天):** Vol {t1_vol} | TR {t1_tr} | Price ${t1_price:.4g}\n"
-            f"📅 **T-0 (今天):** Vol {t0_vol} | TR {t0_tr} | Price ${t0_price:.4g}\n"
-            f"📊 **趋势:** 量能{vol_trend} | 价格{price_trend}"
-        )
-        
-        fields.append({
-            "name": "📈 三日量价趋势",
-            "value": trend_text,
-            "inline": False
-        })
-        
-        # 换手率分析
-        avg_turnover = sum(d.get("turnover", 0) for d in history_3d) / 3
-        tr_analysis = ""
-        if avg_turnover > 0.3:
-            tr_analysis = f"**{_format_turnover(avg_turnover)}** (极高换手，短线博弈激烈)"
-        elif avg_turnover > 0.15:
-            tr_analysis = f"**{_format_turnover(avg_turnover)}** (高换手，资金活跃)"
-        elif avg_turnover > 0.05:
-            tr_analysis = f"**{_format_turnover(avg_turnover)}** (正常换手)"
-        else:
-            tr_analysis = f"**{_format_turnover(avg_turnover)}** (低换手，主力控盘)"
-        
-        fields.append({
-            "name": "💹 平均换手率",
-            "value": tr_analysis,
-            "inline": True
-        })
-    
-    # 信号解读
-    fields.append({
-        "name": "🔍 信号解读",
-        "value": reason,
-        "inline": False
-    })
-    
-    # 构建 Embed
-    embed = {
-        "title": title,
-        "description": description,
-        "color": _get_signal_color(signal_type),
-        "fields": fields,
-        "footer": {
-            "text": f"基于市值分层的动态阈值 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        }
-    }
-    
-    # 发送
-    await _send_embed_raw(embed)
 
 
 async def _send_embed_raw(embed: dict, username: str = "Binance Alpha Monitor"):
@@ -1312,140 +1256,6 @@ async def _send_embed_raw(embed: dict, username: str = "Binance Alpha Monitor"):
         return False
 
 
-async def _send_summary_embed(
-    title: str,
-    items: list[dict],
-    color: int,
-    description_prefix: str = "",
-    max_items: int = 10
-):
-    """发送紧凑概览列表（二级告警）
-    
-    使用多行文本块展示，每个 Token 独立一块
-    适用于批量展示普通异动，支持三日数据展示
-    
-    Args:
-        title: Embed 标题
-        items: 项目列表 (需包含 history_3d 字段以展示三日数据)
-        color: 颜色
-        description_prefix: 描述前缀
-        max_items: 最大展示数量
-    """
-    if not items:
-        return
-    
-    # 限制数量
-    display_items = items[:max_items]
-    
-    # 构建描述内容 (时间放最上方)
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    lines = [f"⏰ **{current_time}**\n"]
-    
-    if description_prefix:
-        lines.append(description_prefix)
-        lines.append("")
-    
-    for i, item in enumerate(display_items, 1):
-        symbol = item.get("symbol", "?")
-        name = item.get("name", "")[:15]
-        vol_change = item.get("vol_change", item.get("change_24h", 0))
-        price_change = item.get("price_change", 0)
-        volume = _format_number(item.get("volume", item.get("volume_24h", 0)))
-        market_cap = _format_number(item.get("market_cap", 0))
-        fdv = _format_number(item.get("fdv", 0))
-        price = item.get("price", 0)
-        score = item.get("score", 0)
-        mcap_tag = item.get("mcap_tag", "")
-        
-        # 获取置信度 Emoji
-        score_emoji = ConfidenceEngine.get_score_emoji(score) if score > 0 else ""
-        
-        # 状态标记
-        vol_emoji = "🚀" if vol_change > 50 else "↗️" if vol_change > 0 else "↘️"
-        price_emoji = "📈" if price_change > 5 else "📉" if price_change < -5 else "➡️"
-        
-        # 判断信号类型
-        status = ""
-        if -2 <= price_change <= 10 and vol_change > 50:
-            status = "🐋 量增价平 (疑似吸筹)"
-        elif price_change < -2 and vol_change > 50:
-            status = "⚠️ 放量下跌 (疑似出货)"
-        elif price_change > 10 and vol_change > 50:
-            status = "🔥 放量上涨"
-        else:
-            status = f"Vol {vol_change:+.0f}% | Price {price_change:+.1f}%"
-        
-        # 添加置信度信息
-        score_info = f" | 置信度: {score:.2f} {score_emoji}" if score > 0 else ""
-        mcap_info = f" {mcap_tag}" if mcap_tag else ""
-        
-        # 构建三日数据展示
-        history_3d = item.get("history_3d", [])
-        history_lines = ""
-        
-        if history_3d and len(history_3d) >= 3:
-            # T-2 (前天)
-            t2 = history_3d[2]
-            t2_vol = _format_number(t2.get("volume", 0))
-            t2_tr = _format_turnover(t2.get("turnover", 0))
-            t2_price = t2.get("price", 0)
-            
-            # T-1 (昨天)
-            t1 = history_3d[1]
-            t1_vol = _format_number(t1.get("volume", 0))
-            t1_tr = _format_turnover(t1.get("turnover", 0))
-            t1_price = t1.get("price", 0)
-            
-            # 计算价格变化
-            t2_pct = ""
-            t1_pct = ""
-            if t2_price > 0 and t1_price > 0:
-                t1_change = ((t1_price - t2_price) / t2_price) * 100
-                t1_pct = f" ({t1_change:+.1f}%)"
-            if t1_price > 0 and history_3d[0].get("price", 0) > 0:
-                t0_price = history_3d[0].get("price", 0)
-                t0_change = ((t0_price - t1_price) / t1_price) * 100
-                # t0_pct 在当前价格变化中已经体现
-            
-            history_lines = (
-                f"├─ T-2: Vol {t2_vol} | TR {t2_tr} | ${t2_price:.4g}\n"
-                f"├─ T-1: Vol {t1_vol} | TR {t1_tr} | ${t1_price:.4g}{t1_pct}\n"
-            )
-        
-        # 价格信息
-        price_info = f" | Price: ${price:.6g}" if price > 0 else ""
-        
-        block = (
-            f"**{i}. {symbol}** ({name}){mcap_info}\n"
-            f"├─ 💰 **MC: ${market_cap}** | **FDV: ${fdv}**{price_info}\n"
-            f"├─ T0 Vol: ${volume} ({vol_change:+.0f}% {vol_emoji})\n"
-            f"{history_lines}"
-            f"├─ Price: {price_change:+.1f}% {price_emoji}{score_info}\n"
-            f"└─ {status}"
-        )
-        lines.append(block)
-        lines.append("")
-    
-    # 如果有更多项目
-    if len(items) > max_items:
-        lines.append(f"_...还有 {len(items) - max_items} 个项目未显示_")
-    
-    description = "\n".join(lines)
-    
-    # 限制描述长度
-    if len(description) > 4000:
-        description = description[:3950] + "\n\n_...内容已截断_"
-    
-    embed = {
-        "title": f"{title} ({len(items)}个)",
-        "description": description,
-        "color": color,
-        "footer": {
-            "text": f"基于市值分层的动态阈值 | {current_time}"
-        }
-    }
-    
-    await _send_embed_raw(embed)
 
 
 async def _save_trend_data(
@@ -1675,76 +1485,183 @@ async def _save_trend_data(
         logger.error(f"保存吸筹/洗盘数据失败: {e}")
 
 
-async def _send_trend_signals(items: list[dict]):
-    """发送三日趋势信号告警到 Discord
+# ==============================================================================
+# 统一推送函数 (Unified Notification System)
+# 只有两条数据流：🎯 Alpha + ⚠️ 异动
+# ==============================================================================
+
+async def _send_unified_alpha(signals: list[ClassifiedSignal], max_per_embed: int = 5):
+    """发送 🎯 Alpha 信号流
     
-    分层展示策略：
-    - 一级告警 (高置信度 Score >= 0.85): 单币单卡片
-    - 二级告警 (普通信号): 紧凑列表
+    统一使用 Embed 格式，按子类型分组，紧凑展示。
+    
+    Args:
+        signals: ClassifiedSignal 列表
+        max_per_embed: 每个 Embed 最多展示多少个
     """
-    if not items:
+    if not signals:
         return
     
-    # 按信号类型分组
-    accumulation = [i for i in items if i["signal_type"] == "ACCUMULATION_STABLE"]
-    wash_complete = [i for i in items if i["signal_type"] == "WASH_COMPLETE"]
-    bull_flag = [i for i in items if i["signal_type"] == "BULL_FLAG"]
+    # 按子类型分组
+    by_subtype: dict[str, list[ClassifiedSignal]] = {}
+    for s in signals:
+        if s.sub_type not in by_subtype:
+            by_subtype[s.sub_type] = []
+        by_subtype[s.sub_type].append(s)
     
-    # 发送稳定吸筹信号
-    if accumulation:
-        accumulation_sorted = sorted(accumulation, key=lambda x: (x["score"], x["market_cap"]), reverse=True)
-        
-        # 一级告警：Top 3 高置信度信号发送单独卡片
-        high_confidence = [i for i in accumulation_sorted if i["score"] >= 0.85][:3]
-        for item in high_confidence:
-            await _send_signal_card(item)
-            await asyncio.sleep(0.3)
-        
-        # 二级告警：其余信号发送紧凑列表
-        remaining = [i for i in accumulation_sorted if i not in high_confidence]
-        if remaining:
-            await _send_summary_embed(
-                title="🟪 稳定吸筹概览",
-                items=remaining,
-                color=DiscordColors.PURPLE,
-                description_prefix="**特征:** 连续3日量能稳定 + 价格横盘\n**含义:** 主力控盘吸筹迹象明显"
-            )
+    # 定义子类型的展示顺序和配置
+    subtype_config = {
+        "ACCUMULATION_STABLE": {"title": "🎯 Alpha: 稳定吸筹", "color": 0x9B59B6, "desc": "连续3日量能稳定 + 价格横盘"},
+        "WASH_COMPLETE": {"title": "🎯 Alpha: 洗盘结束", "color": 0xF1C40F, "desc": "连续缩量 + 价格企稳，卖盘枯竭"},
+        "BULL_FLAG": {"title": "🎯 Alpha: 牛旗整理", "color": 0x2ECC71, "desc": "昨日放量大涨 + 今日缩量回调"},
+        "ACCUMULATION_WHALE": {"title": "🎯 Alpha: 巨鲸吸筹", "color": 0x3498DB, "desc": "高置信度资金流入 (量增价平)"},
+    }
     
-    # 发送洗盘结束信号
-    if wash_complete:
-        wash_sorted = sorted(wash_complete, key=lambda x: (x["score"], x["market_cap"]), reverse=True)
+    # 按顺序发送
+    for subtype in ["WASH_COMPLETE", "ACCUMULATION_STABLE", "BULL_FLAG", "ACCUMULATION_WHALE"]:
+        group = by_subtype.get(subtype, [])
+        if not group:
+            continue
         
-        high_confidence = [i for i in wash_sorted if i["score"] >= 0.85][:3]
-        for item in high_confidence:
-            await _send_signal_card(item)
-            await asyncio.sleep(0.3)
-        
-        remaining = [i for i in wash_sorted if i not in high_confidence]
-        if remaining:
-            await _send_summary_embed(
-                title="🟨 洗盘结束概览",
-                items=remaining,
-                color=DiscordColors.YELLOW,
-                description_prefix="**特征:** 连续缩量 + 价格企稳\n**含义:** 卖盘枯竭，可能触底"
-            )
+        config = subtype_config.get(subtype, {"title": f"🎯 Alpha: {subtype}", "color": 0x5865F2, "desc": ""})
+        await _send_compact_embed(
+            title=config["title"],
+            signals=group[:max_per_embed],
+            total_count=len(group),
+            color=config["color"],
+            description=config["desc"]
+        )
+        await asyncio.sleep(0.3)
+
+
+async def _send_unified_anomaly(signals: list[ClassifiedSignal], max_per_embed: int = 5):
+    """发送 ⚠️ 异动与风控流
     
-    # 发送牛旗信号
-    if bull_flag:
-        flag_sorted = sorted(bull_flag, key=lambda x: (x["score"], x["market_cap"]), reverse=True)
+    统一使用 Embed 格式，分为出货风险和极端异动两部分。
+    
+    Args:
+        signals: ClassifiedSignal 列表
+        max_per_embed: 每个 Embed 最多展示多少个
+    """
+    if not signals:
+        return
+    
+    # 分组
+    distribution = [s for s in signals if s.category == SignalCategory.RISK_DISTRIBUTION]
+    extreme = [s for s in signals if s.category == SignalCategory.ANOMALY_EXTREME]
+    
+    # 出货风险
+    if distribution:
+        await _send_compact_embed(
+            title="⚠️ 风险: 主力出货",
+            signals=distribution[:max_per_embed],
+            total_count=len(distribution),
+            color=0xE74C3C,  # 红色
+            description="量增价跌，注意规避下跌风险"
+        )
+        await asyncio.sleep(0.3)
+    
+    # 极端异动 (包括低分吸筹和极端爆量)
+    if extreme:
+        await _send_compact_embed(
+            title="⚠️ 异动: 极端波动",
+            signals=extreme[:max_per_embed],
+            total_count=len(extreme),
+            color=0xE67E22,  # 橙色
+            description="极端交易量变化，高风险高收益"
+        )
+
+
+async def _send_compact_embed(
+    title: str,
+    signals: list[ClassifiedSignal],
+    total_count: int,
+    color: int,
+    description: str = ""
+):
+    """发送紧凑格式的 Embed
+    
+    每个代币一行，关键信息一目了然。
+    格式: Symbol | Price | MC | Vol变化 | Price变化 | 置信度
+    
+    Args:
+        title: Embed 标题
+        signals: 信号列表
+        total_count: 总数量 (用于显示截断提示)
+        color: 颜色
+        description: 描述文本
+    """
+    if not signals:
+        return
+    
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # 构建 fields
+    fields = []
+    
+    for i, sig in enumerate(signals, 1):
+        data = sig.data
+        symbol = sig.symbol
+        name = sig.name[:12]
         
-        high_confidence = [i for i in flag_sorted if i["score"] >= 0.8][:3]
-        for item in high_confidence:
-            await _send_signal_card(item)
-            await asyncio.sleep(0.3)
+        # 提取关键数据
+        price = data.get("price", 0)
+        market_cap = data.get("market_cap", 0)
+        fdv = data.get("fdv", 0)
+        vol_change = data.get("vol_change", data.get("change_24h", 0))
+        price_change = data.get("price_change", 0)
+        history_3d = data.get("history_3d", [])
         
-        remaining = [i for i in flag_sorted if i not in high_confidence]
-        if remaining:
-            await _send_summary_embed(
-                title="🟩 牛旗整理概览",
-                items=remaining,
-                color=DiscordColors.GREEN,
-                description_prefix="**特征:** 昨日放量大涨 + 今日缩量回调\n**含义:** 良性整理，上涨中继"
-            )
+        # 格式化数值
+        price_str = f"${price:.6g}" if price > 0 else "-"
+        mc_str = _format_number(market_cap)
+        fdv_str = _format_number(fdv)
+        
+        # Emoji
+        vol_emoji = "🚀" if vol_change > 50 else "📈" if vol_change > 0 else "📉"
+        price_emoji = "📈" if price_change > 3 else "📉" if price_change < -3 else "➡️"
+        score_emoji = ConfidenceEngine.get_score_emoji(sig.score)
+        
+        # 构建三日趋势简报
+        trend_line = ""
+        if history_3d and len(history_3d) >= 2:
+            t0_vol = history_3d[0].get("volume", 0)
+            t1_vol = history_3d[1].get("volume", 0)
+            vol_ratio = ((t0_vol - t1_vol) / t1_vol * 100) if t1_vol > 0 else 0
+            trend_line = f"Vol {vol_ratio:+.0f}% vs 昨日"
+        
+        # 构建 field
+        field_name = f"{i}. {symbol} ({name})"
+        field_value = (
+            f"💵 **{price_str}** | 💰 MC ${mc_str} | FDV ${fdv_str}\n"
+            f"Vol {vol_change:+.0f}% {vol_emoji} | Price {price_change:+.1f}% {price_emoji} | {sig.score:.2f} {score_emoji}\n"
+            f"{sig.mcap_tag} {sig.reason}"
+        )
+        
+        if trend_line:
+            field_value = field_value.replace(sig.reason, f"{trend_line} | {sig.reason}")
+        
+        fields.append({
+            "name": field_name,
+            "value": field_value,
+            "inline": False
+        })
+    
+    # 截断提示
+    footer_text = f"共 {total_count} 个信号"
+    if total_count > len(signals):
+        footer_text += f" (仅显示 Top {len(signals)})"
+    footer_text += f" | {current_time}"
+    
+    embed = {
+        "title": f"{title} ({total_count}个)",
+        "description": description,
+        "color": color,
+        "fields": fields,
+        "footer": {"text": footer_text}
+    }
+    
+    await _send_embed_raw(embed)
 
 async def get_volume_statistics(crypto_list):
     """获取交易量统计信息 (保留原有功能)"""
