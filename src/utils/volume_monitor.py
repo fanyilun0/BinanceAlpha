@@ -263,6 +263,9 @@ class SignalArbiter:
             score = item.get("score", 0)
             # 只有高分吸筹才进入 Alpha
             if score >= self.ALPHA_WHALE_MIN_SCORE or item.get("is_continuous"):
+                reason = "巨鲸吸筹 (量增价平)"
+                if item.get("is_continuous"):
+                    reason += " + 连续3日稳定"
                 signal = ClassifiedSignal(
                     symbol=symbol,
                     name=item.get("name", ""),
@@ -271,7 +274,7 @@ class SignalArbiter:
                     score=score,
                     mcap_tag=item.get("mcap_tag", ""),
                     data=item,
-                    reason=f"{item.get('mcap_tag', '')} 巨鲸吸筹 (量增价平)"
+                    reason=reason
                 )
                 self.alpha_signals.append(signal)
                 self._processed_symbols.add(symbol)
@@ -488,7 +491,7 @@ class DynamicTrendAnalyzer:
                 return TrendSignal(
                     signal_type="ACCUMULATION_STABLE",
                     score=round(final_score, 2),
-                    reason=f"{mcap_tag} [{config.name}级] 量稳({score_vol_stability:.2f}) 价平({score_price_flat:.2f})",
+                    reason=f"[{config.name}] 量稳({score_vol_stability:.2f}) 价平({score_price_flat:.2f})",
                     details={
                         "tier": config.name,
                         "mcap_tag": mcap_tag,
@@ -529,7 +532,7 @@ class DynamicTrendAnalyzer:
                 return TrendSignal(
                     signal_type="WASH_COMPLETE",
                     score=round(final_score, 2),
-                    reason=f"{mcap_tag} 连续缩量({shrink_magnitude*100:.1f}%)且价格企稳",
+                    reason=f"[{config.name}] 连续缩量({shrink_magnitude*100:.1f}%)且价格企稳",
                     details={
                         "tier": config.name,
                         "mcap_tag": mcap_tag,
@@ -566,7 +569,7 @@ class DynamicTrendAnalyzer:
                 return TrendSignal(
                     signal_type="BULL_FLAG",
                     score=round(final_score, 2),
-                    reason=f"{mcap_tag} 昨日放量涨{p_changes[1]:.1f}%，今日缩量整理",
+                    reason=f"[{config.name}] 昨日放量涨{p_changes[1]:.1f}%，今日缩量整理",
                     details={
                         "tier": config.name,
                         "mcap_tag": mcap_tag,
@@ -689,19 +692,11 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     """监控交易量变化并发送警报
     
     流程：
-    1. 硬性市值过滤 (< MIN_MCAP_THRESHOLD 直接忽略)
-    2. 批量处理所有项目，更新今日数据到历史记录
-    3. 基于三日历史数据进行趋势分析 (换手率/吸筹/洗盘)
-    4. 使用 ConfidenceEngine 进行置信度加权
+    1. 硬性市值过滤
+    2. 批量处理所有项目，更新今日数据
+    3. 基于三日历史数据进行趋势分析
+    4. 置信度加权
     5. 智能排序并发送告警
-    
-    Args:
-        crypto_list: 加密货币项目列表 (如果为None，则从文件加载)
-        threshold: 变化阈值（百分比），默认50%
-        debug_only: 是否仅调试模式（不发送消息）
-        
-    Returns:
-        dict: 包含监控结果的字典
     """
     print(f"=== 监控交易量变化 (阈值: {threshold}%) ===\n")
     
@@ -710,16 +705,20 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     today_str = datetime.now().strftime('%Y-%m-%d')
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     day_before_str = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
+    three_days_ago_str = (datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d')
     
-    # 加载三日数据文件 (filtered_crypto_list_*.json)
-    multi_day_data = load_multi_day_data(days=3)
+    # 加载4天数据文件 (T0, T-1, T-2, T-3)
+    # T-3 用于计算 T-2 的价格涨跌幅
+    multi_day_data = load_multi_day_data(days=4)
     t0_list = multi_day_data.get("T0", [])
     t1_list = multi_day_data.get("T-1", [])
     t2_list = multi_day_data.get("T-2", [])
+    t3_list = multi_day_data.get("T-3", [])
     
-    # 构建 symbol 索引以便快速查找
+    # 构建索引
     t1_index = _build_crypto_index(t1_list)
     t2_index = _build_crypto_index(t2_list)
+    t3_index = _build_crypto_index(t3_list)
     
     if crypto_list is None:
         if not t0_list:
@@ -832,52 +831,47 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
         # ============================================
         # 三日趋势分析 (核心逻辑)
         # ============================================
-        # 优先从 filtered_crypto_list 文件加载三日数据
         h_today = {"volume": volume_24h, "price": price, "market_cap": market_cap}
         
-        # 从 T-1 文件获取昨日数据
-        h_yest = None
-        t1_crypto = t1_index.get(symbol)
-        if t1_crypto:
-            t1_quotes = t1_crypto.get("quotes", [])
-            t1_usd = next((q for q in t1_quotes if q.get("name") == "USD"), {})
-            if not t1_usd and len(t1_quotes) > 2:
-                t1_usd = t1_quotes[2]
-            if t1_usd:
-                h_yest = {
-                    "volume": t1_usd.get("volume24h", 0),
-                    "price": t1_usd.get("price", 0),
-                    "market_cap": t1_usd.get("marketCap", 0)
-                }
-        
-        # 从 T-2 文件获取前日数据
-        h_before = None
-        t2_crypto = t2_index.get(symbol)
-        if t2_crypto:
-            t2_quotes = t2_crypto.get("quotes", [])
-            t2_usd = next((q for q in t2_quotes if q.get("name") == "USD"), {})
-            if not t2_usd and len(t2_quotes) > 2:
-                t2_usd = t2_quotes[2]
-            if t2_usd:
-                h_before = {
-                    "volume": t2_usd.get("volume24h", 0),
-                    "price": t2_usd.get("price", 0),
-                    "market_cap": t2_usd.get("marketCap", 0)
-                }
-        
-        # 回退到 HistoryManager 中的数据
-        if not h_yest:
-            h_yest = history_manager.get_data(symbol, yesterday_str)
-        if not h_before:
-            h_before = history_manager.get_data(symbol, day_before_str)
+        # 辅助函数: 获取历史数据
+        def _get_history(idx_map, fallback_date):
+            d_crypto = idx_map.get(symbol)
+            if d_crypto:
+                t_quotes = d_crypto.get("quotes", [])
+                t_usd = next((q for q in t_quotes if q.get("name") == "USD"), {})
+                if not t_usd and len(t_quotes) > 2:
+                    t_usd = t_quotes[2]
+                if t_usd:
+                    return {
+                        "volume": t_usd.get("volume24h", 0),
+                        "price": t_usd.get("price", 0),
+                        "market_cap": t_usd.get("marketCap", 0)
+                    }
+            return history_manager.get_data(symbol, fallback_date)
+
+        h_yest = _get_history(t1_index, yesterday_str)
+        h_before = _get_history(t2_index, day_before_str)
+        h_t3 = _get_history(t3_index, three_days_ago_str)
         
         trend_signal = None
         is_continuous_accumulation = False
         
+        # 趋势分析只看 T0-T2 (保持策略逻辑不变)
         if h_today and h_yest and h_before:
-            history_3d = [h_today, h_yest, h_before]
-            trend_signal = DynamicTrendAnalyzer.analyze(history_3d)
+            history_analyze = [h_today, h_yest, h_before]
+            trend_signal = DynamicTrendAnalyzer.analyze(history_analyze)
             
+            # 如果有 T-3 数据，追加到 history_3d 列表供展示使用
+            # 这是一个关键 Hack: analyze 返回的 history_3d 只有3个，我们这里扩充为4个
+            if trend_signal and h_t3:
+                 t3_turnover = h_t3.get("volume", 0) / h_t3.get("market_cap", 1) if h_t3.get("market_cap") else 0
+                 trend_signal.history_3d.append({
+                     "volume": h_t3.get("volume", 0),
+                     "price": h_t3.get("price", 0),
+                     "market_cap": h_t3.get("market_cap", 0),
+                     "turnover": t3_turnover
+                 })
+
             if trend_signal and trend_signal.signal_type != "NEUTRAL":
                 should_alert = False
                 if trend_signal.score >= 0.85:
@@ -897,6 +891,7 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                         "market_cap": market_cap,
                         "fdv": fullyDilluttedMarketCap,
                         "platform": platform,
+                        "price": price,
                         "price_change": price_change_24h,
                         "vol_change": vol_change_24h,
                         "history_3d": trend_signal.history_3d
@@ -907,25 +902,26 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                         is_continuous_accumulation = True
         
         # ============================================
-        # 构建三日历史数据 (用于展示)
+        # 构建三日历史数据 (用于展示) - 扩充为 4 天
         # ============================================
         history_3d_enriched = None
         if h_today and h_yest and h_before:
             # 计算换手率
-            turnovers = []
-            for d in [h_today, h_yest, h_before]:
+            raw_history = [h_today, h_yest, h_before]
+            if h_t3:
+                raw_history.append(h_t3)
+                
+            history_3d_enriched = []
+            for d in raw_history:
                 mc = d.get("market_cap", 0)
                 vol = d.get("volume", 0)
-                if mc > 0:
-                    turnovers.append(vol / mc)
-                else:
-                    turnovers.append(0)
-            
-            history_3d_enriched = [
-                {"volume": h_today["volume"], "price": h_today["price"], "market_cap": h_today.get("market_cap", 0), "turnover": turnovers[0]},
-                {"volume": h_yest["volume"], "price": h_yest["price"], "market_cap": h_yest.get("market_cap", 0), "turnover": turnovers[1]},
-                {"volume": h_before["volume"], "price": h_before["price"], "market_cap": h_before.get("market_cap", 0), "turnover": turnovers[2]},
-            ]
+                tr = vol / mc if mc > 0 else 0
+                history_3d_enriched.append({
+                    "volume": vol,
+                    "price": d.get("price", 0),
+                    "market_cap": mc,
+                    "turnover": tr
+                })
         
         # ============================================
         # 庄家行为检测 (当日维度 + 置信度加权)
@@ -951,7 +947,7 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                 "fdv": fullyDilluttedMarketCap,
                 "platform": platform,
                 "price": price,
-                "history_3d": history_3d_enriched,  # 添加三日数据
+                "history_3d": history_3d_enriched,  # 添加数据(可能包含4天)
                 "score": alert_score,  # 新增分数
                 "mcap_tag": mcap_tag,  # 新增标签
                 "score_emoji": score_emoji  # 新增 emoji
@@ -997,7 +993,7 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
                 "market_cap": market_cap,
                 "fdv": fullyDilluttedMarketCap,
                 "platform": platform,
-                "history_3d": history_3d_enriched  # 添加三日数据
+                "history_3d": history_3d_enriched  # 添加数据(可能包含4天)
             }
             alerts.append(alert_info)
     
@@ -1070,6 +1066,10 @@ async def monitor_volume_changes(crypto_list=None, threshold=50.0, debug_only=Fa
     if anomaly_signals:
         print(f"⚠️ 发送异动警告: {len(anomaly_signals)} 个")
         if not debug_only:
+            # 在 Alpha 与 风险/异动 流之间插入分隔符（仅两者都存在时）
+            if alpha_signals:
+                await send_discord_message("──────────────")
+                await asyncio.sleep(0.3)
             await _send_unified_anomaly(anomaly_signals)
     
     if not alpha_signals and not anomaly_signals:
@@ -1579,15 +1579,20 @@ async def _send_compact_embed(
     color: int,
     description: str = ""
 ):
-    """发送紧凑格式的 Embed
+    """发送紧凑格式的 Embed (支持分页与详细3日数据)
     
-    每个代币一行，关键信息一目了然。
-    格式: Symbol | Price | MC | Vol变化 | Price变化 | 置信度
+    格式:
+    Symbol (Name)
+    💵 $Price | 💰 MC $... | FDV $...
+    Vol +X% 🚀 | Price +Y% 📈 | Score 0.XX
+    T-0: vol/price-change/TR
+    T-1: ...
+    T-2: ...
     
     Args:
         title: Embed 标题
         signals: 信号列表
-        total_count: 总数量 (用于显示截断提示)
+        total_count: 总数量 (忽略，实际使用 signals 长度)
         color: 颜色
         description: 描述文本
     """
@@ -1595,73 +1600,153 @@ async def _send_compact_embed(
         return
     
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    real_count = len(signals)
     
-    # 构建 fields
-    fields = []
+    # 构造头部信息 (Total Count & Time)
+    header_title = f"{title} ({real_count}个)"
+    header_description = f"⏱️ {current_time}"
+    if description:
+        header_description += f"\n{description}"
+        
+    # 分页配置
+    MAX_FIELDS_PER_EMBED = 10  # 每个 Embed 最多显示多少个代币 (防止消息过长)
+    chunks = [signals[i:i + MAX_FIELDS_PER_EMBED] for i in range(0, len(signals), MAX_FIELDS_PER_EMBED)]
     
-    for i, sig in enumerate(signals, 1):
-        data = sig.data
-        symbol = sig.symbol
-        name = sig.name[:12]
-        
-        # 提取关键数据
-        price = data.get("price", 0)
-        market_cap = data.get("market_cap", 0)
-        fdv = data.get("fdv", 0)
-        vol_change = data.get("vol_change", data.get("change_24h", 0))
-        price_change = data.get("price_change", 0)
-        history_3d = data.get("history_3d", [])
-        
-        # 格式化数值
-        price_str = f"${price:.6g}" if price > 0 else "-"
-        mc_str = _format_number(market_cap)
-        fdv_str = _format_number(fdv)
-        
-        # Emoji
-        vol_emoji = "🚀" if vol_change > 50 else "📈" if vol_change > 0 else "📉"
-        price_emoji = "📈" if price_change > 3 else "📉" if price_change < -3 else "➡️"
-        score_emoji = ConfidenceEngine.get_score_emoji(sig.score)
-        
-        # 构建三日趋势简报
-        trend_line = ""
-        if history_3d and len(history_3d) >= 2:
-            t0_vol = history_3d[0].get("volume", 0)
-            t1_vol = history_3d[1].get("volume", 0)
-            vol_ratio = ((t0_vol - t1_vol) / t1_vol * 100) if t1_vol > 0 else 0
-            trend_line = f"Vol {vol_ratio:+.0f}% vs 昨日"
-        
-        # 构建 field
-        field_name = f"{i}. {symbol} ({name})"
-        field_value = (
-            f"💵 **{price_str}** | 💰 MC ${mc_str} | FDV ${fdv_str}\n"
-            f"Vol {vol_change:+.0f}% {vol_emoji} | Price {price_change:+.1f}% {price_emoji} | {sig.score:.2f} {score_emoji}\n"
-            f"{sig.mcap_tag} {sig.reason}"
-        )
-        
-        if trend_line:
-            field_value = field_value.replace(sig.reason, f"{trend_line} | {sig.reason}")
-        
-        fields.append({
-            "name": field_name,
-            "value": field_value,
-            "inline": False
-        })
+    total_chunks = len(chunks)
     
-    # 截断提示
-    footer_text = f"共 {total_count} 个信号"
-    if total_count > len(signals):
-        footer_text += f" (仅显示 Top {len(signals)})"
-    footer_text += f" | {current_time}"
-    
-    embed = {
-        "title": f"{title} ({total_count}个)",
-        "description": description,
-        "color": color,
-        "fields": fields,
-        "footer": {"text": footer_text}
-    }
-    
-    await _send_embed_raw(embed)
+    for chunk_idx, chunk in enumerate(chunks):
+        fields = []
+        
+        for i, sig in enumerate(chunk, 1):
+            # 全局序号
+            global_idx = chunk_idx * MAX_FIELDS_PER_EMBED + i
+            
+            data = sig.data
+            symbol = sig.symbol
+            name = sig.name[:12]
+            
+            # 提取关键数据
+            price = data.get("price", 0)
+            market_cap = data.get("market_cap", 0)
+            fdv = data.get("fdv", 0)
+            vol_change = data.get("vol_change", data.get("change_24h", 0))
+            price_change = data.get("price_change", 0)
+            history_3d = data.get("history_3d", [])
+
+            # 价格回填
+            if (not price or price <= 0) and history_3d and isinstance(history_3d, list):
+                try:
+                    t0_price = history_3d[0].get("price", 0) if len(history_3d) >= 1 else 0
+                    if t0_price and t0_price > 0:
+                        price = t0_price
+                except Exception:
+                    pass
+            
+            # 格式化基础数值
+            price_str = f"${price:.6g}" if price > 0 else "-"
+            mc_str = _format_number(market_cap)
+            fdv_str = _format_number(fdv)
+            
+            # Emoji
+            vol_emoji = "🚀" if vol_change > 50 else "📈" if vol_change > 0 else "📉"
+            price_emoji = "📈" if price_change > 3 else "📉" if price_change < -3 else "➡️"
+            score_emoji = ConfidenceEngine.get_score_emoji(sig.score)
+
+            # 构建 3日数据详情 (T-0, T-1, T-2)
+            metrics_lines = []
+            if history_3d and isinstance(history_3d, list):
+                # 辅助函数: 安全获取数据
+                def _get_h_data(idx):
+                    if idx < len(history_3d):
+                        return history_3d[idx] or {}
+                    return {}
+                
+                t0, t1, t2 = _get_h_data(0), _get_h_data(1), _get_h_data(2)
+                
+                # 定义行生成逻辑
+                days = [("T-0", t0), ("T-1", t1), ("T-2", t2)]
+                
+                # 计算价格变化需要的上日价格
+                # T-0 PChg = (P0 - P1)/P1
+                # T-1 PChg = (P1 - P2)/P2
+                # T-2 PChg = (P2 - P3)/P3 (如果不存在P3则无法计算)
+                
+                # 获取价格序列用于计算涨跌幅
+                p0 = t0.get("price", 0) or 0
+                p1 = t1.get("price", 0) or 0
+                p2 = t2.get("price", 0) or 0
+                # 尝试获取 t3 用于计算 t2 的涨跌幅 (如果存在)
+                t3 = _get_h_data(3)
+                p3 = t3.get("price", 0) or 0
+                
+                prices_seq = [p0, p1, p2, p3]
+                
+                for d_idx, (label, day_data) in enumerate(days):
+                    if not day_data:
+                        continue
+                        
+                    vol = day_data.get("volume", 0) or 0
+                    
+                    # 换手率
+                    tr = day_data.get("turnover", 0)
+                    if not tr and market_cap > 0:
+                         # 估算: 使用当天的 MC 估算 (不太准，但可用)
+                         tr = vol / market_cap
+                    
+                    # 价格变化
+                    # 注意: prices_seq 长度为 4 (p0, p1, p2, p3), d_idx 最大为 2 (T-2)
+                    # 当 d_idx=2 (T-2) 时, prev_p 是 p3
+                    curr_p = prices_seq[d_idx]
+                    prev_p = prices_seq[d_idx + 1] if d_idx + 1 < len(prices_seq) else 0
+                    
+                    pchg_str = "-"
+                    if prev_p > 0:
+                        pchg = (curr_p - prev_p) / prev_p * 100
+                        pchg_str = f"{pchg:+.1f}%"
+                    
+                    # 格式化单行
+                    # T-X: vol / price-change / TR
+                    line = f"{label}: ${_format_number(vol)} / {pchg_str} / TR {_format_turnover(tr)}"
+                    metrics_lines.append(line)
+            
+            # 构建 field
+            field_name = f"{global_idx}. {symbol} ({name})"
+            reason_line = (sig.reason or "").strip() or "-"
+            
+            content_lines = [
+                f"💵 **{price_str}** | 💰 MC ${mc_str} | FDV ${fdv_str}",
+                f"Vol {vol_change:+.0f}% {vol_emoji} | Price {price_change:+.1f}% {price_emoji} | {sig.score:.2f} {score_emoji}",
+            ]
+            if metrics_lines:
+                content_lines.extend(metrics_lines)
+            content_lines.append(f"💡 {reason_line}")
+
+            fields.append({
+                "name": field_name,
+                "value": "\n".join(content_lines),
+                "inline": False
+            })
+        
+        # 发送当前 chunk
+        chunk_title = header_title
+        if total_chunks > 1:
+            chunk_title = f"{header_title} ({chunk_idx + 1}/{total_chunks})"
+        
+        # 底部不再重复显示时间和总数
+        footer_text = "Binance Alpha Monitor"
+        
+        embed = {
+            "title": chunk_title,
+            "description": header_description if chunk_idx == 0 else "", # 描述只显示在第一页
+            "color": color,
+            "fields": fields,
+            "footer": {"text": footer_text}
+        }
+        
+        await _send_embed_raw(embed)
+        # 避免速率限制
+        if total_chunks > 1:
+            await asyncio.sleep(0.5)
 
 async def get_volume_statistics(crypto_list):
     """获取交易量统计信息 (保留原有功能)"""
