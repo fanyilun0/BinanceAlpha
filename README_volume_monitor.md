@@ -83,18 +83,22 @@ graph TD
 1. FOLKS (Folks Finance)
 💵 $15.6 | 💰 MC $177.9M | FDV $729.1M
 Vol -49% 📉 | Price +3.5% 📈 | 0.99 🔥
-[大市值稳健] 连续缩量(49.4%)且价格企稳
+3D(T-2/T-1/T0) Vol $20.4M/$15.8M/$10.3M | PChg -/-9.8%/+3.6% | TR 10.7%/9.2%/5.8%
+[LARGE] 连续缩量(49.4%)且价格企稳
 
 2. SOON (SOON)
 ...
 ```
+
+> Alpha 信号流与 风险/异动流之间会插入分隔符：`──────────────`
 
 **关键信息一目了然:**
 - 当前价格 (新增)
 - 市值/FDV
 - Vol/Price 变化率
 - 置信度分数 + Emoji
-- 市值标签 + 信号原因
+- 3D(T-2/T-1/T0) 的 Vol/PriceChange/TR(换手率=Vol/MC)
+- 信号原因（含 Tier）
 
 ## 7. 核心类说明
 
@@ -134,11 +138,11 @@ class ClassifiedSignal:
 
 ```bash
 # 运行监控
-python src/utils/volume_monitor.py
+python3 src/utils/volume_monitor.py
 
 # 调试模式（不发送消息）
-python src/utils/volume_monitor.py --debug
+python3 src/utils/volume_monitor.py --debug
 
 # 自定义阈值
-python src/utils/volume_monitor.py --threshold 60
+python3 src/utils/volume_monitor.py --threshold 60
 ```
