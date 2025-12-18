@@ -342,8 +342,6 @@
   "PHABTC",
   "ADATRY",
   "ADABRL",
-  "FISBTC",
-  "FISUSDT",
   "DOTBRL",
   "HOTTRY",
   "EGLDEUR",
@@ -478,7 +476,6 @@
   "GALABRL",
   "GALATRY",
   "LUNATRY",
-  "VOXELUSDT",
   "MINATRY",
   "XTZTRY",
   "HIGHUSDT",
@@ -543,7 +540,6 @@
   "AUDIOTRY",
   "NEXOUSDT",
   "NEXOBTC",
-  "REIUSDT",
   "LDOUSDT",
   "LDOBTC",
   "ENSTRY",
@@ -1631,5 +1627,6 @@
   "DASHTRY",
   "DOGEUSD1",
   "SUIUSD1",
-  "XRPUSD1"
+  "XRPUSD1",
+  "\u8fd9\u662f\u6d4b\u8bd5\u5e01456"
 ]
