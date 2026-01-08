@@ -1611,5 +1611,11 @@
   "BREVUSDT",
   "BREVUSDC",
   "BREVBNB",
-  "BREVTRY"
+  "BREVTRY",
+  "\u5e01\u5b89\u4eba\u751fUSDT",
+  "\u5e01\u5b89\u4eba\u751fUSDC",
+  "\u5e01\u5b89\u4eba\u751fTRY",
+  "ZKPUSDT",
+  "ZKPUSDC",
+  "ZKPTRY"
 ]
