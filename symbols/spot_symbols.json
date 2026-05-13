@@ -1235,6 +1235,7 @@
   "POLIDR",
   "RENDERIDR",
   "TAOIDR",
+  "TONIDR",
   "VIRTUALIDR",
   "WIFIDR",
   "ZILIDR",
@@ -1390,5 +1391,8 @@
   "MEGAUSDT",
   "MEGAUSDC",
   "MEGATRY",
-  "USDTKZT"
+  "USDTKZT",
+  "MEGAU",
+  "TONU",
+  "TONUSD1"
 ]
