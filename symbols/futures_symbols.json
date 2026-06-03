@@ -30,7 +30,6 @@
   "COMPUSDT",
   "OMGUSDT",
   "DOGEUSDT",
-  "SXPUSDT",
   "KAVAUSDT",
   "BANDUSDT",
   "RLCUSDT",
@@ -684,5 +683,6 @@
   "PHAROSUSDT",
   "STARUSDT",
   "BTCUSD1",
-  "CTRUSDT"
+  "CTRUSDT",
+  "SLXUSDT"
 ]
