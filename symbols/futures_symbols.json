@@ -694,5 +694,7 @@
   "BTCU",
   "ETHU",
   "GRAMUSDT",
-  "ETHUSD1"
+  "ETHUSD1",
+  "DATAIPUSDT",
+  "DATAIPUSDC"
 ]
