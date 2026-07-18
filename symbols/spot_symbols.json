@@ -5,7 +5,6 @@
   "BNBETH",
   "BTCUSDT",
   "ETHUSDT",
-  "KNCBTC",
   "LINKBTC",
   "LINKETH",
   "ETCBTC",
@@ -24,7 +23,6 @@
   "LTCETH",
   "LTCUSDT",
   "LTCBNB",
-  "ONTBTC",
   "QTUMUSDT",
   "ADAUSDT",
   "XRPUSDT",
@@ -191,7 +189,6 @@
   "XRPBRL",
   "SKLUSDT",
   "BCHEUR",
-  "GLMBTC",
   "LINKBRL",
   "TRXTRY",
   "XLMEUR",
@@ -962,7 +959,6 @@
   "LAUSDC",
   "LATRY",
   "LPTJPY",
-  "XAIUSDC",
   "AXSUSDC",
   "COMPUSDC",
   "ERAUSDT",
@@ -1365,5 +1361,8 @@
   "MRVLBUSDT",
   "NOKBUSDT",
   "TSMBUSDT",
-  "RKLBBUSDT"
+  "RKLBBUSDT",
+  "AEROUSDT",
+  "AEROUSDC",
+  "AEROTRY"
 ]
