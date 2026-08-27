@@ -42,6 +42,17 @@ BLOCKCHAIN_PLATFORMS = {
 # 填入平台名数组则只查询指定的平台，例如: ["Ethereum", "Solana"]
 PLATFORMS_TO_QUERY = []
 
+# 数据保留策略配置（天数）
+DATA_RETENTION = {
+    'images': 30,               # images/ 下的 PNG 图片保留天数
+    'filtered_crypto_list': 30, # data/filtered_crypto_list_*.json
+    'alpha_crypto_list': 30,    # data/alpha_crypto_list_*.json
+    'trend_signals': 60,        # data/trend_signals_*.json（趋势数据保留更久）
+    'platforms': 30,            # data/platforms/*_projects_*.json
+    # advices 由 git 追踪管理，不自动清理
+    'prompts': 30,              # prompts/ 下的提示词文件
+}
+
 # 需要屏蔽的代币列表
 # 可以使用符号(symbol)、名称(name)或ID进行匹配
 # 例如: ["BTC", "Bitcoin", "ETH", "Ethereum"]

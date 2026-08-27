@@ -6,23 +6,25 @@ __pycache__
 *.pyw
 *.pyz
 .env
+
+# 持续增长的数据目录 — 不追踪，由清理脚本管理保留策略
+images/
+data/
 prompts/
 debug_logs/
-data/platforms/*.json
-data/alpha*.json
-
+venv/
 
 # docs-viewer
 docs-viewer/public/advices/
 docs-viewer/public/tables/
 docs-viewer/public/images/
+docs-viewer/public/charts/
 docs-viewer/public/futures_symbols.json
 docs-viewer/dist/
 docs-viewer/node_modules/
 docs-viewer/.env
 docs-viewer/.env.*
 docs-viewer/.env.example
-
 
 # Logs
 logs
@@ -43,7 +45,6 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj

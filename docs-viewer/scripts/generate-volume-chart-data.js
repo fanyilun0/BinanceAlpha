@@ -68,6 +68,14 @@ function getAllTokensWithVolume(data) {
 function processHistoricalData() {
   console.log('开始处理历史数据...');
 
+  if (!fs.existsSync(DATA_DIR)) {
+    console.log(`ℹ️  数据目录不存在: ${DATA_DIR}，跳过图表数据生成`);
+    const emptyData = { dates: [], tokens: {} };
+    const outputPath = path.join(OUTPUT_DIR, 'volume_time_series.json');
+    fs.writeFileSync(outputPath, JSON.stringify(emptyData, null, 2));
+    return emptyData;
+  }
+
   // 获取所有 filtered_crypto_list 文件
   const files = fs.readdirSync(DATA_DIR)
     .filter(file => file.startsWith('filtered_crypto_list_') && file.endsWith('.json'))

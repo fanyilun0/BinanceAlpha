@@ -19,6 +19,26 @@ const tablesTargetDir = path.join(__dirname, '../public/tables');
 const chartsTargetDir = path.join(__dirname, '../public/charts');
 const futuresSymbolsTarget = path.join(__dirname, '../public/futures_symbols.json');
 
+// 数据保留天数限制（与 Python 侧 DATA_RETENTION 保持一致）
+const RETENTION_DAYS = {
+  images: 30,
+  tables: 30,
+  advices: 90,
+};
+
+function isWithinRetention(filename, retentionDays) {
+  const dateMatch = filename.match(/(\d{8})/);
+  if (!dateMatch) return true;
+  const fileDate = new Date(
+    dateMatch[1].slice(0, 4),
+    parseInt(dateMatch[1].slice(4, 6)) - 1,
+    dateMatch[1].slice(6, 8)
+  );
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+  return fileDate >= cutoff;
+}
+
 // 确保目标目录存在
 if (!fs.existsSync(advicesTargetDir)) {
   fs.mkdirSync(advicesTargetDir, { recursive: true });
@@ -45,25 +65,25 @@ try {
   console.error('❌ 图表数据生成失败:', error.message);
 }
 
-// 读取源目录中的所有 .md 文件
+// 读取源目录中的所有 .md 文件（仅保留期限内）
 let mdFiles = [];
 if (fs.existsSync(advicesSourceDir)) {
   mdFiles = fs.readdirSync(advicesSourceDir)
-    .filter(file => file.endsWith('.md'))
+    .filter(file => file.endsWith('.md') && isWithinRetention(file, RETENTION_DAYS.advices))
     .map(file => ({
       name: file,
       title: file.replace('.md', '').replace(/_/g, ' ')
     }))
-    .sort((a, b) => b.name.localeCompare(a.name)); // 按文件名降序排序
+    .sort((a, b) => b.name.localeCompare(a.name));
 } else {
   console.log(`⚠️  文档目录不存在: ${advicesSourceDir}`);
 }
 
-// 读取图片目录中的所有 .png 文件，并按类型分类
+// 读取图片目录中的 .png 文件（仅保留期限内），并按类型分类
 let imageFiles = [];
 if (fs.existsSync(imagesSourceDir)) {
   imageFiles = fs.readdirSync(imagesSourceDir)
-    .filter(file => file.endsWith('.png'))
+    .filter(file => file.endsWith('.png') && isWithinRetention(file, RETENTION_DAYS.images))
     .map(file => {
       // 根据文件名确定图片类型
       let type = 'other';
@@ -88,14 +108,14 @@ if (fs.existsSync(imagesSourceDir)) {
   console.log(`⚠️  图片资源目录不存在: ${imagesSourceDir}`);
 }
 
-// 读取表格数据目录中的所有 .json 文件，并按类型分类
-// 支持: filtered_crypto_list_*.json 和 trend_signals_*.json
+// 读取表格数据目录中的 .json 文件（仅保留期限内），并按类型分类
 let tableFiles = [];
 if (fs.existsSync(tablesSourceDir)) {
   tableFiles = fs.readdirSync(tablesSourceDir)
     .filter(file => {
-      // 支持两种表格数据文件
-      return (file.startsWith('filtered_crypto_list_') || file.startsWith('trend_signals_')) && file.endsWith('.json');
+      return (file.startsWith('filtered_crypto_list_') || file.startsWith('trend_signals_'))
+        && file.endsWith('.json')
+        && isWithinRetention(file, RETENTION_DAYS.tables);
     })
     .map(file => {
       // 确定表格类型

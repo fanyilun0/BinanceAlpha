@@ -24,6 +24,7 @@ from src.utils.image_generator import (
     create_top_vol_mc_ratio_image,
     create_gainers_losers_image
 )
+from src.utils.data_cleanup import cleanup_old_data
 
 
 # 配置日志
@@ -696,6 +697,13 @@ async def run_workflow(debug_only=False, AI_needed=True, volume_monitor=True):
             prepared_data, 
             debug_only=debug_only,
         )
+        
+        # 步骤4: 清理过期历史数据
+        print("\n步骤4: 清理过期历史数据...\n")
+        try:
+            cleanup_old_data()
+        except Exception as cleanup_err:
+            logger.warning(f"数据清理时出错（不影响主流程）: {cleanup_err}")
         
     except Exception as e:
         logger.error(f"工作流执行过程中出错: {str(e)}")
