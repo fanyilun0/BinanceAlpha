@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/((?!assets|advices|images|tables|charts|futures_symbols).*)", "destination": "/index.html" }
+  ]
+}
