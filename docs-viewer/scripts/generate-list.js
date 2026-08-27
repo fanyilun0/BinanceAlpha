@@ -65,11 +65,11 @@ try {
   console.error('❌ 图表数据生成失败:', error.message);
 }
 
-// 读取源目录中的所有 .md 文件（仅保留期限内）
+// 读取源目录中的所有 .md 文件（advices 由 git 管理，不做保留天数过滤）
 let mdFiles = [];
 if (fs.existsSync(advicesSourceDir)) {
   mdFiles = fs.readdirSync(advicesSourceDir)
-    .filter(file => file.endsWith('.md') && isWithinRetention(file, RETENTION_DAYS.advices))
+    .filter(file => file.endsWith('.md'))
     .map(file => ({
       name: file,
       title: file.replace('.md', '').replace(/_/g, ' ')
